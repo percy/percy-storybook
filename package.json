@@ -1,0 +1,15 @@
+{
+  "name": "react-percy",
+  "version": "0.1.0",
+  "private": true,
+  "repository": "https://github.com/percy/react-percy.git",
+  "bugs": "https://github.com/percy/react-percy/issues",
+  "author": "Thomas Huston <thomas@huston.io>",
+  "license": "MIT",
+  "scripts": {
+    "bootstrap": "oao bootstrap"
+  },
+  "devDependencies": {
+    "oao": "^0.6.0"
+  }
+}
