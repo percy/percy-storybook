@@ -20,6 +20,16 @@
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jsx-a11y": "^4.0.0",
     "eslint-plugin-react": "^6.10.0",
+    "ghooks": "^2.0.0",
+    "lint-staged": "^3.3.1",
     "oao": "^0.6.0"
+  },
+  "config": {
+    "ghooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.js": "eslint --color"
   }
 }
