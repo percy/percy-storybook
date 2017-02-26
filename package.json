@@ -8,19 +8,27 @@
   "license": "MIT",
   "scripts": {
     "bootstrap": "oao bootstrap",
-    "lint": "eslint . --cache"
+    "lint": "eslint . --cache",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "devDependencies": {
     "babel-core": "^6.23.1",
     "babel-eslint": "^7.1.1",
+    "babel-jest": "^19.0.0",
+    "babel-plugin-transform-class-properties": "^6.23.0",
+    "babel-plugin-transform-export-extensions": "^6.22.0",
     "babel-preset-latest": "^6.22.0",
     "babel-preset-react": "^6.23.0",
+    "babel-preset-stage-3": "^6.22.0",
     "eslint": "^3.16.1",
     "eslint-config-airbnb": "^14.1.0",
     "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jest": "^19.0.1",
     "eslint-plugin-jsx-a11y": "^4.0.0",
     "eslint-plugin-react": "^6.10.0",
     "ghooks": "^2.0.0",
+    "jest": "^19.0.2",
     "lint-staged": "^3.3.1",
     "oao": "^0.6.0"
   },

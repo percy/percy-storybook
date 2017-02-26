@@ -38,3 +38,6 @@ jspm_packages
 
 # ESLint cache
 .eslintcache
+
+# Mac Files
+.DS_Store

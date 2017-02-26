@@ -1,20 +1,33 @@
 {
   "extends": "airbnb",
+  "plugins": [
+    "jest"
+  ],
   "parser": "babel-eslint",
+  "env": {
+    "jest/globals": true
+  },
   "rules": {
     "comma-dangle": ["error", "never"],
-    "import/no-extraneous-dependencies": ["error", {
-      "devDependencies": true,
-      "optionalDependencies": true,
-      "peerDependencies": true
-    }],
     "indent": ["error", 4],
     "no-else-return": "off",
+    "no-multi-assign": "off",
     "no-param-reassign": "off",
     "no-plusplus": "off",
     "no-trailing-spaces": "off",
     "no-underscore-dangle": "off",
     "padded-blocks": "off",
+
+    "import/no-extraneous-dependencies": ["error", {
+      "devDependencies": true,
+      "optionalDependencies": true,
+      "peerDependencies": true
+    }],
+
+    "jest/no-disabled-tests": "warn",
+    "jest/no-focused-tests": "error",
+    "jest/no-identical-title": "error",
+
     "react/jsx-filename-extension": "off"
   }
 }
