@@ -11,5 +11,5 @@ insert_final_newline = true
 [*.json]
 indent_size = 2
 
-[.babelrc]
+[{.babelrc,.eslintrc}]
 indent_size = 2
