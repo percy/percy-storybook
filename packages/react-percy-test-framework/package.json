@@ -1,0 +1,16 @@
+{
+  "name": "react-percy-test-framework",
+  "version": "0.1.0",
+  "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "engines": {
+    "node": ">=4.0",
+    "npm": ">=3.0"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "react": "^15.4.1"
+  }
+}
