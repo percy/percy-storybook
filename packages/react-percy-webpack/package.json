@@ -1,0 +1,30 @@
+{
+  "name": "react-percy-webpack",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/percy/react-percy.git"
+  },
+  "homepage": "https://github.com/percy/react-percy/",
+  "bugs": "https://github.com/percy/react-percy/issues",
+  "author": "Thomas Huston <thomas@huston.io>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=4.0",
+    "npm": ">=3.0"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "peerDependencies": {
+    "webpack": "^2.2.1"
+  },
+  "dependencies": {
+    "interpret": "^1.0.1",
+    "memory-fs": "^0.4.1"
+  },
+  "devDependencies": {
+    "webpack": "^2.2.1"
+  }
+}
