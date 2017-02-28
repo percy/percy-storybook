@@ -22,7 +22,8 @@
   },
   "dependencies": {
     "interpret": "^1.0.1",
-    "memory-fs": "^0.4.1"
+    "memory-fs": "^0.4.1",
+    "webpack-merge": "^3.0.0"
   },
   "devDependencies": {
     "webpack": "^2.2.1"
