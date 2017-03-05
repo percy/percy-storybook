@@ -1,11 +1,16 @@
 {
   "presets": [
-    "latest",
-    "react",
-    "stage-3"
+    ["env", {
+      "targets": {
+        "node": 4
+      }
+    }],
+    "react"
   ],
   "plugins": [
     "transform-class-properties",
-    "transform-export-extensions"
+    "transform-export-extensions",
+    "transform-object-rest-spread",
+    "transform-runtime"
   ]
 }

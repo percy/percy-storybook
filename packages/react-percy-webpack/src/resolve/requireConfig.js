@@ -1,5 +1,3 @@
-/* eslint-disable global-require, import/no-dynamic-require */
-
 import * as path from 'path';
 import interpret from 'interpret';
 import getExtension from './getExtension';
@@ -11,5 +9,6 @@ export default function requireConfig(configPath) {
     const extension = getExtension(resolvedConfigPath);
     registerCompiler(interpret.extensions[extension]);
 
+    // eslint-disable-next-line global-require, import/no-dynamic-require
     return require(resolvedConfigPath);
 }

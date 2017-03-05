@@ -1,0 +1,1 @@
+export configureVirtualEntry from './configureVirtualEntry';
