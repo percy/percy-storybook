@@ -1,0 +1,1 @@
+export runSnapshots from './runSnapshots';
