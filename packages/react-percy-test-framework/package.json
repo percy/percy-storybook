@@ -5,9 +5,6 @@
     "type": "git",
     "url": "https://github.com/percy/react-percy.git"
   },
-  "homepage": "https://github.com/percy/react-percy/",
-  "bugs": "https://github.com/percy/react-percy/issues",
-  "author": "Thomas Huston <thomas@huston.io>",
   "license": "MIT",
   "engines": {
     "node": ">=4.0",
