@@ -1,8 +1,11 @@
 {
   "private": true,
   "scripts": {
-    "bootstrap": "oao bootstrap",
+    "build": "vitruvius build --src src --dest lib",
+    "clean": "rimraf ./packages/*/lib",
     "lint": "eslint . --cache",
+    "postinstall": "lerna bootstrap --concurrency=1 && npm run clean && npm run build",
+    "precommit": "lint-staged",
     "test": "jest"
   },
   "devDependencies": {
@@ -11,26 +14,29 @@
     "babel-jest": "^19.0.0",
     "babel-plugin-transform-class-properties": "^6.23.0",
     "babel-plugin-transform-export-extensions": "^6.22.0",
-    "babel-preset-latest": "^6.22.0",
+    "babel-plugin-transform-object-rest-spread": "^6.23.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.2.0",
     "babel-preset-react": "^6.23.0",
-    "babel-preset-stage-3": "^6.22.0",
+    "babel-runtime": "^6.23.0",
     "eslint": "^3.16.1",
     "eslint-config-airbnb": "^14.1.0",
     "eslint-plugin-import": "^2.2.0",
     "eslint-plugin-jest": "^19.0.1",
     "eslint-plugin-jsx-a11y": "^4.0.0",
     "eslint-plugin-react": "^6.10.0",
-    "ghooks": "^2.0.0",
+    "husky": "^0.13.2",
     "jest": "^19.0.2",
+    "lerna": "^2.0.0-beta.38",
     "lint-staged": "^3.3.1",
-    "oao": "^0.6.0"
-  },
-  "config": {
-    "ghooks": {
-      "pre-commit": "lint-staged"
-    }
+    "rimraf": "^2.5.4",
+    "vitruvius": "^1.0.2"
   },
   "lint-staged": {
-    "*.js": "eslint --color"
+    "*.js": [
+      "eslint --fix --color",
+      "git add",
+      "jest --bail --findRelatedTests --color"
+    ]
   }
 }

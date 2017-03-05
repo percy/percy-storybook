@@ -39,5 +39,11 @@ jspm_packages
 # ESLint cache
 .eslintcache
 
-# Mac Files
+# Mac files
 .DS_Store
+
+# Nested Yarn files
+packages/*/yarn.lock
+
+# Output directories
+packages/*/lib
