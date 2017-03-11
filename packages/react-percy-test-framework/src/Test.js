@@ -35,10 +35,10 @@ export default class Test {
         return this.sizes;
     }
 
-    getTestCase() {
+    async getTestCase() {
         return {
             name: this.fullTitle(),
-            markup: this.fn(),
+            markup: await this.fn(),
             sizes: this.getSizes()
         };
     }

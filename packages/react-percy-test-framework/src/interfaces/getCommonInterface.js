@@ -15,12 +15,12 @@ export default function getCommonInterface(suites) {
         afterAll(fn) {
             suites[0].addAfterAll(fn);
         },
-        suite(title, fn, sizes) {
+        async suite(title, fn, sizes) {
             const suite = new Suite(title, sizes);
             suites[0].addSuite(suite);
             suites.unshift(suite);
             if (typeof fn === 'function') {
-                fn.call(suite);
+                await fn.call(suite);
             } else {
                 throw new Error(`Suite "${suite.fullTitle()}" was defined but no callback was supplied.`);
             }

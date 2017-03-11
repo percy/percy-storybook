@@ -1,4 +1,5 @@
 import normalizeSizes from './normalizeSizes';
+import { each, mapSeries, reduce } from 'bluebird';
 
 export default class Suite {
 
@@ -40,8 +41,7 @@ export default class Suite {
             if (!this.parent) {
                 throw new Error(`A test suite with name ${suite.title} has already been added`);
             } else {
-                throw new Error(`A test suite with title ${suite.title}` +
-                    ` has already been added to suite ${this.fullTitle()}`);
+                throw new Error(`A test suite with title ${suite.title} has already been added to suite ${this.fullTitle()}`);
             }
         }
         suite.parent = this;
@@ -49,12 +49,8 @@ export default class Suite {
     }
 
     addTest(test) {
-        if (!this.parent) {
-            throw new Error('`it` blocks must be inside a `describe` block');
-        }
         if (this.tests[test.title]) {
-            throw new Error(`A test with name ${test.title}` +
-                ` has already been added to suite ${this.fullTitle()}`);
+            throw new Error(`A test with name ${test.title} has already been added to suite ${this.fullTitle()}`);
         }
         test.parent = this;
         this.tests[test.title] = test;
@@ -78,39 +74,40 @@ export default class Suite {
         return this.sizes;
     }
 
-    getTestCases() {
-        this.beforeAll.forEach(fn => fn());
+    async getTestCases() {
+        await each(this.beforeAll, fn => fn());
 
-        const nestedTestCases = Object.values(this.suites)
-            .map(suite => suite.getTestCases())
-            .reduce((accumulated, testCases) => [...accumulated, ...testCases], []);
+        const nestedTestCases = await reduce(
+            mapSeries(Object.values(this.suites), suite => suite.getTestCases()),
+            (accumulated, testCases) => [...accumulated, ...testCases],
+            []
+        );
 
-        const testCases = Object.values(this.tests)
-            .map((test) => {
-                this.runBeforeEach();
-                const testCase = test.getTestCase();
-                this.runAfterEach();
-                return testCase;
-            });
+        const testCases = await mapSeries(Object.values(this.tests), async (test) => {
+            await this.runBeforeEach();
+            const testCase = await test.getTestCase();
+            await this.runAfterEach();
+            return testCase;
+        });
 
-        this.afterAll.forEach(fn => fn());
+        await each(this.afterAll, fn => fn());
 
         return [...nestedTestCases, ...testCases];
     }
 
-    runBeforeEach() {
+    async runBeforeEach() {
         if (this.parent) {
-            this.parent.runBeforeEach();
+            await this.parent.runBeforeEach();
         }
 
-        this.beforeEach.forEach(fn => fn());
+        await each(this.beforeEach, fn => fn());
     }
 
-    runAfterEach() {
-        this.afterEach.forEach(fn => fn());
+    async runAfterEach() {
+        await each(this.afterEach, fn => fn());
 
         if (this.parent) {
-            this.parent.runAfterEach();
+            await this.parent.runAfterEach();
         }
     }
 

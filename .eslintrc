@@ -8,6 +8,7 @@
     "jest/globals": true
   },
   "rules": {
+    "arrow-body-style": "off",
     "class-methods-use-this": "off",
     "comma-dangle": ["error", "never"],
     "indent": ["error", 4],

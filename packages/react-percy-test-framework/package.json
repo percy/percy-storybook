@@ -16,5 +16,8 @@
   ],
   "devDependencies": {
     "react": "^15.4.2"
+  },
+  "dependencies": {
+    "bluebird": "^3.5.0"
   }
 }
