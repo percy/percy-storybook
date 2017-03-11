@@ -62,10 +62,11 @@ it('runSnapshots injects percy client arg', () => {
     const build = { id: 'buildid' };
     const testCases = [{ testCase: 1 }, { testCase: 2 }];
     const assets = { 'foo.css': '.foo { color: red }' };
+    const renderer = () => {};
 
-    apiClient.runSnapshots(build, testCases, assets);
+    apiClient.runSnapshots(build, testCases, assets, renderer);
 
-    expect(runSnapshots).toHaveBeenCalledWith(expect.any(PercyClient), build, testCases, assets);
+    expect(runSnapshots).toHaveBeenCalledWith(expect.any(PercyClient), build, testCases, assets, renderer);
 });
 
 it('uploadResources injects percy client arg', () => {

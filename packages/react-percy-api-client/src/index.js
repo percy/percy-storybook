@@ -27,8 +27,8 @@ export default class PercyApiClient {
         return makeResources(this._client, assets);
     }
 
-    runSnapshots(build, testCases, assets) {
-        return runSnapshots(this._client, build, testCases, assets);
+    runSnapshots(build, testCases, assets, renderer) {
+        return runSnapshots(this._client, build, testCases, assets, renderer);
     }
 
     uploadResources(build, resources) {

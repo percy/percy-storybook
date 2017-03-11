@@ -1,11 +1,10 @@
 import { getMissingResourceShas, makeRootResource, uploadResources } from '../resources';
 import createSnapshot from './createSnapshot';
 import finalizeSnapshot from './finalizeSnapshot';
-import render from './render';
 
-export default async function runSnapshot(percyClient, build, testCase, assets) {
+export default async function runSnapshot(percyClient, build, testCase, assets, renderer) {
     try {
-        const html = render(testCase.markup, assets);
+        const html = renderer(testCase.markup, assets);
         const resource = makeRootResource(percyClient, testCase.name, html);
 
         const snapshot = await createSnapshot(percyClient, build, testCase.name, resource, testCase.sizes);
