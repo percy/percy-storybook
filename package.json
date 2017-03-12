@@ -30,7 +30,7 @@
     "lerna": "^2.0.0-beta.38",
     "lint-staged": "^3.3.1",
     "rimraf": "^2.5.4",
-    "vitruvius": "^1.0.3"
+    "vitruvius": "^1.0.4"
   },
   "lint-staged": {
     "*.js": [
