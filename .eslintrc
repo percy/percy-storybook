@@ -11,6 +11,7 @@
     "arrow-body-style": "off",
     "class-methods-use-this": "off",
     "comma-dangle": ["error", "never"],
+    "consistent-return": "off",
     "indent": ["error", 4],
     "max-len": ["error", {
       "code": 120,

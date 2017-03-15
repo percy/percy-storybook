@@ -1,0 +1,41 @@
+{
+  "name": "react-percy",
+  "description": "",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/percy/react-percy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/percy/react-percy/issues"
+  },
+  "homepage": "https://github.com/percy/react-percy",
+  "license": "MIT",
+  "engines": {
+    "node": ">=4.0",
+    "npm": ">=3.0"
+  },
+  "bin": {
+    "react-percy": "./bin/react-percy.js"
+  },
+  "files": [
+    "bin",
+    "lib"
+  ],
+  "keywords": [
+    "automated",
+    "percy",
+    "react",
+    "screenshot",
+    "test",
+    "testing",
+    "visual",
+    "webpack"
+  ],
+  "dependencies": {
+    "pkg-dir": "^1.0.0",
+    "react-percy-config": "^0.1.0",
+    "react-percy-webpack": "^0.1.0",
+    "yargs": "^7.0.2"
+  }
+}
