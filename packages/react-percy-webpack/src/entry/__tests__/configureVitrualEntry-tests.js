@@ -1,4 +1,4 @@
-import configureVirtualEntry from '../configureVirtualEntry';
+import configureVirtualEntry from '../';
 import path from 'path';
 import VirtualModulePlugin from 'virtual-module-webpack-plugin';
 
