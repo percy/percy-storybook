@@ -1,8 +1,8 @@
 import resolve from '../';
 
 const mockConfig = { config: true };
-jest.mock('../requireConfig');
-jest.mock('../getConfigExports', () => config => config);
+jest.mock('../requireWebpackConfig');
+jest.mock('../getWebpackConfigExports', () => config => config);
 jest.mock('../../entry', () => ({
     configureVirtualEntry: () => mockConfig
 }));

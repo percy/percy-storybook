@@ -1,8 +1,8 @@
-import getConfigExports from './getConfigExports';
+import getWebpackConfigExports from './getWebpackConfigExports';
 import { configureVirtualEntry } from '../entry';
-import requireConfig from './requireConfig';
+import requireWebpackConfig from './requireWebpackConfig';
 
-export default function resolve(configPath) {
-    const config = requireConfig(configPath);
-    return configureVirtualEntry(getConfigExports(config));
+export default function resolve(webpackConfigPath) {
+    const webpackConfig = requireWebpackConfig(webpackConfigPath);
+    return configureVirtualEntry(getWebpackConfigExports(webpackConfig));
 }

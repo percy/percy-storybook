@@ -1,8 +1,8 @@
 import createCompiler from './createCompiler';
 
-export default function compile(config) {
+export default function compile(webpackConfig) {
     return new Promise((resolve, reject) => {
-        const compiler = createCompiler(config);
+        const compiler = createCompiler(webpackConfig);
         compiler.run((err, stats) => {
             if (err) {
                 return reject([err]);

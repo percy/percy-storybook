@@ -2,9 +2,9 @@ import MemoryOutputPlugin from './MemoryOutputPlugin';
 import merge from 'webpack-merge';
 import webpack from 'webpack';
 
-export default function createCompiler(config) {
+export default function createCompiler(webpackConfig) {
     return webpack(
-        merge(config, {
+        merge(webpackConfig, {
             plugins: [
                 new MemoryOutputPlugin()
             ]

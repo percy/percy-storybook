@@ -4,10 +4,10 @@ class WebpackCompiler { }
 const mockCompiler = () => new WebpackCompiler();
 jest.mock('webpack', () => () => mockCompiler());
 
-const config = { config: true };
+const webpackConfig = { config: true };
 
 it('returns a webpack compiler', () => {
-    const compiler = createCompiler(config);
+    const compiler = createCompiler(webpackConfig);
 
     expect(compiler).toBeInstanceOf(WebpackCompiler);
 });

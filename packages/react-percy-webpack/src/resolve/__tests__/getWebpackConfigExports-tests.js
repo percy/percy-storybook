@@ -1,11 +1,11 @@
-import getConfigExports from '../getConfigExports';
+import getWebpackConfigExports from '../getWebpackConfigExports';
 
 it('throws given no config', () => {
-    expect(() => getConfigExports(null)).toThrow();
+    expect(() => getWebpackConfigExports(null)).toThrow();
 });
 
 it('throws given array', () => {
-    expect(() => getConfigExports([{
+    expect(() => getWebpackConfigExports([{
         config1: true
     }, {
         config2: true
@@ -13,7 +13,7 @@ it('throws given array', () => {
 });
 
 it('returns ES5 config object', () => {
-    const config = getConfigExports({
+    const config = getWebpackConfigExports({
         config: true
     });
 
@@ -23,7 +23,7 @@ it('returns ES5 config object', () => {
 });
 
 it('returns ES6 config object', () => {
-    const config = getConfigExports({
+    const config = getWebpackConfigExports({
         default: {
             config: true
         }

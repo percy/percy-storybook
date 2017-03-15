@@ -3,7 +3,7 @@ import compile from '../';
 let mockCompiler;
 jest.mock('../createCompiler', () => () => mockCompiler);
 
-const config = { config: true };
+const webpackConfig = { config: true };
 
 let webpackError;
 let errors;
@@ -31,7 +31,7 @@ it('rejects when webpack errors internally', async () => {
     givenWebpackError('internal webpack error');
 
     try {
-        await compile(config);
+        await compile(webpackConfig);
         throw new Error('`compile` should have failed');
     } catch (e) {
         expect(e).toEqual([
@@ -45,7 +45,7 @@ it('rejects with webpack fails to compile', async () => {
     givenCompileError('file 2 failed to compile');
 
     try {
-        await compile(config);
+        await compile(webpackConfig);
         throw new Error('`compile` should have failed');
     } catch (e) {
         expect(e).toEqual([
@@ -59,7 +59,7 @@ it('resolves with compiled files when webpack succeeds', async () => {
     givenAsset('/file1.js', 'const x = 1;');
     givenAsset('/file2.css', '.foo { background: red; }');
 
-    const files = await compile(config);
+    const files = await compile(webpackConfig);
 
     expect(files).toEqual({
         '/file1.js': 'const x = 1;',

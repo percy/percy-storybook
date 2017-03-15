@@ -1,7 +1,7 @@
 import * as path from 'path';
 import interpret from 'interpret';
 import registerCompiler from '../registerCompiler';
-import requireConfig from '../requireConfig';
+import requireWebpackConfig from '../requireWebpackConfig';
 
 jest.mock('interpret', () => ({
     extensions: {
@@ -27,7 +27,7 @@ const givenWebpackConfig = (mockConfig = {}) => {
 it('registers the necessary compilers before loading the config', () => {
     givenWebpackConfig();
 
-    requireConfig(configPath);
+    requireWebpackConfig(configPath);
 
     expect(registerCompiler).toHaveBeenCalledWith(interpret.extensions['.foo.js']);
 });
@@ -42,7 +42,7 @@ it('returns webpack config', () => {
         }
     });
 
-    const config = requireConfig(configPath);
+    const config = requireWebpackConfig(configPath);
 
     expect(config).toEqual({
         entry: {

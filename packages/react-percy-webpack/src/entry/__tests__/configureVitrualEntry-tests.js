@@ -6,8 +6,11 @@ it('does not mutate the original Webpack config', () => {
     const originalConfig = {
         old: 'config'
     };
+    const percyConfig = {
+        includeFiles: []
+    };
 
-    const modifiedConfig = configureVirtualEntry(originalConfig);
+    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig);
 
     expect(modifiedConfig).not.toBe(originalConfig);
     expect(originalConfig).toEqual({
@@ -17,8 +20,11 @@ it('does not mutate the original Webpack config', () => {
 
 it('adds VirtualModulePlugin given Webpack config with no plugins', () => {
     const originalConfig = {};
+    const percyConfig = {
+        includeFiles: []
+    };
 
-    const modifiedConfig = configureVirtualEntry(originalConfig);
+    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig);
 
     expect(modifiedConfig.plugins).toEqual([
         expect.any(VirtualModulePlugin)
@@ -32,8 +38,11 @@ it('adds VirtualModulePlugin given Webpack config with plugins', () => {
             'old-plugin-2'
         ]
     };
+    const percyConfig = {
+        includeFiles: []
+    };
 
-    const modifiedConfig = configureVirtualEntry(originalConfig);
+    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig);
 
     expect(modifiedConfig.plugins).toEqual([
         'old-plugin-1',
@@ -44,8 +53,11 @@ it('adds VirtualModulePlugin given Webpack config with plugins', () => {
 
 it('percy entry contains virtual entry given no additional includes specified in percy options', () => {
     const originalConfig = {};
+    const percyConfig = {
+        includeFiles: []
+    };
 
-    const modifiedConfig = configureVirtualEntry(originalConfig);
+    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig);
 
     expect(modifiedConfig.entry).toEqual({
         percy: [
@@ -55,16 +67,15 @@ it('percy entry contains virtual entry given no additional includes specified in
 });
 
 it('percy entry contains virtual entry and additional includes specified in percy options', () => {
-    const originalConfig = {
-        percy: {
-            include: [
-                'babel-polyfill',
-                './src/foo.js'
-            ]
-        }
+    const originalConfig = {};
+    const percyConfig = {
+        includeFiles: [
+            'babel-polyfill',
+            './src/foo.js'
+        ]
     };
 
-    const modifiedConfig = configureVirtualEntry(originalConfig);
+    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig);
 
     expect(modifiedConfig.entry).toEqual({
         percy: [
