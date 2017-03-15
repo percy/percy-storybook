@@ -34,7 +34,7 @@ export function run(argv) {
     const percyConfig = readPercyConfig(packageRoot);
     const webpackConfig = readWebpackConfig(argv.config);
 
-    return runPercy(percyConfig, webpackConfig)
+    return runPercy(percyConfig, webpackConfig, process.env.PERCY_TOKEN)
         .then(() => process.on('exit', () => process.exit(0)))
         .catch(() => process.on('exit', () => process.exit(1)));
 }

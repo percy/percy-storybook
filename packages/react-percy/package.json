@@ -34,6 +34,7 @@
   ],
   "dependencies": {
     "pkg-dir": "^1.0.0",
+    "react-percy-ci": "^0.1.0",
     "react-percy-config": "^0.1.0",
     "react-percy-webpack": "^0.1.0",
     "yargs": "^7.0.2"
