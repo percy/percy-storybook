@@ -41,6 +41,7 @@
     "jest/no-focused-tests": "error",
     "jest/no-identical-title": "error",
 
-    "react/jsx-filename-extension": "off"
+    "react/jsx-filename-extension": "off",
+    "react/jsx-indent": ["error", 4]
   }
 }
