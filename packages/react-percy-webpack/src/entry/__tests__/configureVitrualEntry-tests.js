@@ -9,8 +9,9 @@ it('does not mutate the original Webpack config', () => {
     const percyConfig = {
         includeFiles: []
     };
+    const entry = 'const entry = true;';
 
-    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig);
+    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig, entry);
 
     expect(modifiedConfig).not.toBe(originalConfig);
     expect(originalConfig).toEqual({
@@ -23,8 +24,9 @@ it('adds VirtualModulePlugin given Webpack config with no plugins', () => {
     const percyConfig = {
         includeFiles: []
     };
+    const entry = 'const entry = true;';
 
-    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig);
+    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig, entry);
 
     expect(modifiedConfig.plugins).toEqual([
         expect.any(VirtualModulePlugin)
@@ -41,8 +43,9 @@ it('adds VirtualModulePlugin given Webpack config with plugins', () => {
     const percyConfig = {
         includeFiles: []
     };
+    const entry = 'const entry = true;';
 
-    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig);
+    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig, entry);
 
     expect(modifiedConfig.plugins).toEqual([
         'old-plugin-1',
@@ -56,8 +59,9 @@ it('percy entry contains virtual entry given no additional includes specified in
     const percyConfig = {
         includeFiles: []
     };
+    const entry = 'const entry = true;';
 
-    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig);
+    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig, entry);
 
     expect(modifiedConfig.entry).toEqual({
         percy: [
@@ -74,8 +78,9 @@ it('percy entry contains virtual entry and additional includes specified in perc
             './src/foo.js'
         ]
     };
+    const entry = 'const entry = true;';
 
-    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig);
+    const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig, entry);
 
     expect(modifiedConfig.entry).toEqual({
         percy: [
