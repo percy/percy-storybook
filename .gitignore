@@ -47,3 +47,6 @@ packages/*/yarn.lock
 
 # Output directories
 packages/*/lib
+
+# Packed npm
+*.tgz
