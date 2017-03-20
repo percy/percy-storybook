@@ -1,3 +1,13 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`uploads assets 1`] = `Array []`;
+exports[`uploads assets 1`] = `
+Array [
+  Array [
+    "test-build",
+    ".text {
+    color: red;
+}
+",
+  ],
+]
+`;
