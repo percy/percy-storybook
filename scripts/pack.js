@@ -30,8 +30,9 @@ module.exports = function pack(packagePath, packageJson, outputDir) {
 
         return outputPath;
     } finally {
-        if (!fs.statSync(jsonPath)) {
+        if (fs.statSync(tempPath)) {
             // Restore package.json
+            fs.removeSync(jsonPath);
             fs.moveSync(tempPath, jsonPath);
         }
     }
