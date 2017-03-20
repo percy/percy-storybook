@@ -15,9 +15,10 @@
     "lib"
   ],
   "dependencies": {
-    "react-percy-api-client": "^0.1.0",
-    "react-percy-render": "^0.1.0",
-    "react-percy-test-framework": "^0.1.0",
-    "react-percy-webpack": "^0.1.0"
+    "debug": "^2.6.3",
+    "react-percy-api-client": "/Users/thomas.huston/src/react-percy/integration-tests/packages/react-percy-api-client.tgz",
+    "react-percy-render": "/Users/thomas.huston/src/react-percy/integration-tests/packages/react-percy-render.tgz",
+    "react-percy-test-framework": "/Users/thomas.huston/src/react-percy/integration-tests/packages/react-percy-test-framework.tgz",
+    "react-percy-webpack": "/Users/thomas.huston/src/react-percy/integration-tests/packages/react-percy-webpack.tgz"
   }
 }
