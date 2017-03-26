@@ -6,8 +6,14 @@ jest.mock('percy-client');
 
 process.exit = jest.fn();
 
-it('uploads assets', async () => {
+beforeAll(async () => {
     await run(['--config', 'webpack/webpack.config.js']);
+});
 
+it('uploads CSS files', () => {
     expect(percy.uploadResource.mock.calls).toMatchSnapshot();
+});
+
+it('creates snapshots for each test case', () => {
+    expect(percy.createSnapshot.mock.calls).toMatchSnapshot();
 });

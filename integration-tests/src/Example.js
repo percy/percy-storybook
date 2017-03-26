@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { PropTypes } from 'react';
 import styles from './Example.css';
 
-export default class Example {
+const Example = ({ children }) => (
+    <div className={styles.text}>{children}</div>
+);
 
-    render() {
-        return (
-            <div className={styles.text}>{this.props.children}</div>
-        );
-    }
+Example.propTypes = {
+    children: PropTypes.string.isRequired
+};
 
-}
+export default Example;
