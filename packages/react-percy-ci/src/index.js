@@ -2,7 +2,7 @@ import ApiClient from 'react-percy-api-client';
 import compileAssets from './compileAssets';
 import createDebug from 'debug';
 import getJsFiles from './getJsFiles';
-import render from 'react-percy-render';
+import render from 'react-percy-server-render';
 import TestEnvironment from './TestEnvironment';
 
 const debug = createDebug('react-percy:ci');
