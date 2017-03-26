@@ -8,9 +8,10 @@ module.exports = function pack(packagePath, packageJson, outputDir) {
     const tempPath = `${jsonPath}.orig`;
 
     try {
+        const json = fs.readJsonSync(jsonPath);
+
         fs.moveSync(jsonPath, tempPath, { overwrite: true });
 
-        const json = fs.readJsonSync(tempPath);
         Object.keys(json.dependencies || {}).forEach((dep) => {
             if (/^react-percy/.test(dep)) {
                 json.dependencies[dep] = path.join(outputDir, `${dep}.tgz`);
@@ -30,10 +31,9 @@ module.exports = function pack(packagePath, packageJson, outputDir) {
 
         return outputPath;
     } finally {
-        if (fs.statSync(tempPath)) {
+        if (fs.existsSync(tempPath)) {
             // Restore package.json
-            fs.removeSync(jsonPath);
-            fs.moveSync(tempPath, jsonPath);
+            fs.moveSync(tempPath, jsonPath, { overwrite: true });
         }
     }
 };

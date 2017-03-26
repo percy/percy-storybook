@@ -7,4 +7,4 @@ npm run build
 node scripts/setup-integration-tests.js
 
 cd integration-tests
-npm test
+npm test -- $@
