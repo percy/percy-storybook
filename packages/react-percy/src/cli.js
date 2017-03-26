@@ -1,4 +1,5 @@
 import * as args from './args';
+import chalk from 'chalk';
 import pkgDir from 'pkg-dir';
 import readPercyConfig from 'react-percy-config';
 import { resolve as readWebpackConfig } from 'react-percy-webpack';
@@ -36,5 +37,9 @@ export function run(argv) {
 
     return runPercy(percyConfig, webpackConfig, process.env.PERCY_TOKEN)
         .then(() => process.on('exit', () => process.exit(0)))
-        .catch(() => process.on('exit', () => process.exit(1)));
+        .catch((err) => {
+            // eslint-disable-next-line no-console
+            console.log(chalk.bold.red(err));
+            process.on('exit', () => process.exit(1));
+        });
 }
