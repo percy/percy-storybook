@@ -16,10 +16,11 @@ it('runs snapshots for each test case', async () => {
         { name: 'test 6' },
         { name: 'test 7' }
     ];
+    const renderer = jest.fn();
 
-    await runSnapshots(percyClient, build, testCases, assets);
+    await runSnapshots(percyClient, build, testCases, assets, renderer);
 
     testCases.forEach(testCase =>
-        expect(runSnapshot).toHaveBeenCalledWith(percyClient, build, testCase, assets)
+        expect(runSnapshot).toHaveBeenCalledWith(percyClient, build, testCase, assets, renderer)
     );
 });

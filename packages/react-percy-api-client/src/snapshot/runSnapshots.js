@@ -3,10 +3,10 @@ import runSnapshot from './runSnapshot';
 
 const concurrency = 5;
 
-export default function runSnapshots(percyClient, build, testCases, assets) {
+export default function runSnapshots(percyClient, build, testCases, assets, renderer) {
     function* generatePromises() {
         for (const testCase of testCases) {
-            yield runSnapshot(percyClient, build, testCase, assets);
+            yield runSnapshot(percyClient, build, testCase, assets, renderer);
         }
     }
 
