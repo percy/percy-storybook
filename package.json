@@ -1,5 +1,7 @@
 {
-  "private": true,
+  "name": "react-percy",
+  "version": "0.1.0",
+  "description": "",
   "scripts": {
     "build": "vitruvius build --src src --dest lib",
     "clean": "rimraf ./packages/*/lib",
