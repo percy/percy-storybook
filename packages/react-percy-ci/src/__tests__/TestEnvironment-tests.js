@@ -1,7 +1,7 @@
 import TestEnvironment from '../TestEnvironment';
 
 let mockTestFramework;
-jest.mock('react-percy-test-framework', () => (context) => {
+jest.mock('@percy-io/react-percy-test-framework', () => (context) => {
     Object.keys(mockTestFramework).forEach((key) => {
         context[key] = mockTestFramework[key];
     });

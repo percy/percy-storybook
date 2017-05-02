@@ -1,5 +1,5 @@
 {
-  "name": "react-percy-webpack",
+  "name": "@percy-io/react-percy-webpack",
   "version": "0.1.0",
   "repository": {
     "type": "git",

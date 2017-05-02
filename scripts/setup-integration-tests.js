@@ -32,7 +32,7 @@ const install = (pkg) => {
         return;
     }
 
-    const reactPercyDeps = Object.keys(pkg.dependencies || {}).filter(dep => /^react-percy/.test(dep));
+    const reactPercyDeps = Object.keys(pkg.dependencies || {}).filter(dep => /^@percy-io\/react-percy/.test(dep));
     reactPercyDeps.forEach(dep => install(packageLookup[dep]));
 
     console.log(`Installing ${pkg.name}...`);

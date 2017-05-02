@@ -1,5 +1,5 @@
 {
-  "name": "react-percy-ci",
+  "name": "@percy-io/react-percy-ci",
   "version": "0.1.0",
   "repository": {
     "type": "git",
@@ -16,9 +16,9 @@
   ],
   "dependencies": {
     "debug": "^2.6.3",
-    "react-percy-api-client": "^0.1.0",
-    "react-percy-server-render": "^0.1.0",
-    "react-percy-test-framework": "^0.1.0",
-    "react-percy-webpack": "^0.1.0"
+    "@percy-io/react-percy-api-client": "^0.1.0",
+    "@percy-io/react-percy-server-render": "^0.1.0",
+    "@percy-io/react-percy-test-framework": "^0.1.0",
+    "@percy-io/react-percy-webpack": "^0.1.0"
   }
 }

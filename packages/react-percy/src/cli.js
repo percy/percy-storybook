@@ -1,8 +1,8 @@
 import * as args from './args';
 import chalk from 'chalk';
 import pkgDir from 'pkg-dir';
-import readPercyConfig from 'react-percy-config';
-import { resolve as readWebpackConfig } from 'react-percy-webpack';
+import readPercyConfig from '@percy-io/react-percy-config';
+import { resolve as readWebpackConfig } from '@percy-io/react-percy-webpack';
 import runPercy from './runPercy';
 import yargs from 'yargs';
 

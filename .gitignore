@@ -50,3 +50,6 @@ packages/*/lib
 
 # Packed npm
 *.tgz
+
+# Static storybook
+integration-tests/storybook-static

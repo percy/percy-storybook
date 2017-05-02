@@ -25,8 +25,9 @@ module.exports = function pack(packagePath, packageJson, outputDir) {
         fs.removeSync(jsonPath);
         fs.moveSync(tempPath, jsonPath);
 
-        const tgzPath = path.join(packagePath, `${packageJson.name}-${packageJson.version}.tgz`);
-        const outputPath = path.join(outputDir, `${packageJson.name}.tgz`);
+        const normalizedPackageName = packageJson.name.replace(/\//gi, '-').replace('@', '');
+        const tgzPath = path.join(packagePath, `${normalizedPackageName}-${packageJson.version}.tgz`);
+        const outputPath = path.join(outputDir, `${normalizedPackageName}.tgz`);
         fs.moveSync(tgzPath, outputPath, { overwrite: true });
 
         return outputPath;

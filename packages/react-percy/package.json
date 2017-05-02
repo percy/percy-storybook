@@ -1,5 +1,5 @@
 {
-  "name": "react-percy",
+  "name": "@percy-io/react-percy",
   "description": "",
   "version": "0.1.0",
   "repository": {
@@ -35,9 +35,9 @@
   "dependencies": {
     "chalk": "^1.1.3",
     "pkg-dir": "^1.0.0",
-    "react-percy-ci": "^0.1.0",
-    "react-percy-config": "^0.1.0",
-    "react-percy-webpack": "^0.1.0",
+    "@percy-io/react-percy-ci": "^0.1.0",
+    "@percy-io/react-percy-config": "^0.1.0",
+    "@percy-io/react-percy-webpack": "^0.1.0",
     "yargs": "^7.0.2"
   }
 }

@@ -1,4 +1,4 @@
-import createSuite from 'react-percy-test-framework';
+import createSuite from '@percy-io/react-percy-test-framework';
 import vm from 'vm';
 
 const GLOBALS = [

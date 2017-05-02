@@ -2,7 +2,6 @@ import { lookup } from 'mime-types';
 
 const IGNORE = [
     /\.html$/,
-    /\.js$/,
     /\.map$/
 ];
 

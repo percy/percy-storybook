@@ -1,5 +1,5 @@
 {
-  "name": "react-percy-api-client",
+  "name": "@percy-io/react-percy-api-client",
   "version": "0.1.0",
   "repository": {
     "type": "git",
@@ -17,7 +17,7 @@
   "dependencies": {
     "es6-promise-pool": "^2.4.4",
     "mime-types": "^2.1.14",
-    "percy-client": "^1.3.0",
+    "percy-client": "^2.0.0",
     "slugify": "^1.1.0"
   }
 }

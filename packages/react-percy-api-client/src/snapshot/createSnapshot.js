@@ -1,9 +1,6 @@
-export default function createSnapshot(percyClient, build, name, resource, sizes) {
+export default function createSnapshot(percyClient, build, resources, options) {
     return new Promise((resolve, reject) => {
-        percyClient.createSnapshot(build.id, [resource], {
-            name,
-            widths: sizes.map(size => size.width)
-        })
+        percyClient.createSnapshot(build.id, resources, options)
         .then(
             response => resolve(response.body.data),
             err => reject(err.response.body)

@@ -13,7 +13,7 @@ it('returns data when creating the snapshot succeeds', async () => {
         id: 'buildid'
     };
     const name = 'name';
-    const resource = {};
+    const resources = [];
     percyClient.createSnapshot.mockImplementation(() => Promise.resolve({
         body: {
             data: {
@@ -22,7 +22,7 @@ it('returns data when creating the snapshot succeeds', async () => {
         }
     }));
 
-    const snapshot = await createSnapshot(percyClient, build, name, resource, [{ width: 320 }]);
+    const snapshot = await createSnapshot(percyClient, build, resources, { name, width: 320 });
 
     expect(snapshot).toEqual({
         foo: 'bar'

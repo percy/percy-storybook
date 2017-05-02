@@ -8,14 +8,14 @@ beforeEach(() => {
     };
 });
 
-it('does not create resources for JS files', () => {
+it('does create resources for JS files', () => {
     const assets = {
         'main.js': { foo: () => {} }
     };
 
     const resources = makeResources(percyClient, assets);
 
-    expect(resources).toEqual([]);
+    expect(resources[0].resourceUrl).toEqual('/main.js');
 });
 
 it('does not create resources for HTML files', () => {

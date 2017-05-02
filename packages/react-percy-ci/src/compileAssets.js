@@ -1,4 +1,4 @@
-import { compile, configureEntry } from 'react-percy-webpack';
+import { compile, configureEntry } from '@percy-io/react-percy-webpack';
 
 const escapePathForWindows = path => path.replace(/\\/g, '\\\\');
 

@@ -12,10 +12,10 @@ jest.mock('yargs', () => {
 });
 
 const mockPercyConfig = { percy: 'config' };
-jest.mock('react-percy-config', () => () => mockPercyConfig);
+jest.mock('@percy-io/react-percy-config', () => () => mockPercyConfig);
 
 const mockWebpackConfig = { webpack: 'config' };
-jest.mock('react-percy-webpack', () => ({
+jest.mock('@percy-io/react-percy-webpack', () => ({
     resolve: () => mockWebpackConfig
 }));
 

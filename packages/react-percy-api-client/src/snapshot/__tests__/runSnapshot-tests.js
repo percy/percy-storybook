@@ -38,7 +38,7 @@ it('creates a snapshot for the given test case', async () => {
 
     await runSnapshot(percyClient, build, testCase, assets, renderer);
 
-    expect(createSnapshot).toHaveBeenCalledWith(percyClient, build, 'test case', mockResource, [{ width: 320 }, { width: 768 }]);
+    expect(createSnapshot).toHaveBeenCalledWith(percyClient, build, [mockResource], { name: 'test case', widths: [320, 768] });
 });
 
 it('does not re-upload resource given nothing has changed', async () => {
