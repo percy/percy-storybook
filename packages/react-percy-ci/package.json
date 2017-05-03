@@ -20,5 +20,8 @@
     "@percy-io/react-percy-server-render": "^0.1.0",
     "@percy-io/react-percy-test-framework": "^0.1.0",
     "@percy-io/react-percy-webpack": "^0.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

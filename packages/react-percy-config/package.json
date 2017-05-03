@@ -13,5 +13,8 @@
   "main": "lib/index.js",
   "files": [
     "lib"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

@@ -25,5 +25,8 @@
   },
   "devDependencies": {
     "webpack": "^2.2.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

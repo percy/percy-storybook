@@ -38,5 +38,8 @@
     "react-dom": "^0.14.0",
     "read-pkg-up": "^2.0.0",
     "yargs": "^7.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
