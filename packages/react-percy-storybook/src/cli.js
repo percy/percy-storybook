@@ -40,19 +40,19 @@ export async function run(argv) {
 
     const widths = getWidths(argv.widths);
 
-    const stories = getStories(argv.ignore);
+    const { storyHtml, assets } = getStaticAssets();
+    // debug('assets %o', assets);
+
+    const stories = getStories(assets);
     debug('stories %o', stories);
 
     const selectedStories = selectStories(stories);
     debug('selectedStories %o', selectedStories);
 
     if (selectedStories.length === 0) {
-        console.log('No stories were found.');
+        console.log('No stories were found.'); // eslint-disable no-console
         return;
     }
-
-    const { storyHtml, assets } = getStaticAssets();
-    // debug('assets %o', assets);
 
     const client = new ApiClient(
       process.env.PERCY_TOKEN,
