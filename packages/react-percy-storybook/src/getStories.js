@@ -1,6 +1,6 @@
 import jsdom from 'jsdom';
 
-async function getStoriesFromDom(previewJavascriptCode) {
+function getStoriesFromDom(previewJavascriptCode) {
     return new Promise((resolve, reject) => {
         const jsDomConfig = {
             html: '',
@@ -8,7 +8,7 @@ async function getStoriesFromDom(previewJavascriptCode) {
             done: (err, window) => {
                 if (err) return reject(err.response.body);
                 if (!window || !window.__storybook_stories__) {
-                    return reject(new Error('Storybook object not found'));
+                    reject(new Error('Storybook object not found on window.'));
                 }
                 resolve(window.__storybook_stories__);
             }
@@ -19,7 +19,11 @@ async function getStoriesFromDom(previewJavascriptCode) {
 }
 
 export default async function getStories(assets) {
-    const previewJavascriptCode = assets[assets.keys()[0]];
+    if (!assets) throw new Error('Preview asset was not received.');
+    if (Object.keys(assets).length !== 1) throw new Error('Expected to receive only 1 asset');
+
+    // TODO: Assumes assets has just one key, that contains the preview.js.  Tidy this.
+    const previewJavascriptCode = assets[Object.keys(assets)[0]];
     const stories = await getStoriesFromDom(previewJavascriptCode);
     return stories;
 }

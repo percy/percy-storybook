@@ -43,21 +43,24 @@ export async function run(argv) {
     const { storyHtml, assets } = getStaticAssets();
     // debug('assets %o', assets);
 
-    const stories = getStories(assets);
-    debug('stories %o', stories);
+    getStories(assets).then((stories) => {
+        debug('stories %o', stories);
 
-    const selectedStories = selectStories(stories);
-    debug('selectedStories %o', selectedStories);
+        const selectedStories = selectStories(stories);
+        debug('selectedStories %o', selectedStories);
 
-    if (selectedStories.length === 0) {
-        console.log('No stories were found.'); // eslint-disable no-console
-        return;
-    }
+        if (selectedStories.length === 0) {
+            console.log('No stories were found.'); // eslint-disable no-console
+            return;
+        }
 
-    const client = new ApiClient(
-      process.env.PERCY_TOKEN,
-      process.env.PERCY_API
-    );
+        const client = new ApiClient(
+          process.env.PERCY_TOKEN,
+          process.env.PERCY_API
+        );
 
-    return uploadStorybook(client, selectedStories, widths, storyHtml, assets);
+        return uploadStorybook(client, selectedStories, widths, storyHtml, assets);
+    }).catch((reason) => {
+        console.log(reason); // eslint-disable no-console
+    });
 }
