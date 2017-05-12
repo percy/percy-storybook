@@ -43,7 +43,11 @@ export async function run(argv) {
     const { storyHtml, assets } = getStaticAssets();
     // debug('assets %o', assets);
 
-    getStories(assets).then((stories) => {
+    const options = {
+        debug: argv.debug
+    };
+
+    getStories(assets, options).then((stories) => {
         debug('stories %o', stories);
 
         const selectedStories = selectStories(stories);
@@ -61,6 +65,7 @@ export async function run(argv) {
 
         return uploadStorybook(client, selectedStories, widths, storyHtml, assets);
     }).catch((reason) => {
+        console.log('Error encountered taking snapshots.'); // eslint-disable no-console
         console.log(reason); // eslint-disable no-console
     });
 }

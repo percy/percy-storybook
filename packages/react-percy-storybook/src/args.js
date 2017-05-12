@@ -4,13 +4,13 @@ export const options = {
     widths: {
         alias: 'w',
         description: 'Comma seperated lists of strings.',
-        requiresArg: false
+        requiresArg: true
     },
-    ignore: {
-        alias: 'i',
-        description: 'Filepath regex Babel should ignore when loading. Default: node_modules',
+    debug: {
+        alias: 'd',
+        description: 'Debug mode',
         requiresArg: false
     }
 };
 
-export const usage = 'Usage: $0 --widths=320,1280';
+export const usage = 'Usage: $0 --widths=320,1280 --debug';

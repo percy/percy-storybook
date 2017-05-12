@@ -1,4 +1,4 @@
-import { configure } from '@kadira/storybook';
+import { configure, getStorybook } from '@kadira/storybook';
 
 function loadStories() {
   require('../stories/index.js');
@@ -6,3 +6,5 @@ function loadStories() {
 }
 
 configure(loadStories, module);
+
+if (typeof window === 'object') window.__storybook_stories__ = getStorybook();

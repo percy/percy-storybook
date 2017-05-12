@@ -4,6 +4,8 @@
     "test": "jest",
     "test:screenshots": "react-percy",
     "storybook": "start-storybook -p 9001 -c .storybook",
+    "storybook:build": "build-storybook",
+    "storybook:percy-debug": "percy-storybook --debug",
     "storybook:percy": "build-storybook && percy-storybook",
     "storybook:percy-no-build": "percy-storybook"
   },
