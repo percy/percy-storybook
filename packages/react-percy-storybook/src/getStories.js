@@ -1,5 +1,27 @@
 import jsdom from 'jsdom';
 
+// jsdom doesn't support Web Workers yet.
+// We use workerMock to allow the user's preview.js to interact with the Worker API.
+const workerMock = `
+    function MockWorker(path) {
+      var api = this;
+
+      function addEventListener() {}
+      function removeEventListener() {}
+      function postMessage() {}
+      function terminate() {}
+
+      api.postMessage = postMessage;
+      api.addEventListener = addEventListener;
+      api.removeEventListener = removeEventListener;
+      api.terminate = terminate;
+
+      return api;
+    }
+    window.Worker = MockWorker;
+`;
+
+
 // jsdom doesn't support localStorage yet.
 // We use localStorageMock to allow the user's preview.js to interact with localStorage.
 const localStorageMock = `
@@ -25,7 +47,7 @@ function getStoriesFromDom(previewJavascriptCode, options) {
         const jsDomConfig = {
             html: '',
             url: 'https://example.com/iframe.js?selectedKind=none&selectedStory=none',
-            src: [localStorageMock, previewJavascriptCode],
+            src: [workerMock, localStorageMock, previewJavascriptCode],
             done: (err, window) => {
                 if (err) return reject(err.response.body);
                 if (!window || !window.__storybook_stories__) {
