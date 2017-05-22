@@ -23,7 +23,7 @@ export async function run(argv) {
         .alias('help', 'h')
         .options(args.options)
         .epilogue(args.docs)
-        .default('ignore', 'node_modules')
+        .default('build_dir', 'storybook-static')
         .argv;
 
     if (argv.help) {
@@ -40,12 +40,13 @@ export async function run(argv) {
 
     const widths = getWidths(argv.widths);
 
-    const { storyHtml, assets } = getStaticAssets();
-    // debug('assets %o', assets);
-
     const options = {
-        debug: argv.debug
+        debug: argv.debug,
+        buildDir: argv.build_dir
     };
+
+    const { storyHtml, assets } = getStaticAssets(options);
+    // debug('assets %o', assets);
 
     getStories(assets, options).then((stories) => {
         debug('stories %o', stories);

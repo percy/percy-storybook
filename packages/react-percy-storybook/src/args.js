@@ -3,13 +3,18 @@ export const docs = 'Documentation: https://percy.io/percy-storybook';
 export const options = {
     widths: {
         alias: 'w',
-        description: 'Comma seperated lists of strings.',
+        description: 'Comma seperated lists of widths.',
         requiresArg: true
     },
     debug: {
         alias: 'd',
         description: 'Debug mode',
         requiresArg: false
+    },
+    build_dir: {
+        alias: 'b',
+        description: 'Directory to load the static storybook built by build-storybook from',
+        requiresArg: true
     }
 };
 
