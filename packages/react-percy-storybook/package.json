@@ -34,6 +34,7 @@
     "react": "^0.14.0",
     "react-dom": "^0.14.0",
     "read-pkg-up": "^2.0.0",
+    "walk": "^2.3.9",
     "yargs": "^7.0.2"
   },
   "publishConfig": {

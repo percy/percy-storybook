@@ -63,12 +63,8 @@ function getStoriesFromDom(previewJavascriptCode, options) {
     });
 }
 
-export default async function getStories(assets, options = {}) {
-    if (!assets) throw new Error('Preview asset was not received.');
-    if (Object.keys(assets).length !== 1) throw new Error('Expected to receive only 1 asset');
-
-    // TODO: Assumes assets has just one key, that contains the preview.js.  Tidy this.
-    const previewJavascriptCode = assets[Object.keys(assets)[0]];
-    const stories = await getStoriesFromDom(previewJavascriptCode, options);
+export default async function getStories(storybookCode, options = {}) {
+    if (!storybookCode || storybookCode === '') throw new Error('Storybook code was not received.');
+    const stories = await getStoriesFromDom(storybookCode, options);
     return stories;
 }

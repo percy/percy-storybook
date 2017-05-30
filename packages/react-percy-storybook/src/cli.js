@@ -45,17 +45,29 @@ export async function run(argv) {
         buildDir: argv.build_dir
     };
 
-    const { storyHtml, assets } = getStaticAssets(options);
+    if (!process.env.PERCY_TOKEN) {
+        // eslint-disable-next-line no-console
+        console.log('The PERCY_TOKEN environment variable is missing. Exiting.');
+        return;
+    }
+
+    if (!process.env.PERCY_PROJECT) {
+        // eslint-disable-next-line no-console
+        console.log('The PERCY_PROJECT environment variable is missing. Exiting.');
+        return;
+    }
+
+    const { storyHtml, assets, storybookJavascriptPath } = getStaticAssets(options);
     // debug('assets %o', assets);
 
-    getStories(assets, options).then((stories) => {
+    getStories(assets[storybookJavascriptPath], options).then((stories) => {
         debug('stories %o', stories);
 
         const selectedStories = selectStories(stories);
         debug('selectedStories %o', selectedStories);
 
         if (selectedStories.length === 0) {
-            console.log('No stories were found.'); // eslint-disable no-console
+            console.log('No stories were found.'); // eslint-disable-line no-console
             return;
         }
 
@@ -66,7 +78,7 @@ export async function run(argv) {
 
         return uploadStorybook(client, selectedStories, widths, storyHtml, assets);
     }).catch((reason) => {
-        console.log('Error encountered taking snapshots.'); // eslint-disable no-console
-        console.log(reason); // eslint-disable no-console
+        console.log('Error encountered taking snapshots.'); // eslint-disable-line no-console
+        console.log(reason); // eslint-disable-line no-console
     });
 }
