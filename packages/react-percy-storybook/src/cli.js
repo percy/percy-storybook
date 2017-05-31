@@ -45,6 +45,12 @@ export async function run(argv) {
         buildDir: argv.build_dir
     };
 
+    if (process.env.PERCY_ENABLE === '0') {
+        // eslint-disable-next-line no-console
+        console.log('The PERCY_ENABLE environment variable is set to 0. Exiting.');
+        return;
+    }
+
     if (!process.env.PERCY_TOKEN) {
         // eslint-disable-next-line no-console
         console.log('The PERCY_TOKEN environment variable is missing. Exiting.');

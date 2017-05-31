@@ -16,7 +16,7 @@
   "devDependencies": {
     "@kadira/storybook": "^2.35.3",
     "@percy-io/react-percy": "^0.1.1",
-    "@percy-io/react-percy-storybook": "^0.1.1",
+    "@percy-io/react-percy-storybook": "^0.1.8",
     "babel-core": "^6.24.0",
     "babel-jest": "^19.0.0",
     "babel-loader": "^6.4.1",

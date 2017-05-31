@@ -1,6 +1,15 @@
 sudo: false
 language: node_js
-node_js:
-  - "7"
-  - "6"
-  - "4"
+matrix:
+  include:
+    - node_js: "7"
+      env: PERCY_ENABLE=1
+    - node_js: "6"
+      env: PERCY_ENABLE=0
+    - node_js: "4"
+      env: PERCY_ENABLE=0
+script:
+  - npm test
+  - cd packages/react-percy-storybook && yarn link
+  - cd ../../integration-tests && yarn && yarn link @percy-io/react-percy-storybook
+  - npm run storybook:percy
