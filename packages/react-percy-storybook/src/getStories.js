@@ -63,7 +63,9 @@ function getStoriesFromDom(previewJavascriptCode, options) {
             done: (err, window) => {
                 if (err) return reject(err.response.body);
                 if (!window || !window.__storybook_stories__) {
-                    reject(new Error('Storybook object not found on window.'));
+                    const message = 'Storybook object not found on window. Check '
+                        + 'window.__storybook_stories__ is set in your Storybook\'s config.js.';
+                    reject(new Error(message));
                 }
                 resolve(window.__storybook_stories__);
             }

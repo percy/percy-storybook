@@ -28,13 +28,11 @@ export async function run(argv) {
 
     if (argv.help) {
         yargs.showHelp();
-        process.on('exit', () => process.exit(1));
         return;
     }
 
     if (argv.version) {
         process.stdout.write(`v${VERSION}\n`);
-        process.on('exit', () => process.exit(0));
         return;
     }
 
@@ -52,39 +50,31 @@ export async function run(argv) {
     }
 
     if (!process.env.PERCY_TOKEN) {
-        // eslint-disable-next-line no-console
-        console.log('The PERCY_TOKEN environment variable is missing. Exiting.');
-        return;
+        throw new Error('The PERCY_TOKEN environment variable is missing.');
     }
 
     if (!process.env.PERCY_PROJECT) {
-        // eslint-disable-next-line no-console
-        console.log('The PERCY_PROJECT environment variable is missing. Exiting.');
-        return;
+        throw new Error('The PERCY_PROJECT environment variable is missing.');
     }
 
     const { storyHtml, assets, storybookJavascriptPath } = getStaticAssets(options);
     // debug('assets %o', assets);
 
-    getStories(assets[storybookJavascriptPath], options).then((stories) => {
-        debug('stories %o', stories);
+    const stories = await getStories(assets[storybookJavascriptPath], options);
+    debug('stories %o', stories);
 
-        const selectedStories = selectStories(stories);
-        debug('selectedStories %o', selectedStories);
+    const selectedStories = selectStories(stories);
+    debug('selectedStories %o', selectedStories);
 
-        if (selectedStories.length === 0) {
-            console.log('No stories were found.'); // eslint-disable-line no-console
-            return;
-        }
+    if (selectedStories.length === 0) {
+        console.log('WARNING: No stories were found.'); // eslint-disable-line no-console
+        return;
+    }
 
-        const client = new ApiClient(
-          process.env.PERCY_TOKEN,
-          process.env.PERCY_API
-        );
+    const client = new ApiClient(
+      process.env.PERCY_TOKEN,
+      process.env.PERCY_API
+    );
 
-        return uploadStorybook(client, selectedStories, widths, storyHtml, assets);
-    }).catch((reason) => {
-        console.log('Error encountered taking snapshots.'); // eslint-disable-line no-console
-        console.log(reason); // eslint-disable-line no-console
-    });
+    return uploadStorybook(client, selectedStories, widths, storyHtml, assets);
 }
