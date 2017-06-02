@@ -1,7 +1,7 @@
 {
   "name": "@percy-io/in-percy",
   "description": "Helper to detect if running in Percy rendering environment",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/percy/react-percy.git"
