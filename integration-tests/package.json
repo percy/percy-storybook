@@ -1,4 +1,6 @@
 {
+  "name": "react-percy-integration-tests",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "test": "jest",
@@ -10,12 +12,15 @@
     "storybook:percy-no-build": "percy-storybook --widths=320,1280"
   },
   "dependencies": {
+    "faker": "^4.1.0",
     "react": "^15.4.2",
     "react-dom": "^15.4.2",
-    "react-match-media": "^2.0.1"
+    "react-match-media": "^2.0.1",
+    "timemachine": "^0.3.0"
   },
   "devDependencies": {
     "@kadira/storybook": "^2.35.3",
+    "@percy-io/in-percy": "file:../packages/in-percy",
     "@percy-io/react-percy": "^0.1.1",
     "@percy-io/react-percy-storybook": "^0.1.8",
     "babel-core": "^6.24.0",
