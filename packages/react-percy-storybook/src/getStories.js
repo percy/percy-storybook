@@ -42,12 +42,24 @@ const localStorageMock = `
     Object.defineProperty(window, 'localStorage', { value: localStorageMock });
     `;
 
+// jsdom doesn't support matchMedia yet.
+const matchMediaMock = `
+    window.matchMedia = window.matchMedia || (() => {
+      return {
+        matches: false,
+        addListener: () => {},
+        removeListener: () => {},
+      };
+    });
+    `;
+
+
 function getStoriesFromDom(previewJavascriptCode, options) {
     return new Promise((resolve, reject) => {
         const jsDomConfig = {
             html: '',
             url: 'https://example.com/iframe.js?selectedKind=none&selectedStory=none',
-            src: [workerMock, localStorageMock, previewJavascriptCode],
+            src: [workerMock, localStorageMock, matchMediaMock, previewJavascriptCode],
             done: (err, window) => {
                 if (err) return reject(err.response.body);
                 if (!window || !window.__storybook_stories__) {

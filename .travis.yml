@@ -10,6 +10,4 @@ matrix:
       env: PERCY_ENABLE=0
 script:
   - npm test
-  - cd packages/react-percy-storybook && yarn link
-  - cd ../../integration-tests && yarn && yarn link @percy-io/react-percy-storybook
-  - npm run storybook:percy
+  - scripts/run-integration-test-snapshots.sh
