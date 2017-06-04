@@ -3,10 +3,10 @@ import uploadStory from './uploadStory';
 
 const concurrency = 5;
 
-export default function uploadStories(percyClient, build, stories, widths, assets, storyHtml) {
+export default function uploadStories(percyClient, build, stories, widths, minimumHeight, assets, storyHtml) {
     function* generatePromises() {
         for (const story of stories) {
-            yield uploadStory(percyClient, build, story, widths, assets, storyHtml);
+            yield uploadStory(percyClient, build, story, widths, minimumHeight, assets, storyHtml);
         }
     }
 

@@ -3,6 +3,7 @@ import * as args from './args';
 import getStories from './getStories';
 import getStaticAssets from './getStaticAssets';
 import getWidths from './getWidths';
+import getMinimumHeight from './getMinimumHeight';
 import selectStories from './selectStories';
 import uploadStorybook from './uploadStorybook';
 
@@ -24,6 +25,7 @@ export async function run(argv) {
         .options(args.options)
         .epilogue(args.docs)
         .default('build_dir', 'storybook-static')
+        .default('minimum_height', '100')
         .argv;
 
     if (argv.help) {
@@ -37,6 +39,7 @@ export async function run(argv) {
     }
 
     const widths = getWidths(argv.widths);
+    const minimumHeight = getMinimumHeight(argv.minimum_height);
 
     const options = {
         debug: argv.debug,
@@ -76,5 +79,5 @@ export async function run(argv) {
       process.env.PERCY_API
     );
 
-    return uploadStorybook(client, selectedStories, widths, storyHtml, assets);
+    return uploadStorybook(client, selectedStories, widths, minimumHeight, storyHtml, assets);
 }

@@ -1,6 +1,6 @@
 import uploadStories from './uploadStories';
 
-export default async function uploadStorybook(client, selectedStories, widths, storyHtml, assets) {
+export default async function uploadStorybook(client, selectedStories, widths, minimumHeight, storyHtml, assets) {
     const snapshotPluralization = selectedStories.length === 1 ? 'snapshot' : 'snapshots';
     // eslint-disable-next-line no-console
     console.log('\nUploading', selectedStories.length, snapshotPluralization, 'to Percy.');
@@ -9,7 +9,7 @@ export default async function uploadStorybook(client, selectedStories, widths, s
     const build = await client.createBuild(resources);
     const missingResources = client.getMissingResources(build, resources);
     await client.uploadResources(build, missingResources);
-    await uploadStories(client, build, selectedStories, widths, assets, storyHtml);
+    await uploadStories(client, build, selectedStories, widths, minimumHeight, assets, storyHtml);
     await client.finalizeBuild(build);
 
     // eslint-disable-next-line no-console
