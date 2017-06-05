@@ -25,7 +25,7 @@ export async function run(argv) {
         .options(args.options)
         .epilogue(args.docs)
         .default('build_dir', 'storybook-static')
-        .default('minimum_height', '100')
+        .default('minimum_height', '800')
         .argv;
 
     if (argv.help) {
