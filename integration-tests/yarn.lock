@@ -100,7 +100,7 @@
     webpack-hot-middleware "^2.13.2"
 
 "@percy-io/in-percy@file:../packages/in-percy":
-  version "0.1.0"
+  version "0.1.2"
 
 "@percy-io/react-percy-api-client@^0.1.2":
   version "0.1.2"
@@ -3397,6 +3397,10 @@ mobx@^2.3.4:
   version "2.7.0"
   resolved "https://registry.yarnpkg.com/mobx/-/mobx-2.7.0.tgz#cf3d82d18c0ca7f458d8f2a240817b3dc7e54a01"
 
+mockdate@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/mockdate/-/mockdate-2.0.1.tgz#51bc309e2c4396600d56b6c23a6a0f4182943a36"
+
 ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
@@ -4935,10 +4939,6 @@ throat@^3.0.0:
 through@~2.3.4:
   version "2.3.8"
   resolved "https://registry.yarnpkg.com/through/-/through-2.3.8.tgz#0dd4c9ffaabc357960b1b724115d7e0e86a2e1f5"
-
-timemachine@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/timemachine/-/timemachine-0.3.0.tgz#83e2eb696cbfe4696c1708e6a3700df4e62fc525"
 
 timers-browserify@^2.0.2:
   version "2.0.2"

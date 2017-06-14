@@ -16,7 +16,7 @@
     "react": "^15.4.2",
     "react-dom": "^15.4.2",
     "react-match-media": "^2.0.1",
-    "timemachine": "^0.3.0"
+    "mockdate": "^2.0.1"
   },
   "devDependencies": {
     "@kadira/storybook": "^2.35.3",
