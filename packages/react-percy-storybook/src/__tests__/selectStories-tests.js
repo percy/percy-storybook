@@ -43,3 +43,36 @@ it('returns expected selected stories for a stories array', () => {
 
     expect(selectStories(stories)).toEqual(expectedSelectedStories);
 });
+
+it('ads rtl stories when requested', () => {
+    const stories = [
+        {
+            kind: 'ImagePost',
+            stories: [
+                 { name: 'a' },
+                 { name: 'b' }
+            ]
+        }
+    ];
+
+    const expectedSelectedStories = [
+        {
+            encodedParams: 'selectedKind=ImagePost&selectedStory=a',
+            name: 'ImagePost: a'
+        },
+        {
+            encodedParams: 'selectedKind=ImagePost&selectedStory=b',
+            name: 'ImagePost: b'
+        },
+        {
+            encodedParams: 'selectedKind=ImagePost&selectedStory=a&direction=rtl',
+            name: 'ImagePost: a [RTL]'
+        },
+        {
+            encodedParams: 'selectedKind=ImagePost&selectedStory=b&direction=rtl',
+            name: 'ImagePost: b [RTL]'
+        }
+    ];
+
+    expect(selectStories(stories, /.*/gim)).toEqual(expectedSelectedStories);
+});

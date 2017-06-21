@@ -1,5 +1,5 @@
-export default function selectStories(stories) {
-    const selectedStories = [];
+export default function selectStories(stories, rtlRegex) {
+    let selectedStories = [];
     for (const group of stories) {
         for (const story of group.stories) {
             const name = `${group.kind}: ${story.name}`;
@@ -12,5 +12,19 @@ export default function selectStories(stories) {
             });
         }
     }
+
+    if (rtlRegex) {
+        const rtlStories = [];
+        for (const story of selectedStories) {
+            if (story.name.match(rtlRegex)) {
+                rtlStories.push({
+                    name: `${story.name} [RTL]`,
+                    encodedParams: `${story.encodedParams}&direction=rtl`
+                });
+            }
+        }
+        selectedStories = selectedStories.concat(rtlStories);
+    }
+
     return selectedStories;
 }

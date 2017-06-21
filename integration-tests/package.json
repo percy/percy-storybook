@@ -8,8 +8,8 @@
     "storybook": "start-storybook -p 9001 -c .storybook -s ./.storybook/public",
     "storybook:build": "build-storybook -s ./.storybook/public",
     "storybook:percy-debug": "percy-storybook --debug",
-    "storybook:percy": "build-storybook -s ./.storybook/public && percy-storybook --widths=320,1280",
-    "storybook:percy-no-build": "percy-storybook --widths=320,1280"
+    "storybook:percy": "build-storybook -s ./.storybook/public && percy-storybook --widths=320,1280 --rtl_regex=Direction",
+    "storybook:percy-no-build": "percy-storybook --widths=320,1280 --rtl_regex=Direction"
   },
   "dependencies": {
     "faker": "^4.1.0",
@@ -39,5 +39,10 @@
   },
   "jest": {
     "setupTestFrameworkScriptFile": "<rootDir>/jest.setup.js"
+  },
+  "eslintConfig": {
+    "globals": {
+      "window": true
+    }
   }
 }
