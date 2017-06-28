@@ -7,7 +7,7 @@ jest.mock('webpack', () => () => mockCompiler());
 const webpackConfig = { config: true };
 
 it('returns a webpack compiler', () => {
-    const compiler = createCompiler(webpackConfig);
+  const compiler = createCompiler(webpackConfig);
 
-    expect(compiler).toBeInstanceOf(WebpackCompiler);
+  expect(compiler).toBeInstanceOf(WebpackCompiler);
 });

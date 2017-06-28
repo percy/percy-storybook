@@ -5,7 +5,7 @@ jest.mock('../requireWebpackConfig');
 jest.mock('../getWebpackConfigExports', () => () => mockConfig);
 
 it('returns the webpack config', () => {
-    const config = resolve('webpack.config.js');
+  const config = resolve('webpack.config.js');
 
-    expect(config).toEqual(mockConfig);
+  expect(config).toEqual(mockConfig);
 });

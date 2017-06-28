@@ -7,17 +7,17 @@ jest.mock('../interfaces', () => ({ bdd: jest.fn() }));
 let context;
 
 beforeEach(() => {
-    context = {};
+  context = {};
 });
 
 it('adds bdd interface to context', () => {
-    initialize(context);
+  initialize(context);
 
-    expect(interfaces.bdd).toHaveBeenCalledWith(context, [expect.any(Suite)]);
+  expect(interfaces.bdd).toHaveBeenCalledWith(context, [expect.any(Suite)]);
 });
 
 it('returns the root suite', () => {
-    const rootSuite = initialize(context);
+  const rootSuite = initialize(context);
 
-    expect(rootSuite).toBeInstanceOf(Suite);
+  expect(rootSuite).toBeInstanceOf(Suite);
 });

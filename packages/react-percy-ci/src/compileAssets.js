@@ -10,7 +10,7 @@ const getEntry = percyConfig => `
 `;
 
 export default function compileAssets(percyConfig, webpackConfig) {
-    const entry = getEntry(percyConfig);
-    webpackConfig = configureEntry(webpackConfig, percyConfig, entry);
-    return compile(webpackConfig);
+  const entry = getEntry(percyConfig);
+  webpackConfig = configureEntry(webpackConfig, percyConfig, entry);
+  return compile(webpackConfig);
 }

@@ -12,7 +12,7 @@
     "class-methods-use-this": "off",
     "comma-dangle": ["error", "never"],
     "consistent-return": "off",
-    "indent": ["error", 4],
+    "indent": ["error", 2],
     "max-len": ["error", {
       "code": 120,
       "ignoreComments": true,
@@ -43,6 +43,6 @@
     "jest/no-identical-title": "error",
 
     "react/jsx-filename-extension": "off",
-    "react/jsx-indent": ["error", 4]
+    "react/jsx-indent": ["error", 2]
   }
 }

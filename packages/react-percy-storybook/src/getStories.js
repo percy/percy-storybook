@@ -55,30 +55,30 @@ const matchMediaMock = `
 
 
 function getStoriesFromDom(previewJavascriptCode, options) {
-    return new Promise((resolve, reject) => {
-        const jsDomConfig = {
-            html: '',
-            url: 'https://example.com/iframe.js?selectedKind=none&selectedStory=none',
-            src: [workerMock, localStorageMock, matchMediaMock, previewJavascriptCode],
-            done: (err, window) => {
-                if (err) return reject(err.response.body);
-                if (!window || !window.__storybook_stories__) {
-                    const message = 'Storybook object not found on window. Check '
+  return new Promise((resolve, reject) => {
+    const jsDomConfig = {
+      html: '',
+      url: 'https://example.com/iframe.js?selectedKind=none&selectedStory=none',
+      src: [workerMock, localStorageMock, matchMediaMock, previewJavascriptCode],
+      done: (err, window) => {
+        if (err) return reject(err.response.body);
+        if (!window || !window.__storybook_stories__) {
+          const message = 'Storybook object not found on window. Check '
                         + 'window.__storybook_stories__ is set in your Storybook\'s config.js.';
-                    reject(new Error(message));
-                }
-                resolve(window.__storybook_stories__);
-            }
-        };
-        if (options.debug) {
-            jsDomConfig.virtualConsole = jsdom.createVirtualConsole().sendTo(console);
+          reject(new Error(message));
         }
-        jsdom.env(jsDomConfig);
-    });
+        resolve(window.__storybook_stories__);
+      }
+    };
+    if (options.debug) {
+      jsDomConfig.virtualConsole = jsdom.createVirtualConsole().sendTo(console);
+    }
+    jsdom.env(jsDomConfig);
+  });
 }
 
 export default async function getStories(storybookCode, options = {}) {
-    if (!storybookCode || storybookCode === '') throw new Error('Storybook code was not received.');
-    const stories = await getStoriesFromDom(storybookCode, options);
-    return stories;
+  if (!storybookCode || storybookCode === '') throw new Error('Storybook code was not received.');
+  const stories = await getStoriesFromDom(storybookCode, options);
+  return stories;
 }

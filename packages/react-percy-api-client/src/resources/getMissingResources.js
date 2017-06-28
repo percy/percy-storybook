@@ -1,18 +1,18 @@
 import getMissingResourceShas from './getMissingResourceShas';
 
 function toHashMap(resources) {
-    const hashMap = {};
+  const hashMap = {};
 
-    resources.forEach((resource) => {
-        hashMap[resource.sha] = resource;
-    });
+  resources.forEach((resource) => {
+    hashMap[resource.sha] = resource;
+  });
 
-    return hashMap;
+  return hashMap;
 }
 
 export default function getMissingResources(build, resources) {
-    const shas = getMissingResourceShas(build);
-    const resourceHash = toHashMap(resources);
+  const shas = getMissingResourceShas(build);
+  const resourceHash = toHashMap(resources);
 
-    return shas.map(sha => resourceHash[sha]);
+  return shas.map(sha => resourceHash[sha]);
 }

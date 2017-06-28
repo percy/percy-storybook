@@ -10,7 +10,7 @@ const VERSION = require('../package.json').version;
 
 // eslint-disable-next-line import/prefer-default-export
 export function run(argv) {
-    argv = yargs(argv)
+  argv = yargs(argv)
         .usage(args.usage)
         .help()
         .alias('help', 'h')
@@ -18,28 +18,28 @@ export function run(argv) {
         .epilogue(args.docs)
         .argv;
 
-    if (argv.help) {
-        yargs.showHelp();
-        process.on('exit', () => process.exit(1));
-        return;
-    }
+  if (argv.help) {
+    yargs.showHelp();
+    process.on('exit', () => process.exit(1));
+    return;
+  }
 
-    if (argv.version) {
-        process.stdout.write(`v${VERSION}\n`);
-        process.on('exit', () => process.exit(0));
-        return;
-    }
+  if (argv.version) {
+    process.stdout.write(`v${VERSION}\n`);
+    process.on('exit', () => process.exit(0));
+    return;
+  }
 
-    const packageRoot = pkgDir.sync();
+  const packageRoot = pkgDir.sync();
 
-    const percyConfig = readPercyConfig(packageRoot);
-    const webpackConfig = readWebpackConfig(argv.config);
+  const percyConfig = readPercyConfig(packageRoot);
+  const webpackConfig = readWebpackConfig(argv.config);
 
-    return runPercy(percyConfig, webpackConfig, process.env.PERCY_TOKEN)
+  return runPercy(percyConfig, webpackConfig, process.env.PERCY_TOKEN)
         .then(() => process.on('exit', () => process.exit(0)))
         .catch((err) => {
             // eslint-disable-next-line no-console
-            console.log(chalk.bold.red(err));
-            process.on('exit', () => process.exit(1));
+          console.log(chalk.bold.red(err));
+          process.on('exit', () => process.exit(1));
         });
 }

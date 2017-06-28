@@ -4,10 +4,10 @@ import runSnapshots from '../runSnapshots';
 jest.mock('../runSnapshot', () => jest.fn(() => Promise.resolve()));
 
 it('runs snapshots for each test case', async () => {
-    const percyClient = {};
-    const build = {};
-    const assets = {};
-    const testCases = [
+  const percyClient = {};
+  const build = {};
+  const assets = {};
+  const testCases = [
         { name: 'test 1' },
         { name: 'test 2' },
         { name: 'test 3' },
@@ -15,12 +15,12 @@ it('runs snapshots for each test case', async () => {
         { name: 'test 5' },
         { name: 'test 6' },
         { name: 'test 7' }
-    ];
-    const renderer = jest.fn();
+  ];
+  const renderer = jest.fn();
 
-    await runSnapshots(percyClient, build, testCases, assets, renderer);
+  await runSnapshots(percyClient, build, testCases, assets, renderer);
 
-    testCases.forEach(testCase =>
+  testCases.forEach(testCase =>
         expect(runSnapshot).toHaveBeenCalledWith(percyClient, build, testCase, assets, renderer)
     );
 });

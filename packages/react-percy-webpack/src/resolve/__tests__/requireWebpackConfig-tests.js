@@ -4,11 +4,11 @@ import registerCompiler from '../registerCompiler';
 import requireWebpackConfig from '../requireWebpackConfig';
 
 jest.mock('interpret', () => ({
-    extensions: {
-        '.foo.js': {
-            'interpret-foo': 'mock'
-        }
+  extensions: {
+    '.foo.js': {
+      'interpret-foo': 'mock'
     }
+  }
 }));
 
 jest.mock('../getExtension', () => () => '.foo.js');
@@ -17,39 +17,39 @@ jest.mock('../registerCompiler', () => jest.fn());
 const configPath = 'webpack.config.foo.js';
 
 beforeEach(() => {
-    jest.resetModules();
+  jest.resetModules();
 });
 
 const givenWebpackConfig = (mockConfig = {}) => {
-    jest.mock(path.resolve(configPath), () => mockConfig, { virtual: true });
+  jest.mock(path.resolve(configPath), () => mockConfig, { virtual: true });
 };
 
 it('registers the necessary compilers before loading the config', () => {
-    givenWebpackConfig();
+  givenWebpackConfig();
 
-    requireWebpackConfig(configPath);
+  requireWebpackConfig(configPath);
 
-    expect(registerCompiler).toHaveBeenCalledWith(interpret.extensions['.foo.js']);
+  expect(registerCompiler).toHaveBeenCalledWith(interpret.extensions['.foo.js']);
 });
 
 it('returns webpack config', () => {
-    givenWebpackConfig({
-        entry: {
-            foo: 'bar'
-        },
-        module: {
-            loaders: []
-        }
-    });
+  givenWebpackConfig({
+    entry: {
+      foo: 'bar'
+    },
+    module: {
+      loaders: []
+    }
+  });
 
-    const config = requireWebpackConfig(configPath);
+  const config = requireWebpackConfig(configPath);
 
-    expect(config).toEqual({
-        entry: {
-            foo: 'bar'
-        },
-        module: {
-            loaders: []
-        }
-    });
+  expect(config).toEqual({
+    entry: {
+      foo: 'bar'
+    },
+    module: {
+      loaders: []
+    }
+  });
 });

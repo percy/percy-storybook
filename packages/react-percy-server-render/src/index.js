@@ -1,15 +1,15 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 
 function getStylesheets(assets) {
-    return Object.keys(assets).filter(name => /\.css$/.test(name));
+  return Object.keys(assets).filter(name => /\.css$/.test(name));
 }
 
 export default function render(markup, assets) {
-    const body = renderToStaticMarkup(markup);
+  const body = renderToStaticMarkup(markup);
 
-    const stylesheets = getStylesheets(assets);
+  const stylesheets = getStylesheets(assets);
 
-    return `
+  return `
     <!DOCTYPE html>
     <html lang="en">
     <head>

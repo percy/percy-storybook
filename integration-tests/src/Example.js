@@ -2,11 +2,11 @@ import React, { PropTypes } from 'react';
 import styles from './Example.css';
 
 const Example = ({ children }) => (
-    <div className={styles.text}>{children}</div>
+  <div className={styles.text}>{children}</div>
 );
 
 Example.propTypes = {
-    children: PropTypes.string.isRequired
+  children: PropTypes.string.isRequired
 };
 
 export default Example;

@@ -10,51 +10,51 @@ import { createSnapshot, finalizeSnapshot, runSnapshots } from './snapshot';
 
 export default class PercyApiClient {
 
-    constructor(token, apiUrl) {
-        this._client = new PercyClient({
-            token,
-            apiUrl
-        });
-    }
+  constructor(token, apiUrl) {
+    this._client = new PercyClient({
+      token,
+      apiUrl
+    });
+  }
 
-    createBuild(resources) {
-        return createBuild(this._client, resources);
-    }
+  createBuild(resources) {
+    return createBuild(this._client, resources);
+  }
 
-    createSnapshot(build, resources, options) {
-        return createSnapshot(this._client, build, resources, options);
-    }
+  createSnapshot(build, resources, options) {
+    return createSnapshot(this._client, build, resources, options);
+  }
 
-    getMissingResources(build, resources) {
-        return getMissingResources(build, resources);
-    }
+  getMissingResources(build, resources) {
+    return getMissingResources(build, resources);
+  }
 
-    getMissingResourceShas(build) {
-        return getMissingResourceShas(build);
-    }
+  getMissingResourceShas(build) {
+    return getMissingResourceShas(build);
+  }
 
-    finalizeBuild(build) {
-        return finalizeBuild(this._client, build);
-    }
+  finalizeBuild(build) {
+    return finalizeBuild(this._client, build);
+  }
 
-    finalizeSnapshot(snapshot) {
-        finalizeSnapshot(this._client, snapshot);
-    }
+  finalizeSnapshot(snapshot) {
+    finalizeSnapshot(this._client, snapshot);
+  }
 
-    makeResources(assets) {
-        return makeResources(this._client, assets);
-    }
+  makeResources(assets) {
+    return makeResources(this._client, assets);
+  }
 
-    makeRootResource(name, html, encodedResourceParams) {
-        return makeRootResource(this._client, name, html, encodedResourceParams);
-    }
+  makeRootResource(name, html, encodedResourceParams) {
+    return makeRootResource(this._client, name, html, encodedResourceParams);
+  }
 
-    runSnapshots(build, testCases, assets, renderer) {
-        return runSnapshots(this._client, build, testCases, assets, renderer);
-    }
+  runSnapshots(build, testCases, assets, renderer) {
+    return runSnapshots(this._client, build, testCases, assets, renderer);
+  }
 
-    uploadResources(build, resources) {
-        return uploadResources(this._client, build, resources);
-    }
+  uploadResources(build, resources) {
+    return uploadResources(this._client, build, resources);
+  }
 
 }

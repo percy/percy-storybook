@@ -7,13 +7,13 @@ const mockNormalizedConfig = { normalized: true };
 jest.mock('../normalize', () => () => mockNormalizedConfig);
 
 it('loads package JSON file from package root', () => {
-    readPercyConfig('/package/root');
+  readPercyConfig('/package/root');
 
-    expect(loadFromPackage).toHaveBeenCalledWith('/package/root/package.json');
+  expect(loadFromPackage).toHaveBeenCalledWith('/package/root/package.json');
 });
 
 it('returns normalized percy config', () => {
-    const config = readPercyConfig('/package/root');
+  const config = readPercyConfig('/package/root');
 
-    expect(config).toEqual(mockNormalizedConfig);
+  expect(config).toEqual(mockNormalizedConfig);
 });
