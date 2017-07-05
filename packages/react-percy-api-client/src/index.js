@@ -10,10 +10,12 @@ import { createSnapshot, finalizeSnapshot, runSnapshots } from './snapshot';
 
 export default class PercyApiClient {
 
-  constructor(token, apiUrl) {
+  constructor(token, apiUrl, clientInfo = '', environmentInfo = '') {
     this._client = new PercyClient({
       token,
-      apiUrl
+      apiUrl,
+      clientInfo,
+      environmentInfo
     });
   }
 
