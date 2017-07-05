@@ -1,6 +1,6 @@
 {
   "name": "@percy-io/react-percy-storybook",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/percy/react-percy.git"
@@ -24,7 +24,7 @@
     "babel-register": "^6.16.0"
   },
   "dependencies": {
-    "@percy-io/react-percy-api-client": "^0.1.3",
+    "@percy-io/react-percy-api-client": "^0.1.4",
     "debug": "^2.6.3",
     "es6-promise-pool": "^2.4.4",
     "jsdom": "^9.12.0",
