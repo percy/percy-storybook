@@ -4,6 +4,9 @@ import yargs from 'yargs';
 
 const VERSION = require('../../package.json').version;
 
+// eslint-disable-next-line no-console
+console.log = jest.fn();
+
 let mockYargs;
 jest.mock('yargs', () => {
   const fakeYargs = () => mockYargs;

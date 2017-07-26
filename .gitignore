@@ -46,6 +46,7 @@ jspm_packages
 packages/*/yarn.lock
 
 # Output directories
+integration-tests/lib
 packages/*/lib
 
 # Packed npm
