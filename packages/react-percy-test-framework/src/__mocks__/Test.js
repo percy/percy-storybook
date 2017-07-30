@@ -1,3 +1,1 @@
-export default class MockTest {
-
-}
+export default class MockTest {}

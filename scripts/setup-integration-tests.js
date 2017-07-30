@@ -20,19 +20,21 @@ const packageLookup = packages.reduce((result, pkg) => {
 }, {});
 
 const packageTgz = {};
-packages.forEach((pkg) => {
+packages.forEach(pkg => {
   console.log(`Packing ${pkg.name}...`);
   const tgz = pack(pkg.location, pkg, outputDir);
   packageTgz[pkg.name] = tgz;
 });
 
 const installed = new Set();
-const install = (pkg) => {
+const install = pkg => {
   if (installed.has(pkg.name)) {
     return;
   }
 
-  const reactPercyDeps = Object.keys(pkg.dependencies || {}).filter(dep => /^@percy-io\/react-percy/.test(dep));
+  const reactPercyDeps = Object.keys(pkg.dependencies || {}).filter(dep =>
+    /^@percy-io\/react-percy/.test(dep),
+  );
   reactPercyDeps.forEach(dep => install(packageLookup[dep]));
 
   console.log(`Installing ${pkg.name}...`);

@@ -16,8 +16,9 @@ it('returns an empty array when no stories loaded', async () => {
   try {
     await getStories(code);
   } catch (e) {
-    const message = 'Storybook object not found on window. Check '
-          + 'window.__storybook_stories__ is set in your Storybook\'s config.js.';
+    const message =
+      'Storybook object not found on window. Check ' +
+      "window.__storybook_stories__ is set in your Storybook's config.js.";
     expect(e).toEqual(new Error(message));
   }
 
@@ -25,7 +26,7 @@ it('returns an empty array when no stories loaded', async () => {
 });
 
 it('returns the value __storybook_stories__ is set to', async () => {
-  const code = 'if (typeof window === \'object\') window.__storybook_stories__ = \'hi\';';
+  const code = "if (typeof window === 'object') window.__storybook_stories__ = 'hi';";
 
   const stories = await getStories(code);
   expect(stories).toEqual('hi');

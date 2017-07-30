@@ -14,7 +14,7 @@ export default async function runSnapshot(percyClient, build, testCase, assets, 
 
     const snapshotOptions = {
       name: testCase.name,
-      widths
+      widths,
     };
 
     const snapshot = await createSnapshot(percyClient, build, [resource], snapshotOptions);
@@ -27,9 +27,8 @@ export default async function runSnapshot(percyClient, build, testCase, assets, 
     await finalizeSnapshot(percyClient, snapshot, testCase.name);
   } catch (e) {
     e._percy = {
-      testCase
+      testCase,
     };
     throw e;
   }
-
 }

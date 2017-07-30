@@ -9,6 +9,6 @@ export default function requireWebpackConfig(webpackConfigPath) {
   const extension = getExtension(resolvedWebpackConfigPath);
   registerCompiler(interpret.extensions[extension]);
 
-    // eslint-disable-next-line global-require, import/no-dynamic-require
+  // eslint-disable-next-line global-require, import/no-dynamic-require
   return require(resolvedWebpackConfigPath);
 }

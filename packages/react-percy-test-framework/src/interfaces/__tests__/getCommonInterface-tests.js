@@ -15,7 +15,6 @@ beforeEach(() => {
 });
 
 describe('beforeAll', () => {
-
   it('adds beforeAll hook to the current suite', () => {
     const hook = jest.fn();
 
@@ -23,11 +22,9 @@ describe('beforeAll', () => {
 
     expect(suites[0].addBeforeAll).toHaveBeenCalledWith(hook);
   });
-
 });
 
 describe('beforeEach', () => {
-
   it('adds beforeEach hook to the current suite', () => {
     const hook = jest.fn();
 
@@ -35,11 +32,9 @@ describe('beforeEach', () => {
 
     expect(suites[0].addBeforeEach).toHaveBeenCalledWith(hook);
   });
-
 });
 
 describe('afterEach', () => {
-
   it('adds afterEach hook to the current suite', () => {
     const hook = jest.fn();
 
@@ -47,11 +42,9 @@ describe('afterEach', () => {
 
     expect(suites[0].addAfterEach).toHaveBeenCalledWith(hook);
   });
-
 });
 
 describe('afterAll', () => {
-
   it('adds afterAll hook to the current suite', () => {
     const hook = jest.fn();
 
@@ -59,17 +52,16 @@ describe('afterAll', () => {
 
     expect(suites[0].addAfterAll).toHaveBeenCalledWith(hook);
   });
-
 });
 
 describe('suite', () => {
-
   it('rejects when no callback is specified', () => {
-    return common.suite('suite')
-            .then(() => {
-              throw new Error('should have rejected');
-            })
-            .catch(e => expect(e).toBeInstanceOf(TypeError));
+    return common
+      .suite('suite')
+      .then(() => {
+        throw new Error('should have rejected');
+      })
+      .catch(e => expect(e).toBeInstanceOf(TypeError));
   });
 
   it('adds the suite as a child of the current suite given synchronous callback', async () => {
@@ -100,7 +92,9 @@ describe('suite', () => {
 
   it('sets the new suite as the current suite while executing synchronous callback', async () => {
     let callbackCurrentSuite;
-    const callback = jest.fn(() => { callbackCurrentSuite = suites[0]; });
+    const callback = jest.fn(() => {
+      callbackCurrentSuite = suites[0];
+    });
 
     const newSuite = await common.suite('suite', callback);
 
@@ -110,12 +104,13 @@ describe('suite', () => {
 
   it('sets the new suite as the current suite while executing asynchronous callback', async () => {
     let callbackCurrentSuite;
-    const callback = () => new Promise((resolve) => {
-      setTimeout(() => {
-        callbackCurrentSuite = suites[0];
-        resolve();
-      }, 5);
-    });
+    const callback = () =>
+      new Promise(resolve => {
+        setTimeout(() => {
+          callbackCurrentSuite = suites[0];
+          resolve();
+        }, 5);
+      });
 
     const newSuite = await common.suite('suite', callback);
 
@@ -141,11 +136,9 @@ describe('suite', () => {
     expect(suites[0]).toBe(currentSuite);
     expect(suites[0]).not.toBe(newSuite);
   });
-
 });
 
 describe('test', () => {
-
   it('adds test to the current suite', () => {
     common.test('test', jest.fn());
 
@@ -157,5 +150,4 @@ describe('test', () => {
 
     expect(newTest).toEqual(expect.any(Test));
   });
-
 });

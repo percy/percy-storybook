@@ -4,6 +4,7 @@ cache:
   yarn: true
   directories:
     - node_modules
+    - .eslintcache
 matrix:
   include:
     - node_js: "7"

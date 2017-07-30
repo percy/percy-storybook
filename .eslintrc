@@ -1,35 +1,33 @@
 {
-  "extends": "airbnb",
-  "plugins": [
-    "jest"
+  "extends": [
+    "eslint:recommended",
+    "prettier",
+    "plugin:react/recommended"
   ],
+
+  "plugins": [
+    "import",
+    "jest",
+    "prettier",
+    "react"
+  ],
+
   "parser": "babel-eslint",
-  "env": {
-    "jest/globals": true
+
+  "parserOptions": {
+    "ecmaVersion": 2017,
+    "ecmaFeatures": {
+      "jsx": true
+    }
   },
+
+  "env": {
+    "es6": true,
+    "node": true
+  },
+
   "rules": {
-    "arrow-body-style": "off",
-    "class-methods-use-this": "off",
-    "comma-dangle": ["error", "never"],
-    "consistent-return": "off",
-    "indent": ["error", 2],
-    "max-len": ["error", {
-      "code": 120,
-      "ignoreComments": true,
-      "ignoreTrailingComments": true,
-      "ignoreUrls": true,
-      "ignoreStrings": true,
-      "ignoreTemplateLiterals": true,
-      "ignoreRegExpLiterals": true
-    }],
-    "no-else-return": "off",
-    "no-multi-assign": "off",
-    "no-param-reassign": "off",
-    "no-plusplus": "off",
-    "no-restricted-syntax": "off",
-    "no-trailing-spaces": "off",
-    "no-underscore-dangle": "off",
-    "padded-blocks": "off",
+    "jsx-quotes": ["error", "prefer-double"],
 
     "import/first": "off",
     "import/no-extraneous-dependencies": ["error", {
@@ -38,11 +36,43 @@
       "peerDependencies": true
     }],
 
-    "jest/no-disabled-tests": "warn",
-    "jest/no-focused-tests": "error",
-    "jest/no-identical-title": "error",
+    "prettier/prettier": ["error", {
+      "printWidth": 100,
+      "singleQuote": true,
+      "trailingComma": "all"
+    }]
+  },
 
-    "react/jsx-filename-extension": "off",
-    "react/jsx-indent": ["error", 2]
-  }
+  "overrides": [
+    {
+      "files": [
+        "**/{__mocks__,__tests__}/**/*.js",
+        "integration-tests/jest.setup.js"
+      ],
+      "env": {
+        "jest/globals": true
+      },
+      "rules": {
+        "jest/no-disabled-tests": "warn",
+        "jest/no-focused-tests": "error",
+        "jest/no-identical-title": "error"
+      }
+    },
+    {
+      "files": [
+        "**/__screenshots__/**/*.js"
+      ],
+      "globals": {
+        "after": false,
+        "afterAll": false,
+        "afterEach": false,
+        "before": false,
+        "beforeAll": false,
+        "beforeEach": false,
+        "describe": false,
+        "it": false,
+        "test": false
+      }
+    }
+  ]
 }

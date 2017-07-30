@@ -3,7 +3,7 @@ import getMissingResourceShas from './getMissingResourceShas';
 function toHashMap(resources) {
   const hashMap = {};
 
-  resources.forEach((resource) => {
+  resources.forEach(resource => {
     hashMap[resource.sha] = resource;
   });
 

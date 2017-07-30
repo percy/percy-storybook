@@ -15,7 +15,7 @@ beforeEach(() => {
     finalizeSnapshot: jest.fn(() => Promise.resolve()),
     getMissingResourceShas: jest.fn(() => mockMissingResources),
     makeRootResource: jest.fn(() => mockResource),
-    uploadResources: jest.fn(() => Promise.resolve())
+    uploadResources: jest.fn(() => Promise.resolve()),
   };
   assets = {};
   mockMissingResources = [];
@@ -24,20 +24,23 @@ beforeEach(() => {
 it('creates a snapshot for the given test case', async () => {
   const story = {
     name: 'test case',
-    markup: '<div>test</div>'
+    markup: '<div>test</div>',
   };
 
   await uploadStory(percyClient, build, story, [320, 768], 100, assets, storyHtml);
 
   expect(percyClient.createSnapshot).toHaveBeenCalledWith(build, [mockResource], {
-    name: 'test case', widths: [320, 768], minimumHeight: 100, enableJavaScript: true
+    name: 'test case',
+    widths: [320, 768],
+    minimumHeight: 100,
+    enableJavaScript: true,
   });
 });
 
 it('does not re-upload resource given nothing has changed', async () => {
   const story = {
     name: 'test case',
-    markup: '<div>test</div>'
+    markup: '<div>test</div>',
   };
   mockMissingResources = [];
 
@@ -49,7 +52,7 @@ it('does not re-upload resource given nothing has changed', async () => {
 it('re-uploads resource given changes', async () => {
   const story = {
     name: 'test case',
-    markup: '<div>test</div>'
+    markup: '<div>test</div>',
   };
   mockMissingResources = ['foo'];
 
@@ -61,7 +64,7 @@ it('re-uploads resource given changes', async () => {
 it('finalizes the snapshot', async () => {
   const story = {
     name: 'test case',
-    markup: '<div>test</div>'
+    markup: '<div>test</div>',
   };
 
   await uploadStory(percyClient, build, story, assets, storyHtml);

@@ -1,6 +1,6 @@
 import createCompiler from '../createCompiler';
 
-class WebpackCompiler { }
+class WebpackCompiler {}
 const mockCompiler = () => new WebpackCompiler();
 jest.mock('webpack', () => () => mockCompiler());
 

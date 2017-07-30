@@ -1,7 +1,6 @@
 import defaults from '../defaults';
 
 describe('testRegex', () => {
-
   it('matches JS files in `__screenshots__` directories', () => {
     expect('/package/src/__screenshots__/foo.js').toMatch(defaults.testRegex);
   });
@@ -45,5 +44,4 @@ describe('testRegex', () => {
   it('does not match other JSX files', () => {
     expect('/package/src/foo/foo.jsx').not.toMatch(defaults.testRegex);
   });
-
 });

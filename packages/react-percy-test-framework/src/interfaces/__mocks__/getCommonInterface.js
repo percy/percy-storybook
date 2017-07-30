@@ -4,7 +4,7 @@ export const __common = {
   afterEach: jest.fn(),
   afterAll: jest.fn(),
   suite: jest.fn(),
-  test: jest.fn()
+  test: jest.fn(),
 };
 
 export default () => __common;

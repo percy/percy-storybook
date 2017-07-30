@@ -6,9 +6,9 @@ import requireWebpackConfig from '../requireWebpackConfig';
 jest.mock('interpret', () => ({
   extensions: {
     '.foo.js': {
-      'interpret-foo': 'mock'
-    }
-  }
+      'interpret-foo': 'mock',
+    },
+  },
 }));
 
 jest.mock('../getExtension', () => () => '.foo.js');
@@ -35,21 +35,21 @@ it('registers the necessary compilers before loading the config', () => {
 it('returns webpack config', () => {
   givenWebpackConfig({
     entry: {
-      foo: 'bar'
+      foo: 'bar',
     },
     module: {
-      loaders: []
-    }
+      loaders: [],
+    },
   });
 
   const config = requireWebpackConfig(configPath);
 
   expect(config).toEqual({
     entry: {
-      foo: 'bar'
+      foo: 'bar',
     },
     module: {
-      loaders: []
-    }
+      loaders: [],
+    },
   });
 });

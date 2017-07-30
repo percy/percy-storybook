@@ -4,8 +4,8 @@ export const options = {
   config: {
     alias: 'c',
     description: 'Path to the webpack config file',
-    requiresArg: true
-  }
+    requiresArg: true,
+  },
 };
 
 export const usage = 'Usage: $0 --config=<webpackConfigPath>';

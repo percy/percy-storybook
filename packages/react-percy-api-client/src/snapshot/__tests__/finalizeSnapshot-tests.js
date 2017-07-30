@@ -4,14 +4,14 @@ let percyClient;
 
 beforeEach(() => {
   percyClient = {
-    finalizeSnapshot: jest.fn()
+    finalizeSnapshot: jest.fn(),
   };
 });
 
 it('finalizes the specified snapshot', async () => {
   const name = 'name';
   const snapshot = {
-    id: 'snapshotid'
+    id: 'snapshotid',
   };
   percyClient.finalizeSnapshot.mockImplementation(() => Promise.resolve());
 

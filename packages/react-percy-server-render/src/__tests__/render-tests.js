@@ -4,7 +4,7 @@ import render from '../';
 it('renders markup in the HTML body', () => {
   const markup = <div>My Component</div>;
   const assets = {
-    'foo.css': '.foo { background: red; }'
+    'foo.css': '.foo { background: red; }',
   };
 
   const html = render(markup, assets);
@@ -16,7 +16,7 @@ it('adds all external stylesheets to the HTML head', () => {
   const markup = <div>My Component</div>;
   const assets = {
     'foo.css': '.foo { background: red; }',
-    'bar.css': '.bar { background: blue; }'
+    'bar.css': '.bar { background: blue; }',
   };
 
   const html = render(markup, assets);
@@ -30,7 +30,7 @@ it('does not add non-CSS assets to the HTML', () => {
   const assets = {
     'foo.css': '.foo { background: red; }',
     'foo.js': 'module.exports = 1;',
-    'foo.svg': '<svg></svg>'
+    'foo.svg': '<svg></svg>',
   };
 
   const html = render(markup, assets);

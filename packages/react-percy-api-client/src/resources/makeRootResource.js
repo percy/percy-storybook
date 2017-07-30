@@ -10,6 +10,6 @@ export default function makeRootResource(percyClient, name, html, encodedResourc
     resourceUrl,
     content: html,
     isRoot: true,
-    mimetype: 'text/html'
+    mimetype: 'text/html',
   });
 }

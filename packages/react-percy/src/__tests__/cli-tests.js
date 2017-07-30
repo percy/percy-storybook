@@ -19,7 +19,7 @@ jest.mock('@percy-io/react-percy-config', () => () => mockPercyConfig);
 
 const mockWebpackConfig = { webpack: 'config' };
 jest.mock('@percy-io/react-percy-webpack', () => ({
-  resolve: () => mockWebpackConfig
+  resolve: () => mockWebpackConfig,
 }));
 
 jest.mock('../runPercy', () => jest.fn());
@@ -35,7 +35,7 @@ beforeEach(() => {
     epilogue: jest.fn(() => mockYargs),
     help: jest.fn(() => mockYargs),
     options: jest.fn(() => mockYargs),
-    usage: jest.fn(() => mockYargs)
+    usage: jest.fn(() => mockYargs),
   };
 
   process.exit = jest.fn();

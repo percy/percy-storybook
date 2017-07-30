@@ -3,7 +3,7 @@ const npm = require('./npm');
 const path = require('path');
 
 module.exports = function pack(packagePath, packageJson, outputDir) {
-    // Backup package.json before modifying it
+  // Backup package.json before modifying it
   const jsonPath = path.join(packagePath, 'package.json');
   const tempPath = `${jsonPath}.orig`;
 
@@ -12,7 +12,7 @@ module.exports = function pack(packagePath, packageJson, outputDir) {
 
     fs.moveSync(jsonPath, tempPath, { overwrite: true });
 
-    Object.keys(json.dependencies || {}).forEach((dep) => {
+    Object.keys(json.dependencies || {}).forEach(dep => {
       if (/^react-percy/.test(dep)) {
         json.dependencies[dep] = path.join(outputDir, `${dep}.tgz`);
       }
@@ -21,7 +21,7 @@ module.exports = function pack(packagePath, packageJson, outputDir) {
 
     npm('pack', packagePath);
 
-        // Restore package.json
+    // Restore package.json
     fs.removeSync(jsonPath);
     fs.moveSync(tempPath, jsonPath);
 
@@ -33,7 +33,7 @@ module.exports = function pack(packagePath, packageJson, outputDir) {
     return outputPath;
   } finally {
     if (fs.existsSync(tempPath)) {
-            // Restore package.json
+      // Restore package.json
       fs.moveSync(tempPath, jsonPath, { overwrite: true });
     }
   }

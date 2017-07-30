@@ -12,7 +12,7 @@ it('sets `ignoreRegexes` to exclude node_modules given no `ignoreRegexes` in con
 
 it('sets `ignoreRegexes` to `ignoreRegexes` from config', () => {
   const config = {
-    ignoreRegexes: [/foo/]
+    ignoreRegexes: [/foo/],
   };
   const packageRoot = '/package/root';
 
@@ -23,7 +23,7 @@ it('sets `ignoreRegexes` to `ignoreRegexes` from config', () => {
 
 it('converts string `ignoreRegexes` from config to regexes', () => {
   const config = {
-    ignoreRegexes: ['foo$']
+    ignoreRegexes: ['foo$'],
   };
   const packageRoot = '/package/root';
 
@@ -43,7 +43,7 @@ it('sets `includeFiles` to an empty array given no `includeFiles` in config', ()
 
 it('sets `includeFiles` to `includeFiles` from config', () => {
   const config = {
-    includeFiles: ['foo.js', 'bar']
+    includeFiles: ['foo.js', 'bar'],
   };
   const packageRoot = '/package/root';
 
@@ -63,7 +63,7 @@ it('sets `rootDir` to the package root given no `rootDir` in config', () => {
 
 it('sets `rootDir` to normalized `rootDir` from config', () => {
   const config = {
-    rootDir: '/config/foo/../root'
+    rootDir: '/config/foo/../root',
   };
   const packageRoot = '/package/root';
 
@@ -83,7 +83,7 @@ it('sets default `testRegex` given none specified in config', () => {
 
 it('sets `testRegex` to `testRegex` from config', () => {
   const config = {
-    testRegex: /\.screenshots$/
+    testRegex: /\.screenshots$/,
   };
   const packageRoot = '/package/root';
 
@@ -94,7 +94,7 @@ it('sets `testRegex` to `testRegex` from config', () => {
 
 it('converts string `testRegex` from config to regex', () => {
   const config = {
-    testRegex: '\\.screenshots$'
+    testRegex: '\\.screenshots$',
   };
   const packageRoot = '/package/root';
 

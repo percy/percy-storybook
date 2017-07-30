@@ -15,7 +15,7 @@ export default async function run(percyConfig, webpackConfig, percyToken) {
 
   const environment = new TestEnvironment();
   const jsFiles = getJsFiles(assets);
-  jsFiles.forEach((jsFile) => {
+  jsFiles.forEach(jsFile => {
     debug('executing %s', jsFile.path);
     environment.runScript(jsFile);
   });

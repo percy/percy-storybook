@@ -4,8 +4,8 @@ jest.mock('interpret', () => ({
   extensions: {
     '.babel.js': null,
     '.coffee': null,
-    '.js': null
-  }
+    '.js': null,
+  },
 }));
 
 it('returns multipart JS file extension when mapped by interpret', () => {

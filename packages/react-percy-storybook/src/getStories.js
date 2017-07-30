@@ -21,7 +21,6 @@ const workerMock = `
     window.Worker = MockWorker;
 `;
 
-
 // jsdom doesn't support localStorage yet.
 // We use localStorageMock to allow the user's preview.js to interact with localStorage.
 const localStorageMock = `
@@ -53,7 +52,6 @@ const matchMediaMock = `
     });
     `;
 
-
 function getStoriesFromDom(previewJavascriptCode, options) {
   return new Promise((resolve, reject) => {
     const jsDomConfig = {
@@ -63,12 +61,13 @@ function getStoriesFromDom(previewJavascriptCode, options) {
       done: (err, window) => {
         if (err) return reject(err.response.body);
         if (!window || !window.__storybook_stories__) {
-          const message = 'Storybook object not found on window. Check '
-                        + 'window.__storybook_stories__ is set in your Storybook\'s config.js.';
+          const message =
+            'Storybook object not found on window. Check ' +
+            "window.__storybook_stories__ is set in your Storybook's config.js.";
           reject(new Error(message));
         }
         resolve(window.__storybook_stories__);
-      }
+      },
     };
     if (options.debug) {
       jsDomConfig.virtualConsole = jsdom.createVirtualConsole().sendTo(console);

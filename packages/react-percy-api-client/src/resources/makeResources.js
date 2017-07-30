@@ -1,12 +1,9 @@
 import { lookup } from 'mime-types';
 
-const IGNORE = [
-  /\.html$/,
-  /\.map$/
-];
+const IGNORE = [/\.html$/, /\.map$/];
 
 function filterAssetPaths(assetPaths) {
-  return assetPaths.filter((assetPath) => {
+  return assetPaths.filter(assetPath => {
     for (const pattern of IGNORE) {
       if (pattern.test(assetPath)) {
         return false;
@@ -20,10 +17,10 @@ export default function makeResources(percyClient, assets) {
   const assetPaths = Object.keys(assets);
   const filteredAssetPaths = filterAssetPaths(assetPaths);
   return filteredAssetPaths.map(assetPath =>
-        percyClient.makeResource({
-          resourceUrl: `/${assetPath}`,
-          mimetype: lookup(assetPath),
-          content: assets[assetPath]
-        })
-    );
+    percyClient.makeResource({
+      resourceUrl: `/${assetPath}`,
+      mimetype: lookup(assetPath),
+      content: assets[assetPath],
+    }),
+  );
 }

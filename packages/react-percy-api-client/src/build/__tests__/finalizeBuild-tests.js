@@ -4,13 +4,13 @@ let percyClient;
 
 beforeEach(() => {
   percyClient = {
-    finalizeBuild: jest.fn()
+    finalizeBuild: jest.fn(),
   };
 });
 
 it('finalizes the specified build', async () => {
   const build = {
-    id: 'buildid'
+    id: 'buildid',
   };
   percyClient.finalizeBuild.mockImplementation(() => Promise.resolve());
 
@@ -21,13 +21,15 @@ it('finalizes the specified build', async () => {
 
 it('rejects the error response on failure', async () => {
   const build = {
-    id: 'buildid'
+    id: 'buildid',
   };
-  percyClient.finalizeBuild.mockImplementation(() => Promise.reject({
-    response: {
-      body: '501 Error'
-    }
-  }));
+  percyClient.finalizeBuild.mockImplementation(() =>
+    Promise.reject({
+      response: {
+        body: '501 Error',
+      },
+    }),
+  );
 
   try {
     await finalizeBuild(percyClient, build);

@@ -4,7 +4,6 @@ import Test from '../Test';
 jest.mock('../normalizeSizes', () => sizes => sizes);
 
 describe('constructor', () => {
-
   it('throws when no title or function is specified', () => {
     expect(() => new Test()).toThrow();
   });
@@ -12,11 +11,9 @@ describe('constructor', () => {
   it('throws when no title is specified', () => {
     expect(() => new Test(() => {})).toThrow();
   });
-
 });
 
 describe('getTestCase', () => {
-
   it('sets name to title given no parent', async () => {
     const test = new Test('title', () => {});
 
@@ -29,7 +26,7 @@ describe('getTestCase', () => {
     const test = new Test('title', () => {});
     test.parent = {
       fullTitle: () => '',
-      getSizes: () => []
+      getSizes: () => [],
     };
 
     const testCase = await test.getTestCase();
@@ -41,7 +38,7 @@ describe('getTestCase', () => {
     const test = new Test('title', () => {});
     test.parent = {
       fullTitle: () => 'parent title',
-      getSizes: () => []
+      getSizes: () => [],
     };
 
     const testCase = await test.getTestCase();
@@ -60,9 +57,13 @@ describe('getTestCase', () => {
 
   it('sets markup to the result of asynchronous test function', async () => {
     const markup = <div>Test</div>;
-    const test = new Test('title', () => new Promise((resolve) => {
-      setTimeout(() => resolve(markup), 2);
-    }));
+    const test = new Test(
+      'title',
+      () =>
+        new Promise(resolve => {
+          setTimeout(() => resolve(markup), 2);
+        }),
+    );
 
     const testCase = await test.getTestCase();
 
@@ -81,7 +82,7 @@ describe('getTestCase', () => {
     const test = new Test('title', () => {});
     test.parent = {
       fullTitle: () => '',
-      getSizes: () => [320, 768]
+      getSizes: () => [320, 768],
     };
 
     const testCase = await test.getTestCase();
@@ -93,12 +94,11 @@ describe('getTestCase', () => {
     const test = new Test('title', () => {}, [500, 1024]);
     test.parent = {
       fullTitle: () => '',
-      getSizes: () => [320, 768]
+      getSizes: () => [320, 768],
     };
 
     const testCase = await test.getTestCase();
 
     expect(testCase.sizes).toEqual([500, 1024]);
   });
-
 });

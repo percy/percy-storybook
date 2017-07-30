@@ -11,12 +11,11 @@ const VERSION = require('../package.json').version;
 // eslint-disable-next-line import/prefer-default-export
 export function run(argv) {
   argv = yargs(argv)
-        .usage(args.usage)
-        .help()
-        .alias('help', 'h')
-        .options(args.options)
-        .epilogue(args.docs)
-        .argv;
+    .usage(args.usage)
+    .help()
+    .alias('help', 'h')
+    .options(args.options)
+    .epilogue(args.docs).argv;
 
   if (argv.help) {
     yargs.showHelp();
@@ -36,10 +35,10 @@ export function run(argv) {
   const webpackConfig = readWebpackConfig(argv.config);
 
   return runPercy(percyConfig, webpackConfig, process.env.PERCY_TOKEN)
-        .then(() => process.on('exit', () => process.exit(0)))
-        .catch((err) => {
-            // eslint-disable-next-line no-console
-          console.log(chalk.bold.red(err));
-          process.on('exit', () => process.exit(1));
-        });
+    .then(() => process.on('exit', () => process.exit(0)))
+    .catch(err => {
+      // eslint-disable-next-line no-console
+      console.log(chalk.bold.red(err));
+      process.on('exit', () => process.exit(1));
+    });
 }

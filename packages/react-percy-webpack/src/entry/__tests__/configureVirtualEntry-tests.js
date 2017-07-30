@@ -4,10 +4,10 @@ import VirtualModulePlugin from 'virtual-module-webpack-plugin';
 
 it('does not mutate the original Webpack config', () => {
   const originalConfig = {
-    old: 'config'
+    old: 'config',
   };
   const percyConfig = {
-    includeFiles: []
+    includeFiles: [],
   };
   const entry = 'const entry = true;';
 
@@ -15,33 +15,28 @@ it('does not mutate the original Webpack config', () => {
 
   expect(modifiedConfig).not.toBe(originalConfig);
   expect(originalConfig).toEqual({
-    old: 'config'
+    old: 'config',
   });
 });
 
 it('adds VirtualModulePlugin given Webpack config with no plugins', () => {
   const originalConfig = {};
   const percyConfig = {
-    includeFiles: []
+    includeFiles: [],
   };
   const entry = 'const entry = true;';
 
   const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig, entry);
 
-  expect(modifiedConfig.plugins).toEqual([
-    expect.any(VirtualModulePlugin)
-  ]);
+  expect(modifiedConfig.plugins).toEqual([expect.any(VirtualModulePlugin)]);
 });
 
 it('adds VirtualModulePlugin given Webpack config with plugins', () => {
   const originalConfig = {
-    plugins: [
-      'old-plugin-1',
-      'old-plugin-2'
-    ]
+    plugins: ['old-plugin-1', 'old-plugin-2'],
   };
   const percyConfig = {
-    includeFiles: []
+    includeFiles: [],
   };
   const entry = 'const entry = true;';
 
@@ -50,33 +45,28 @@ it('adds VirtualModulePlugin given Webpack config with plugins', () => {
   expect(modifiedConfig.plugins).toEqual([
     'old-plugin-1',
     'old-plugin-2',
-    expect.any(VirtualModulePlugin)
+    expect.any(VirtualModulePlugin),
   ]);
 });
 
 it('percy entry contains virtual entry given no additional includes specified in percy options', () => {
   const originalConfig = {};
   const percyConfig = {
-    includeFiles: []
+    includeFiles: [],
   };
   const entry = 'const entry = true;';
 
   const modifiedConfig = configureVirtualEntry(originalConfig, percyConfig, entry);
 
   expect(modifiedConfig.entry).toEqual({
-    percy: [
-      path.resolve(path.join(__dirname, '..', 'percy-virtual-entry.js'))
-    ]
+    percy: [path.resolve(path.join(__dirname, '..', 'percy-virtual-entry.js'))],
   });
 });
 
 it('percy entry contains virtual entry and additional includes specified in percy options', () => {
   const originalConfig = {};
   const percyConfig = {
-    includeFiles: [
-      'babel-polyfill',
-      './src/foo.js'
-    ]
+    includeFiles: ['babel-polyfill', './src/foo.js'],
   };
   const entry = 'const entry = true;';
 
@@ -86,7 +76,7 @@ it('percy entry contains virtual entry and additional includes specified in perc
     percy: [
       'babel-polyfill',
       './src/foo.js',
-      path.resolve(path.join(__dirname, '..', 'percy-virtual-entry.js'))
-    ]
+      path.resolve(path.join(__dirname, '..', 'percy-virtual-entry.js')),
+    ],
   });
 });

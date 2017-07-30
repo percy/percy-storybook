@@ -14,18 +14,25 @@ beforeEach(() => {
   errors = [];
   assets = {};
   mockCompiler = {
-    run: fn => fn(webpackError, {
-      compilation: {
-        assets,
-        errors
-      }
-    })
+    run: fn =>
+      fn(webpackError, {
+        compilation: {
+          assets,
+          errors,
+        },
+      }),
   };
 });
 
-const givenWebpackError = (error) => { webpackError = error; };
-const givenCompileError = (error) => { errors.push(error); };
-const givenAsset = (path, src) => { assets[path] = { source: () => src }; };
+const givenWebpackError = error => {
+  webpackError = error;
+};
+const givenCompileError = error => {
+  errors.push(error);
+};
+const givenAsset = (path, src) => {
+  assets[path] = { source: () => src };
+};
 
 it('rejects when webpack errors internally', async () => {
   givenWebpackError('internal webpack error');
@@ -34,9 +41,7 @@ it('rejects when webpack errors internally', async () => {
     await compile(webpackConfig);
     throw new Error('`compile` should have failed');
   } catch (e) {
-    expect(e).toEqual([
-      'internal webpack error'
-    ]);
+    expect(e).toEqual(['internal webpack error']);
   }
 });
 
@@ -48,10 +53,7 @@ it('rejects with webpack fails to compile', async () => {
     await compile(webpackConfig);
     throw new Error('`compile` should have failed');
   } catch (e) {
-    expect(e).toEqual([
-      'file 1 failed to compile',
-      'file 2 failed to compile'
-    ]);
+    expect(e).toEqual(['file 1 failed to compile', 'file 2 failed to compile']);
   }
 });
 
@@ -63,6 +65,6 @@ it('resolves with compiled files when webpack succeeds', async () => {
 
   expect(files).toEqual({
     '/file1.js': 'const x = 1;',
-    '/file2.css': '.foo { background: red; }'
+    '/file2.css': '.foo { background: red; }',
   });
 });

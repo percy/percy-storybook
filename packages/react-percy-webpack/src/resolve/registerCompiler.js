@@ -4,10 +4,10 @@ export default function registerCompiler(compiler) {
   }
 
   if (typeof compiler === 'string') {
-        // eslint-disable-next-line global-require, import/no-dynamic-require
+    // eslint-disable-next-line global-require, import/no-dynamic-require
     require(compiler);
   } else if (!Array.isArray(compiler)) {
-        // eslint-disable-next-line global-require, import/no-dynamic-require
+    // eslint-disable-next-line global-require, import/no-dynamic-require
     compiler.register(require(compiler.module));
   } else {
     for (let i = 0; i < compiler.length; i++) {
@@ -15,7 +15,7 @@ export default function registerCompiler(compiler) {
         registerCompiler(compiler[i]);
         break;
       } catch (e) {
-                // continue trying subsequent compilers
+        // continue trying subsequent compilers
       }
     }
   }

@@ -14,7 +14,9 @@ export default function render(markup, assets) {
     <html lang="en">
     <head>
         <meta charset="utf-8">
-        ${stylesheets.map(stylesheet => `<link rel="stylesheet" href="/${stylesheet}" />`).join('\n')}
+        ${stylesheets
+          .map(stylesheet => `<link rel="stylesheet" href="/${stylesheet}" />`)
+          .join('\n')}
     </head>
     <body>${body}</body>
     </html>

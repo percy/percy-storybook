@@ -3,15 +3,12 @@ import Suite from '../Suite';
 jest.mock('../normalizeSizes');
 
 describe('constructor', () => {
-
   it('throws when no title is specified', () => {
     expect(() => new Suite()).toThrow();
   });
-
 });
 
 describe('addSuite', () => {
-
   it('sets parent on suite being added', () => {
     const suite = new Suite('title');
     const nestedSuite = new Suite('nested');
@@ -30,11 +27,9 @@ describe('addSuite', () => {
     const nestedSuite2 = new Suite('nested');
     expect(() => suite.addSuite(nestedSuite2)).toThrow();
   });
-
 });
 
 describe('addTest', () => {
-
   it('throws when test with the same title has already been added', () => {
     const suite = new Suite('title');
     suite.parent = new Suite('parent');
@@ -55,11 +50,9 @@ describe('addTest', () => {
 
     expect(test.parent).toEqual(suite);
   });
-
 });
 
 describe('fullTitle', () => {
-
   it('returns title given no parent', () => {
     const suite = new Suite('title');
 
@@ -69,7 +62,7 @@ describe('fullTitle', () => {
   it('returns title given parent with no title', () => {
     const suite = new Suite('title');
     suite.parent = {
-      fullTitle: () => ''
+      fullTitle: () => '',
     };
 
     expect(suite.fullTitle()).toEqual('title');
@@ -78,16 +71,14 @@ describe('fullTitle', () => {
   it('returns combined title given parent with title', () => {
     const suite = new Suite('title');
     suite.parent = {
-      fullTitle: () => 'parent title'
+      fullTitle: () => 'parent title',
     };
 
     expect(suite.fullTitle()).toEqual('parent title - title');
   });
-
 });
 
 describe('getSizes', () => {
-
   it('returns an empty array given no sizes specified and no parent', () => {
     const suite = new Suite('title');
 
@@ -97,7 +88,7 @@ describe('getSizes', () => {
   it('returns parent sizes given no sizes specified', () => {
     const suite = new Suite('title');
     suite.parent = {
-      getSizes: () => [320, 768]
+      getSizes: () => [320, 768],
     };
 
     expect(suite.getSizes()).toEqual([320, 768]);
@@ -106,10 +97,9 @@ describe('getSizes', () => {
   it('returns sizes specified on suite, ignoring parent sizes', () => {
     const suite = new Suite('title', [500, 1024]);
     suite.parent = {
-      getSizes: () => [320, 768]
+      getSizes: () => [320, 768],
     };
 
     expect(suite.getSizes()).toEqual([500, 1024]);
   });
-
 });

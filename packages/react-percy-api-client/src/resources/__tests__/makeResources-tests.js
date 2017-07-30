@@ -4,13 +4,13 @@ let percyClient;
 
 beforeEach(() => {
   percyClient = {
-    makeResource: data => data
+    makeResource: data => data,
   };
 });
 
 it('does create resources for JS files', () => {
   const assets = {
-    'main.js': { foo: () => {} }
+    'main.js': { foo: () => {} },
   };
 
   const resources = makeResources(percyClient, assets);
@@ -20,7 +20,7 @@ it('does create resources for JS files', () => {
 
 it('does not create resources for HTML files', () => {
   const assets = {
-    'main.html': '<html><body>Foo</body></html>'
+    'main.html': '<html><body>Foo</body></html>',
   };
 
   const resources = makeResources(percyClient, assets);
@@ -30,7 +30,7 @@ it('does not create resources for HTML files', () => {
 
 it('does not create resources for source maps', () => {
   const assets = {
-    'main.map': '{"version":"5"}'
+    'main.map': '{"version":"5"}',
   };
 
   const resources = makeResources(percyClient, assets);
@@ -40,7 +40,7 @@ it('does not create resources for source maps', () => {
 
 it('creates resources for CSS files', () => {
   const assets = {
-    'main.css': '.foo { background: red; }'
+    'main.css': '.foo { background: red; }',
   };
 
   const resources = makeResources(percyClient, assets);
@@ -50,42 +50,42 @@ it('creates resources for CSS files', () => {
 
 it('sets the resource URL to a slash prefixed path to the asset', () => {
   const assets = {
-    'main.css': '.foo { background: red; }'
+    'main.css': '.foo { background: red; }',
   };
 
   const resources = makeResources(percyClient, assets);
 
   expect(resources).toEqual([
     expect.objectContaining({
-      resourceUrl: '/main.css'
-    })
+      resourceUrl: '/main.css',
+    }),
   ]);
 });
 
 it('sets the mime type for assets', () => {
   const assets = {
-    'main.css': '.foo { background: red; }'
+    'main.css': '.foo { background: red; }',
   };
 
   const resources = makeResources(percyClient, assets);
 
   expect(resources).toEqual([
     expect.objectContaining({
-      mimetype: 'text/css'
-    })
+      mimetype: 'text/css',
+    }),
   ]);
 });
 
 it('sets content to the contents of the asset', () => {
   const assets = {
-    'main.css': '.foo { background: red; }'
+    'main.css': '.foo { background: red; }',
   };
 
   const resources = makeResources(percyClient, assets);
 
   expect(resources).toEqual([
     expect.objectContaining({
-      content: '.foo { background: red; }'
-    })
+      content: '.foo { background: red; }',
+    }),
   ]);
 });

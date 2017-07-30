@@ -31,6 +31,6 @@ export default function getCommonInterface(suites) {
       const test = new Test(title, fn, sizes);
       suites[0].addTest(test);
       return test;
-    }
+    },
   };
 }

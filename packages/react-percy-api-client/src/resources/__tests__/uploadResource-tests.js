@@ -4,16 +4,16 @@ let percyClient;
 
 beforeEach(() => {
   percyClient = {
-    uploadResource: jest.fn()
+    uploadResource: jest.fn(),
   };
 });
 
 it('uploads the specified resource', async () => {
   const build = {
-    id: 'build123'
+    id: 'build123',
   };
   const resource = {
-    content: 'resource contents'
+    content: 'resource contents',
   };
   percyClient.uploadResource.mockImplementation(() => Promise.resolve());
 
@@ -24,16 +24,18 @@ it('uploads the specified resource', async () => {
 
 it('rejects the error response on failure', async () => {
   const build = {
-    id: 'build123'
+    id: 'build123',
   };
   const resource = {
-    content: 'resource contents'
+    content: 'resource contents',
   };
-  percyClient.uploadResource.mockImplementation(() => Promise.reject({
-    response: {
-      body: '501 Error'
-    }
-  }));
+  percyClient.uploadResource.mockImplementation(() =>
+    Promise.reject({
+      response: {
+        body: '501 Error',
+      },
+    }),
+  );
 
   try {
     await uploadResource(percyClient, build, resource);

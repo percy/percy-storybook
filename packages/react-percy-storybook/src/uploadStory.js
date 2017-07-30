@@ -1,4 +1,12 @@
-export default async function uploadStory(percyClient, build, story, widths, minimumHeight, assets, storyHtml) {
+export default async function uploadStory(
+  percyClient,
+  build,
+  story,
+  widths,
+  minimumHeight,
+  assets,
+  storyHtml,
+) {
   try {
     const resource = percyClient.makeRootResource(story.name, storyHtml, story.encodedParams);
 
@@ -6,7 +14,7 @@ export default async function uploadStory(percyClient, build, story, widths, min
       name: story.name,
       widths,
       minimumHeight,
-      enableJavaScript: true
+      enableJavaScript: true,
     };
 
     const snapshot = await percyClient.createSnapshot(build, [resource], snapshotOptions);
@@ -19,7 +27,7 @@ export default async function uploadStory(percyClient, build, story, widths, min
     await percyClient.finalizeSnapshot(snapshot, story.name);
   } catch (e) {
     e._percy = {
-      story
+      story,
     };
     throw e;
   }

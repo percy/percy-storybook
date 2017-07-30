@@ -12,23 +12,27 @@ const mockCompiler = (mockModule, options = {}) => {
     wasRequired: false,
     shouldThrow: options.shouldThrow,
     exports: {
-      [mockModule]: 'mock'
-    }
+      [mockModule]: 'mock',
+    },
   };
-  jest.mock(mockModule, () => {
-    mockCompilers[mockModule].wasRequired = true;
-    if (mockCompilers[mockModule].shouldThrow) {
-      throw new Error();
-    }
-    return mockCompilers[mockModule].exports;
-  }, { virtual: true });
+  jest.mock(
+    mockModule,
+    () => {
+      mockCompilers[mockModule].wasRequired = true;
+      if (mockCompilers[mockModule].shouldThrow) {
+        throw new Error();
+      }
+      return mockCompilers[mockModule].exports;
+    },
+    { virtual: true },
+  );
 };
 
-const expectCompilerToHaveBeenRequired = (module) => {
+const expectCompilerToHaveBeenRequired = module => {
   expect(mockCompilers[module].wasRequired).toBe(true);
 };
 
-const expectCompilerNotToHaveBeenRequired = (module) => {
+const expectCompilerNotToHaveBeenRequired = module => {
   expect(mockCompilers[module].wasRequired).toBe(false);
 };
 
@@ -54,7 +58,7 @@ it('requires compiler module and registers it given object', () => {
 
   registerCompiler({
     module: 'foo-register',
-    register
+    register,
   });
 
   expectCompilerToHaveBeenRegistered('foo-register', register);
@@ -86,31 +90,39 @@ it('only requires first compiler module and registers it given array of objects 
   mockCompiler('foo-1-register');
   mockCompiler('foo-2-register');
 
-  registerCompiler([{
-    module: 'foo-1-register',
-    register: registerFoo1
-  }, {
-    module: 'foo-2-register',
-    register: registerFoo2
-  }]);
+  registerCompiler([
+    {
+      module: 'foo-1-register',
+      register: registerFoo1,
+    },
+    {
+      module: 'foo-2-register',
+      register: registerFoo2,
+    },
+  ]);
 
   expectCompilerToHaveBeenRegistered('foo-1-register', registerFoo1);
   expectCompilerNotToHaveBeenRequired('foo-2-register');
 });
 
 it('requires multiple compiler modules and registers them given array of objects and first fails', () => {
-  const registerFoo1 = jest.fn(() => { throw new Error(); });
+  const registerFoo1 = jest.fn(() => {
+    throw new Error();
+  });
   const registerFoo2 = jest.fn();
   mockCompiler('foo-1-register');
   mockCompiler('foo-2-register');
 
-  registerCompiler([{
-    module: 'foo-1-register',
-    register: registerFoo1
-  }, {
-    module: 'foo-2-register',
-    register: registerFoo2
-  }]);
+  registerCompiler([
+    {
+      module: 'foo-1-register',
+      register: registerFoo1,
+    },
+    {
+      module: 'foo-2-register',
+      register: registerFoo2,
+    },
+  ]);
 
   expectCompilerToHaveBeenRegistered('foo-1-register', registerFoo1);
   expectCompilerToHaveBeenRegistered('foo-2-register', registerFoo2);

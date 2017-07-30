@@ -14,7 +14,7 @@ export default function compile(webpackConfig) {
 
       const assets = stats.compilation.assets;
       const files = {};
-      Object.keys(assets).forEach((key) => {
+      Object.keys(assets).forEach(key => {
         files[key] = assets[key].source();
       });
       return resolve(files);
