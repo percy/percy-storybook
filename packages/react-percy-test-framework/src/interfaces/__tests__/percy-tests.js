@@ -1,4 +1,4 @@
-import bdd from '../bdd';
+import percy from '../percy';
 import { __common } from '../getCommonInterface';
 
 jest.mock('../getCommonInterface');
@@ -8,7 +8,7 @@ let context;
 beforeEach(() => {
   context = {};
 
-  bdd(context, [{ suite: true }]);
+  percy(context, [{ suite: true }]);
 });
 
 it('adds `before` to context', () => {
@@ -83,41 +83,28 @@ it('`afterAll` adds afterAll hook', () => {
   expect(__common.afterAll).toHaveBeenCalledWith(hook);
 });
 
-it('adds `describe` to context', () => {
-  expect(context.describe).toBeDefined();
+it('adds `percySnapshot` to context', () => {
+  expect(context.percySnapshot).toBeDefined();
 });
 
-it('`describe` creates a new suite', () => {
+it('`percySnapshot` creates a new test', () => {
+  const title = 'test';
+  const test = jest.fn();
+
+  context.percySnapshot(title, test);
+
+  expect(__common.test).toHaveBeenCalledWith(title, test);
+});
+
+it('adds `suite` to context', () => {
+  expect(context.suite).toBeDefined();
+});
+
+it('`suite` creates a new suite', () => {
   const title = 'suite';
   const callback = jest.fn();
 
-  context.describe(title, callback);
+  context.suite(title, callback);
 
   expect(__common.suite).toHaveBeenCalledWith(title, callback);
-});
-
-it('adds `it` to context', () => {
-  expect(context.it).toBeDefined();
-});
-
-it('`it` creates a new test', () => {
-  const title = 'test';
-  const test = jest.fn();
-
-  context.it(title, test);
-
-  expect(__common.test).toHaveBeenCalledWith(title, test);
-});
-
-it('adds `test` to context', () => {
-  expect(context.test).toBeDefined();
-});
-
-it('`test` creates a new test', () => {
-  const title = 'test';
-  const test = jest.fn();
-
-  context.test(title, test);
-
-  expect(__common.test).toHaveBeenCalledWith(title, test);
 });

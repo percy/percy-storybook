@@ -1,1 +1,1 @@
-export bdd from './bdd';
+export percy from './percy';

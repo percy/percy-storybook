@@ -1,40 +1,28 @@
 import defaults from '../defaults';
 
 describe('testRegex', () => {
-  it('matches JS files in `__screenshots__` directories', () => {
-    expect('/package/src/__screenshots__/foo.js').toMatch(defaults.testRegex);
+  it('matches JS files in `__percy__` directories', () => {
+    expect('/package/src/__percy__/foo.js').toMatch(defaults.testRegex);
   });
 
-  it('matches JSX files in `__screenshots__` directories', () => {
-    expect('/package/src/__screenshots__/foo.jsx').toMatch(defaults.testRegex);
+  it('matches JSX files in `__percy__` directories', () => {
+    expect('/package/src/__percy__/foo.jsx').toMatch(defaults.testRegex);
   });
 
-  it('does not match non-JS files in `__screenshots__` directories', () => {
-    expect('/package/src/__screenshots__/foo.json').not.toMatch(defaults.testRegex);
+  it('does not match non-JS files in `__percy__` directories', () => {
+    expect('/package/src/__percy__/foo.json').not.toMatch(defaults.testRegex);
   });
 
-  it('matches JS files with `.screenshot` suffix', () => {
-    expect('/package/src/foo/foo.screenshot.js').toMatch(defaults.testRegex);
+  it('matches JS files with `.percy` suffix', () => {
+    expect('/package/src/foo/foo.percy.js').toMatch(defaults.testRegex);
   });
 
-  it('matches JSX files with `.screenshot` suffix', () => {
-    expect('/package/src/foo/foo.screenshot.jsx').toMatch(defaults.testRegex);
+  it('matches JSX files with `.percy` suffix', () => {
+    expect('/package/src/foo/foo.percy.jsx').toMatch(defaults.testRegex);
   });
 
-  it('does not match non-JS files with `.screenshot` suffix', () => {
-    expect('/package/src/foo/foo.screenshot.json').not.toMatch(defaults.testRegex);
-  });
-
-  it('matches JS files with `.screenshots` suffix', () => {
-    expect('/package/src/foo/foo.screenshots.js').toMatch(defaults.testRegex);
-  });
-
-  it('matches JSX files with `.screenshots` suffix', () => {
-    expect('/package/src/foo/foo.screenshots.jsx').toMatch(defaults.testRegex);
-  });
-
-  it('does not match non-JS files with `.screenshots` suffix', () => {
-    expect('/package/src/foo/foo.screenshots.json').not.toMatch(defaults.testRegex);
+  it('does not match non-JS files with `.percy` suffix', () => {
+    expect('/package/src/foo/foo.percy.json').not.toMatch(defaults.testRegex);
   });
 
   it('does not match other JS files', () => {

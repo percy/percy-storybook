@@ -2,7 +2,7 @@ import * as interfaces from '../interfaces';
 import initialize from '../';
 import Suite from '../Suite';
 
-jest.mock('../interfaces', () => ({ bdd: jest.fn() }));
+jest.mock('../interfaces', () => ({ percy: jest.fn() }));
 
 let context;
 
@@ -10,10 +10,10 @@ beforeEach(() => {
   context = {};
 });
 
-it('adds bdd interface to context', () => {
+it('adds percy interface to context', () => {
   initialize(context);
 
-  expect(interfaces.bdd).toHaveBeenCalledWith(context, [expect.any(Suite)]);
+  expect(interfaces.percy).toHaveBeenCalledWith(context, [expect.any(Suite)]);
 });
 
 it('returns the root suite', () => {
