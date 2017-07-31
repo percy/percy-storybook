@@ -20,10 +20,15 @@
     "react-match-media": "^2.0.1"
   },
   "devDependencies": {
-    "@kadira/storybook": "^2.35.3",
     "@percy-io/in-percy": "file:../packages/in-percy",
     "@percy-io/react-percy": "^0.1.1",
     "@percy-io/react-percy-storybook": "^0.1.8",
+    "@storybook/addon-actions": "^3.1.9",
+    "@storybook/addon-info": "^3.1.9",
+    "@storybook/addon-knobs": "^3.1.9",
+    "@storybook/addon-links": "^3.1.6",
+    "@storybook/addon-options": "^3.1.6",
+    "@storybook/react": "^3.2.0-alpha.12",
     "babel-core": "^6.24.0",
     "babel-jest": "^19.0.0",
     "babel-loader": "^6.4.1",

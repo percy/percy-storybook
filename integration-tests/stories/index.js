@@ -1,5 +1,5 @@
 import React from 'react';
-import { storiesOf, action } from '@kadira/storybook';
+import { storiesOf, action } from '@storybook/react';
 import faker from 'faker';
 import { MatchMediaHOC } from 'react-match-media';
 import Example from '../src/Example';
@@ -16,9 +16,12 @@ storiesOf('Static CSS', module)
     <p className="blue">Hi there! This text should be blue.</p>,
   );
 
-storiesOf('Frozen Time', module).add('Show the current date', () =>
+storiesOf('Managing Dynamic Data/Frozen Time', module).add('Show the current date', () =>
   <div>
-    <p>In Percy&apos;s screenshot the current date should be frozen to 2015 thanks to mockdate.</p>
+    <p>
+      In Percy&apos;s screenshot (but not local dev) the current date should be frozen to 2015
+      thanks to mockdate and inPercy.
+    </p>
     <p>
       See .storybook/config.js or&nbsp;
       <a href="https://github.com/boblauer/MockDate">mockdate&apos;s docs</a>
@@ -33,9 +36,12 @@ storiesOf('Frozen Time', module).add('Show the current date', () =>
 const name = faker.name.findName();
 const email = faker.internet.email();
 
-storiesOf('Faker', module).add('Show a fake name and email', () =>
+storiesOf('Managing Dynamic Data/Faker', module).add('Show a fake name and email', () =>
   <div>
-    <p>In Percy&apos;s screenshot the fake data should be the same thanks to faker&apos;s seed.</p>
+    <p>
+      In Percy&apos;s screenshot (but not local dev) the fake data should be the same thanks to
+      faker&apos;s seed and inPercy.
+    </p>
     <p>
       See .storybook/config.js or&nbsp;
       <a href="https://www.npmjs.com/package/faker#setting-a-randomness-seed">faker&apos;s docs</a>

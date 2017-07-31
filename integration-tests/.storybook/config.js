@@ -1,4 +1,7 @@
-import { configure, getStorybook } from '@kadira/storybook';
+import { configure, getStorybook, setAddon } from '@storybook/react';
+import { setOptions } from '@storybook/addon-options';
+import infoAddon, { setDefaults } from '@storybook/addon-info';
+
 import inPercy from '@percy-io/in-percy';
 import faker from 'faker';
 import mockdate from 'mockdate';
@@ -16,6 +19,23 @@ function loadStories() {
   // You can require as many stories as you need.
 }
 
+setDefaults({
+  inline: true,
+  source: false,
+});
+setAddon(infoAddon);
+
 configure(loadStories, module);
 
 if (typeof window === 'object') window.__storybook_stories__ = getStorybook();
+
+setOptions({
+  name: 'Shared Components',
+  url: '',
+  goFullScreen: false,
+  showLeftPanel: true,
+  showDownPanel: true,
+  showSearchBox: false,
+  downPanelInRight: true,
+  sortStoriesByKind: false,
+});
