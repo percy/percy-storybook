@@ -5,7 +5,7 @@
 "@percy-io/in-percy@file:../packages/in-percy":
   version "0.1.3"
 
-"@percy-io/react-percy-api-client@^0.1.3", "@percy-io/react-percy-api-client@^0.1.4":
+"@percy-io/react-percy-api-client@^0.1.4":
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/@percy-io/react-percy-api-client/-/react-percy-api-client-0.1.4.tgz#7172cc85ea9079d6806aab5295c6f01e7442d326"
   dependencies:
@@ -32,11 +32,10 @@
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/@percy-io/react-percy-server-render/-/react-percy-server-render-0.1.2.tgz#84f6a84c90c13bfc03dcd9c43333e22667a458c4"
 
-"@percy-io/react-percy-storybook@^0.1.8":
-  version "0.1.12"
-  resolved "https://registry.yarnpkg.com/@percy-io/react-percy-storybook/-/react-percy-storybook-0.1.12.tgz#0ec2a7d72635ad768ea65849e22ac205d04dd311"
+"@percy-io/react-percy-storybook@file:../packages/react-percy-storybook":
+  version "1.0.2"
   dependencies:
-    "@percy-io/react-percy-api-client" "^0.1.3"
+    "@percy-io/react-percy-api-client" "^0.1.4"
     debug "^2.6.3"
     es6-promise-pool "^2.4.4"
     jsdom "^9.12.0"
@@ -58,9 +57,8 @@
     virtual-module-webpack-plugin "^0.1.3"
     webpack-merge "^3.0.0"
 
-"@percy-io/react-percy@^0.1.1":
+"@percy-io/react-percy@file:../packages/react-percy":
   version "0.1.4"
-  resolved "https://registry.yarnpkg.com/@percy-io/react-percy/-/react-percy-0.1.4.tgz#61c2693055d8787d062d3a395af5cd3cfe4933f6"
   dependencies:
     "@percy-io/react-percy-ci" "^0.1.4"
     "@percy-io/react-percy-config" "^0.1.2"
@@ -69,92 +67,73 @@
     pkg-dir "^1.0.0"
     yargs "^7.0.2"
 
-"@storybook/addon-actions@^3.1.9":
-  version "3.1.9"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-actions/-/addon-actions-3.1.9.tgz#2fb0e686742b9d645d9c622f01e5ba99acab8b69"
+"@storybook/addon-actions@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-actions/-/addon-actions-3.2.0.tgz#e5d7f63fec89cae1b98bbc124694153b7409317f"
   dependencies:
-    "@storybook/addons" "^3.1.6"
-    deep-equal "^1.0.1"
-    json-stringify-safe "^5.0.1"
-    prop-types "^15.5.8"
-    react-inspector "^2.1.1"
-    uuid "^3.1.0"
-
-"@storybook/addon-actions@^3.2.0-alpha.10":
-  version "3.2.0-alpha.10"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-actions/-/addon-actions-3.2.0-alpha.10.tgz#10b58bb2de3e3cbab7da72ebb1f5f3ea1842e03a"
-  dependencies:
-    "@storybook/addons" "^3.2.0-alpha.10"
+    "@storybook/addons" "^3.2.0"
     deep-equal "^1.0.1"
     json-stringify-safe "^5.0.1"
     prop-types "^15.5.10"
     react-inspector "^2.1.1"
     uuid "^3.1.0"
 
-"@storybook/addon-info@^3.1.9":
-  version "3.1.9"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-info/-/addon-info-3.1.9.tgz#e2c096c27257a864ff6936a8dbca13d6a42ee461"
+"@storybook/addon-info@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-info/-/addon-info-3.2.0.tgz#0036b947464f6f1a657b14ea4d0f070546679aab"
   dependencies:
-    "@storybook/addons" "^3.1.6"
+    "@storybook/addons" "^3.2.0"
     babel-runtime "^6.23.0"
     global "^4.3.2"
     marksy "^2.0.0"
-    prop-types "^15.5.8"
+    prop-types "^15.5.10"
     react-addons-create-fragment "^15.5.3"
+    util-deprecate "^1.0.2"
 
-"@storybook/addon-knobs@^3.1.9":
-  version "3.1.9"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-knobs/-/addon-knobs-3.1.9.tgz#8d783141d0b87ab520f7d01e5b9383ad5f7bf357"
+"@storybook/addon-knobs@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-knobs/-/addon-knobs-3.2.0.tgz#675b6648034996b1c2aa57fd6d318155d7e511bc"
   dependencies:
-    "@storybook/addons" "^3.1.6"
+    "@storybook/addons" "^3.2.0"
     babel-runtime "^6.23.0"
     deep-equal "^1.0.1"
     global "^4.3.2"
     insert-css "^1.0.0"
     lodash.debounce "^4.0.8"
     moment "^2.18.1"
-    prop-types "^15.5.8"
+    prop-types "^15.5.10"
     react-color "^2.11.4"
     react-datetime "^2.8.10"
     react-textarea-autosize "^4.3.0"
+    util-deprecate "^1.0.2"
 
-"@storybook/addon-links@^3.1.6":
-  version "3.1.6"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-links/-/addon-links-3.1.6.tgz#62c8a839e54ff0adb04c6023dae467b336ced5d9"
+"@storybook/addon-links@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-links/-/addon-links-3.2.0.tgz#28c73d1fd7fa37591139f3fb16e60a43113ad643"
   dependencies:
-    "@storybook/addons" "^3.1.6"
+    "@storybook/addons" "^3.2.0"
 
-"@storybook/addon-links@^3.2.0-alpha.10":
-  version "3.2.0-alpha.10"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-links/-/addon-links-3.2.0-alpha.10.tgz#8b9aba02ece465aea51be075f114a17ddfd25997"
+"@storybook/addon-options@^3.2.3":
+  version "3.2.3"
+  resolved "https://registry.yarnpkg.com/@storybook/addon-options/-/addon-options-3.2.3.tgz#ea3740d289d429ce767e9699bf3a647dd741592d"
   dependencies:
-    "@storybook/addons" "^3.2.0-alpha.10"
+    "@storybook/addons" "^3.2.0"
 
-"@storybook/addon-options@^3.1.6":
-  version "3.1.6"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-options/-/addon-options-3.1.6.tgz#0cf3a24e075f4802fda42a13a2199646b0e2303d"
+"@storybook/addons@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@storybook/addons/-/addons-3.2.0.tgz#e1446cc5613af179701673276267cee71859bf41"
+
+"@storybook/channel-postmessage@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@storybook/channel-postmessage/-/channel-postmessage-3.2.0.tgz#612ff53120bf266660cb9328bac9ad671228a2f7"
   dependencies:
-    "@storybook/addons" "^3.1.6"
-
-"@storybook/addons@^3.1.6":
-  version "3.1.6"
-  resolved "https://registry.yarnpkg.com/@storybook/addons/-/addons-3.1.6.tgz#29ef2348550f5a74d5e83dd75d04714cac751c39"
-
-"@storybook/addons@^3.2.0-alpha.10":
-  version "3.2.0-alpha.10"
-  resolved "https://registry.yarnpkg.com/@storybook/addons/-/addons-3.2.0-alpha.10.tgz#962c8f381df3686ee19f3168b50d4f0a68fde4e1"
-
-"@storybook/channel-postmessage@^3.2.0-alpha.10":
-  version "3.2.0-alpha.10"
-  resolved "https://registry.yarnpkg.com/@storybook/channel-postmessage/-/channel-postmessage-3.2.0-alpha.10.tgz#1e2b1b9ef38ea701ec81c224ea4d037a6c434d40"
-  dependencies:
-    "@storybook/channels" "^3.2.0-alpha.10"
+    "@storybook/channels" "^3.2.0"
     global "^4.3.2"
     json-stringify-safe "^5.0.1"
 
-"@storybook/channels@^3.2.0-alpha.10":
-  version "3.2.0-alpha.10"
-  resolved "https://registry.yarnpkg.com/@storybook/channels/-/channels-3.2.0-alpha.10.tgz#2fd75a9c745d063ffddd23036f450972a766370e"
+"@storybook/channels@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@storybook/channels/-/channels-3.2.0.tgz#d75395212db76b49e3335f50cce5bc763cf0b5c6"
 
 "@storybook/react-fuzzy@^0.4.0":
   version "0.4.0"
@@ -165,15 +144,15 @@
     fuse.js "^3.0.1"
     prop-types "^15.5.9"
 
-"@storybook/react@^3.2.0-alpha.12":
-  version "3.2.0-alpha.12"
-  resolved "https://registry.yarnpkg.com/@storybook/react/-/react-3.2.0-alpha.12.tgz#a09878e5b393b1c5f4a7d303f530a1cd2a8e4c79"
+"@storybook/react@^3.2.3":
+  version "3.2.3"
+  resolved "https://registry.yarnpkg.com/@storybook/react/-/react-3.2.3.tgz#4e5aff80b61328288dcf9e3a6b2a2890eab880be"
   dependencies:
-    "@storybook/addon-actions" "^3.2.0-alpha.10"
-    "@storybook/addon-links" "^3.2.0-alpha.10"
-    "@storybook/addons" "^3.2.0-alpha.10"
-    "@storybook/channel-postmessage" "^3.2.0-alpha.10"
-    "@storybook/ui" "^3.2.0-alpha.12"
+    "@storybook/addon-actions" "^3.2.0"
+    "@storybook/addon-links" "^3.2.0"
+    "@storybook/addons" "^3.2.0"
+    "@storybook/channel-postmessage" "^3.2.0"
+    "@storybook/ui" "^3.2.3"
     airbnb-js-shims "^1.1.1"
     autoprefixer "^7.1.1"
     babel-core "^6.25.0"
@@ -219,9 +198,9 @@
     webpack-dev-middleware "^1.10.2"
     webpack-hot-middleware "^2.18.0"
 
-"@storybook/ui@^3.2.0-alpha.12":
-  version "3.2.0-alpha.12"
-  resolved "https://registry.yarnpkg.com/@storybook/ui/-/ui-3.2.0-alpha.12.tgz#03b6cc05dbbe69f99dd968a980a150bbb1c2fccb"
+"@storybook/ui@^3.2.3":
+  version "3.2.3"
+  resolved "https://registry.yarnpkg.com/@storybook/ui/-/ui-3.2.3.tgz#9579c191a1695d3d5aaabcef93a7a5456d8f19af"
   dependencies:
     "@storybook/react-fuzzy" "^0.4.0"
     babel-runtime "^6.23.0"

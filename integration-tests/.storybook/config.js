@@ -27,8 +27,10 @@ setAddon(infoAddon);
 
 configure(loadStories, module);
 
+// NOTE: Place this *BEFORE* any setOptions call
 if (typeof window === 'object') window.__storybook_stories__ = getStorybook();
 
+// NOTE: This call has to come *AFTER* exposing the stories on the window object.
 setOptions({
   name: 'Shared Components',
   url: '',
@@ -38,4 +40,5 @@ setOptions({
   showSearchBox: false,
   downPanelInRight: true,
   sortStoriesByKind: false,
+  hierarchySeparator: /\./,
 });

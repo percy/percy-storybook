@@ -16,7 +16,7 @@ storiesOf('Static CSS', module)
     <p className="blue">Hi there! This text should be blue.</p>,
   );
 
-storiesOf('Managing Dynamic Data/Frozen Time', module).add('Show the current date', () =>
+storiesOf('Managing Dynamic Data.Frozen Time', module).add('Show the current date', () =>
   <div>
     <p>
       In Percy&apos;s screenshot (but not local dev) the current date should be frozen to 2015
@@ -36,7 +36,7 @@ storiesOf('Managing Dynamic Data/Frozen Time', module).add('Show the current dat
 const name = faker.name.findName();
 const email = faker.internet.email();
 
-storiesOf('Managing Dynamic Data/Faker', module).add('Show a fake name and email', () =>
+storiesOf('Managing Dynamic Data.Faker', module).add('Show a fake name and email', () =>
   <div>
     <p>
       In Percy&apos;s screenshot (but not local dev) the fake data should be the same thanks to
@@ -81,4 +81,8 @@ storiesOf('Direction Demo', module).add('Show the direction', () =>
     <p>In Percy this story will be rendered twice automatically, once for each direction.</p>
     <p>This happens because the name matches the rtl_regex command line argument.</p>
   </div>,
+);
+
+storiesOf('Hierarchy.separator.is.supported', module).add('story', () =>
+  <span>Hello hierarchySeparator</span>,
 );
