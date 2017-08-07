@@ -72,33 +72,33 @@ it('sets `rootDir` to normalized `rootDir` from config', () => {
   expect(normalizedConfig.rootDir).toEqual('/config/root');
 });
 
-it('sets default `testRegex` given none specified in config', () => {
+it('sets default `snapshotRegex` given none specified in config', () => {
   const config = {};
   const packageRoot = '/package/root';
 
   const normalizedConfig = normalize(config, packageRoot);
 
-  expect(normalizedConfig.testRegex).toEqual(defaults.testRegex);
+  expect(normalizedConfig.snapshotRegex).toEqual(defaults.snapshotRegex);
 });
 
-it('sets `testRegex` to `testRegex` from config', () => {
+it('sets `snapshotRegex` to `snapshotRegex` from config', () => {
   const config = {
-    testRegex: /\.screenshots$/,
+    snapshotRegex: /\.screenshots$/,
   };
   const packageRoot = '/package/root';
 
   const normalizedConfig = normalize(config, packageRoot);
 
-  expect(normalizedConfig.testRegex).toEqual(/\.screenshots$/);
+  expect(normalizedConfig.snapshotRegex).toEqual(/\.screenshots$/);
 });
 
-it('converts string `testRegex` from config to regex', () => {
+it('converts string `snapshotRegex` from config to regex', () => {
   const config = {
-    testRegex: '\\.screenshots$',
+    snapshotRegex: '\\.screenshots$',
   };
   const packageRoot = '/package/root';
 
   const normalizedConfig = normalize(config, packageRoot);
 
-  expect(normalizedConfig.testRegex).toEqual(/\.screenshots$/);
+  expect(normalizedConfig.snapshotRegex).toEqual(/\.screenshots$/);
 });

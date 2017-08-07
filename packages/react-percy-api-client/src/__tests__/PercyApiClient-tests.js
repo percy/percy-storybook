@@ -60,16 +60,16 @@ it('makeResources injects percy client arg', () => {
 
 it('runSnapshots injects percy client arg', () => {
   const build = { id: 'buildid' };
-  const testCases = [{ testCase: 1 }, { testCase: 2 }];
+  const snapshots = [{ snapshot: 1 }, { snapshot: 2 }];
   const assets = { 'foo.css': '.foo { color: red }' };
   const renderer = () => {};
 
-  apiClient.runSnapshots(build, testCases, assets, renderer);
+  apiClient.runSnapshots(build, snapshots, assets, renderer);
 
   expect(runSnapshots).toHaveBeenCalledWith(
     expect.any(PercyClient),
     build,
-    testCases,
+    snapshots,
     assets,
     renderer,
   );

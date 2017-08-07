@@ -51,8 +51,8 @@ export default class PercyApiClient {
     return makeRootResource(this._client, name, html, encodedResourceParams);
   }
 
-  runSnapshots(build, testCases, assets, renderer) {
-    return runSnapshots(this._client, build, testCases, assets, renderer);
+  runSnapshots(build, snapshots, assets, renderer) {
+    return runSnapshots(this._client, build, snapshots, assets, renderer);
   }
 
   uploadResources(build, resources) {

@@ -1,20 +1,20 @@
-import TestEnvironment from '../TestEnvironment';
+import Environment from '../Environment';
 
-let mockTestFramework;
+let mockFrameworkGlobals;
 jest.mock('@percy-io/react-percy-test-framework', () => context => {
-  Object.keys(mockTestFramework).forEach(key => {
-    context[key] = mockTestFramework[key];
+  Object.keys(mockFrameworkGlobals).forEach(key => {
+    context[key] = mockFrameworkGlobals[key];
   });
 });
 
 let environment;
 
 beforeEach(() => {
-  mockTestFramework = {
+  mockFrameworkGlobals = {
     describe: jest.fn(),
   };
 
-  environment = new TestEnvironment();
+  environment = new Environment();
 });
 
 it('can parse basic files', () => {
@@ -90,7 +90,7 @@ it('console works', () => {
   expect(console.log).toHaveBeenCalledWith('foo');
 });
 
-it('test framework globals work', () => {
+it('framework globals work', () => {
   environment.runScript({
     path: '/foo/bar.js',
     src: `
@@ -99,5 +99,5 @@ it('test framework globals work', () => {
         `,
   });
 
-  expect(mockTestFramework.describe).toHaveBeenCalledWith('suite', expect.any(Function));
+  expect(mockFrameworkGlobals.describe).toHaveBeenCalledWith('suite', expect.any(Function));
 });

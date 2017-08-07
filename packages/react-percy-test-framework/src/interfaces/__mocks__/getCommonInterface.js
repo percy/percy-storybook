@@ -3,8 +3,8 @@ export const __common = {
   beforeEach: jest.fn(),
   afterEach: jest.fn(),
   afterAll: jest.fn(),
+  snapshot: jest.fn(),
   suite: jest.fn(),
-  test: jest.fn(),
 };
 
 export default () => __common;

@@ -8,11 +8,11 @@ beforeEach(() => {
   };
 });
 
-it('sets resource URL to slug-ified test name', () => {
-  const testName = 'Suite - renders my component';
+it('sets resource URL to slug-ified snapshot name', () => {
+  const snapshotName = 'Suite - renders my component';
   const html = '<html></html>';
 
-  const rootResource = makeRootResource(percyClient, testName, html);
+  const rootResource = makeRootResource(percyClient, snapshotName, html);
 
   expect(rootResource).toEqual(
     expect.objectContaining({
@@ -22,10 +22,10 @@ it('sets resource URL to slug-ified test name', () => {
 });
 
 it('sets content to the HTML', () => {
-  const testName = 'Suite - renders my component';
+  const snapshotName = 'Suite - renders my component';
   const html = '<html></html>';
 
-  const rootResource = makeRootResource(percyClient, testName, html);
+  const rootResource = makeRootResource(percyClient, snapshotName, html);
 
   expect(rootResource).toEqual(
     expect.objectContaining({
@@ -35,10 +35,10 @@ it('sets content to the HTML', () => {
 });
 
 it('marks resource as a root resource', () => {
-  const testName = 'Suite - renders my component';
+  const snapshotName = 'Suite - renders my component';
   const html = '<html></html>';
 
-  const rootResource = makeRootResource(percyClient, testName, html);
+  const rootResource = makeRootResource(percyClient, snapshotName, html);
 
   expect(rootResource).toEqual(
     expect.objectContaining({
@@ -48,10 +48,10 @@ it('marks resource as a root resource', () => {
 });
 
 it('sets the mimetype to HTML', () => {
-  const testName = 'Suite - renders my component';
+  const snapshotName = 'Suite - renders my component';
   const html = '<html></html>';
 
-  const rootResource = makeRootResource(percyClient, testName, html);
+  const rootResource = makeRootResource(percyClient, snapshotName, html);
 
   expect(rootResource).toEqual(
     expect.objectContaining({

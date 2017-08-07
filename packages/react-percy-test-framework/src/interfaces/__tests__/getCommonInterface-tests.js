@@ -1,9 +1,9 @@
 import getCommonInterface from '../getCommonInterface';
+import Snapshot from '../../Snapshot';
 import Suite from '../../Suite';
-import Test from '../../Test';
 
+jest.mock('../../Snapshot');
 jest.mock('../../Suite');
-jest.mock('../../Test');
 
 let suites;
 let common;
@@ -138,16 +138,16 @@ describe('suite', () => {
   });
 });
 
-describe('test', () => {
-  it('adds test to the current suite', () => {
-    common.test('test', jest.fn());
+describe('snapshot', () => {
+  it('adds snapshot to the current suite', () => {
+    common.snapshot('snapshot', jest.fn());
 
-    expect(suites[0].addTest).toHaveBeenCalledWith(expect.any(Test));
+    expect(suites[0].addSnapshot).toHaveBeenCalledWith(expect.any(Snapshot));
   });
 
-  it('returns the new test', () => {
-    const newTest = common.test('test', jest.fn());
+  it('returns the new snapshot', () => {
+    const newSnapshot = common.snapshot('snapshot', jest.fn());
 
-    expect(newTest).toEqual(expect.any(Test));
+    expect(newSnapshot).toEqual(expect.any(Snapshot));
   });
 });

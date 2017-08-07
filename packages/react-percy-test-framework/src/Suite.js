@@ -1,17 +1,16 @@
-import normalizeSizes from './normalizeSizes';
 import { each, mapSeries, reduce } from 'bluebird';
 
 export default class Suite {
-  constructor(title, sizes = []) {
+  constructor(title, options = {}) {
     if (typeof title !== 'string') {
       throw new Error(`\`title\` should be a "string", but "${typeof title}" was given`);
     }
 
     this.title = title;
-    this.sizes = normalizeSizes(sizes);
+    this.options = options;
 
     this.suites = {};
-    this.tests = {};
+    this.snapshots = {};
 
     this.beforeAll = [];
     this.beforeEach = [];
@@ -38,10 +37,10 @@ export default class Suite {
   addSuite(suite) {
     if (this.suites[suite.title]) {
       if (!this.parent) {
-        throw new Error(`A test suite with name ${suite.title} has already been added`);
+        throw new Error(`A suite with name ${suite.title} has already been added`);
       } else {
         throw new Error(
-          `A test suite with title ${suite.title} has already been added to suite ${this.fullTitle()}`,
+          `A suite with title ${suite.title} has already been added to suite ${this.fullTitle()}`,
         );
       }
     }
@@ -49,14 +48,14 @@ export default class Suite {
     this.suites[suite.title] = suite;
   }
 
-  addTest(test) {
-    if (this.tests[test.title]) {
+  addSnapshot(snapshot) {
+    if (this.snapshots[snapshot.title]) {
       throw new Error(
-        `A test with name ${test.title} has already been added to suite ${this.fullTitle()}`,
+        `A snapshot with name ${snapshot.title} has already been added to suite ${this.fullTitle()}`,
       );
     }
-    test.parent = this;
-    this.tests[test.title] = test;
+    snapshot.parent = this;
+    this.snapshots[snapshot.title] = snapshot;
   }
 
   fullTitle() {
@@ -70,32 +69,36 @@ export default class Suite {
     return this.title;
   }
 
-  getSizes() {
-    if (this.sizes.length === 0 && this.parent) {
-      return this.parent.getSizes();
+  getOptions() {
+    if (this.parent) {
+      return {
+        ...this.parent.getOptions(),
+        ...this.options,
+      };
     }
-    return this.sizes;
+
+    return this.options;
   }
 
-  async getTestCases() {
+  async getSnapshots() {
     await each(this.beforeAll, fn => fn());
 
-    const nestedTestCases = await reduce(
-      mapSeries(Object.values(this.suites), suite => suite.getTestCases()),
-      (accumulated, testCases) => [...accumulated, ...testCases],
+    const nestedSnapshots = await reduce(
+      mapSeries(Object.values(this.suites), suite => suite.getSnapshots()),
+      (accumulated, snapshots) => [...accumulated, ...snapshots],
       [],
     );
 
-    const testCases = await mapSeries(Object.values(this.tests), async test => {
+    const snapshots = await mapSeries(Object.values(this.snapshots), async snapshot => {
       await this.runBeforeEach();
-      const testCase = await test.getTestCase();
+      const snapshotResult = await snapshot.getSnapshot();
       await this.runAfterEach();
-      return testCase;
+      return snapshotResult;
     });
 
     await each(this.afterAll, fn => fn());
 
-    return [...nestedTestCases, ...testCases];
+    return [...nestedSnapshots, ...snapshots];
   }
 
   async runBeforeEach() {

@@ -4,5 +4,5 @@ export default class MockSuite {
   addAfterEach = jest.fn();
   addAfterAll = jest.fn();
   addSuite = jest.fn();
-  addTest = jest.fn();
+  addSnapshot = jest.fn();
 }

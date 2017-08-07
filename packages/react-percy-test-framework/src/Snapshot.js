@@ -1,9 +1,16 @@
-import normalizeSizes from './normalizeSizes';
-
-export default class Test {
-  constructor(title, fn, sizes = []) {
+export default class Snapshot {
+  constructor(title, options, fn) {
     if (typeof title !== 'string') {
       throw new Error(`\`title\` should be a "string", but "${typeof title}" was given`);
+    }
+
+    if (typeof options === 'function' && typeof fn === 'undefined') {
+      fn = options;
+      options = undefined;
+    }
+
+    if (typeof options !== 'object' && typeof options !== 'undefined') {
+      throw new Error(`\`options\` should be an "object", but "${typeof options}" was given`);
     }
 
     if (typeof fn !== 'function') {
@@ -12,7 +19,7 @@ export default class Test {
 
     this.title = title;
     this.fn = fn;
-    this.sizes = normalizeSizes(sizes);
+    this.options = options || {};
   }
 
   fullTitle() {
@@ -26,19 +33,22 @@ export default class Test {
     return this.title;
   }
 
-  getSizes() {
-    if (this.sizes.length === 0 && this.parent) {
-      return this.parent.getSizes();
+  getOptions() {
+    if (this.parent) {
+      return {
+        ...this.parent.getOptions(),
+        ...this.options,
+      };
     }
 
-    return this.sizes;
+    return this.options;
   }
 
-  async getTestCase() {
+  async getSnapshot() {
     return {
       name: this.fullTitle(),
       markup: await this.fn(),
-      sizes: this.getSizes(),
+      options: this.getOptions(),
     };
   }
 }

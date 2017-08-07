@@ -7,6 +7,6 @@ export default function percy(context, suites) {
   context.beforeEach = common.beforeEach;
   context.afterEach = common.afterEach;
   context.after = context.afterAll = common.afterAll;
-  context.percySnapshot = common.test;
+  context.percySnapshot = common.snapshot;
   context.suite = common.suite;
 }

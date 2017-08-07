@@ -11,7 +11,7 @@ jest.mock('../../resources', () => ({
   uploadResources: jest.fn(() => Promise.resolve()),
 }));
 
-const mockSnapshot = { id: 'snapshotid' };
+const mockSnapshot = { id: 'percySnapshotId' };
 jest.mock('../createSnapshot', () => jest.fn(() => Promise.resolve(mockSnapshot)));
 
 jest.mock('../finalizeSnapshot', () => jest.fn(() => Promise.resolve()));
@@ -29,52 +29,55 @@ beforeEach(() => {
   mockMissingResources = [];
 });
 
-it('creates a snapshot for the given test case', async () => {
-  const testCase = {
-    name: 'test case',
-    markup: '<div>test</div>',
-    sizes: [{ width: 320 }, { width: 768 }],
+it('creates a percy snapshot for the given snapshot', async () => {
+  const snapshot = {
+    name: 'snapshot',
+    markup: '<div>snapshot</div>',
+    options: { widths: [320, 768] },
   };
 
-  await runSnapshot(percyClient, build, testCase, assets, renderer);
+  await runSnapshot(percyClient, build, snapshot, assets, renderer);
 
   expect(createSnapshot).toHaveBeenCalledWith(percyClient, build, [mockResource], {
-    name: 'test case',
+    name: 'snapshot',
     widths: [320, 768],
   });
 });
 
 it('does not re-upload resource given nothing has changed', async () => {
-  const testCase = {
-    name: 'test case',
-    markup: '<div>test</div>',
+  const snapshot = {
+    name: 'snapshot',
+    markup: '<div>snapshot</div>',
+    options: {},
   };
   mockMissingResources = [];
 
-  await runSnapshot(percyClient, build, testCase, assets, renderer);
+  await runSnapshot(percyClient, build, snapshot, assets, renderer);
 
   expect(uploadResources).not.toHaveBeenCalled();
 });
 
 it('re-uploads resource given changes', async () => {
-  const testCase = {
-    name: 'test case',
-    markup: '<div>test</div>',
+  const snapshot = {
+    name: 'snapshot',
+    markup: '<div>snapshot</div>',
+    options: {},
   };
   mockMissingResources = ['foo'];
 
-  await runSnapshot(percyClient, build, testCase, assets, renderer);
+  await runSnapshot(percyClient, build, snapshot, assets, renderer);
 
   expect(uploadResources).toHaveBeenCalledWith(percyClient, build, [mockResource]);
 });
 
-it('finalizes the snapshot', async () => {
-  const testCase = {
-    name: 'test case',
-    markup: '<div>test</div>',
+it('finalizes the percySnapshot', async () => {
+  const snapshot = {
+    name: 'snapshot',
+    markup: '<div>snapshot</div>',
+    options: {},
   };
 
-  await runSnapshot(percyClient, build, testCase, assets, renderer);
+  await runSnapshot(percyClient, build, snapshot, assets, renderer);
 
-  expect(finalizeSnapshot).toHaveBeenCalledWith(percyClient, mockSnapshot, 'test case');
+  expect(finalizeSnapshot).toHaveBeenCalledWith(percyClient, mockSnapshot, 'snapshot');
 });

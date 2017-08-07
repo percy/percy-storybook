@@ -19,9 +19,9 @@ export default function normalize(config, packageRoot) {
 
   normalizedConfig.rootDir = config.rootDir ? path.normalize(config.rootDir) : packageRoot;
 
-  normalizedConfig.testRegex = config.testRegex
-    ? convertToRegex(config.testRegex)
-    : defaults.testRegex;
+  normalizedConfig.snapshotRegex = config.snapshotRegex
+    ? convertToRegex(config.snapshotRegex)
+    : defaults.snapshotRegex;
 
   return normalizedConfig;
 }

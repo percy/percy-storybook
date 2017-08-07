@@ -1,7 +1,5 @@
 import Suite from '../Suite';
 
-jest.mock('../normalizeSizes');
-
 describe('constructor', () => {
   it('throws when no title is specified', () => {
     expect(() => new Suite()).toThrow();
@@ -29,26 +27,26 @@ describe('addSuite', () => {
   });
 });
 
-describe('addTest', () => {
-  it('throws when test with the same title has already been added', () => {
+describe('addSnapshot', () => {
+  it('throws when snapshot with the same title has already been added', () => {
     const suite = new Suite('title');
     suite.parent = new Suite('parent');
 
-    const test1 = { title: 'test' };
-    suite.addTest(test1);
+    const snapshot1 = { title: 'snapshot' };
+    suite.addSnapshot(snapshot1);
 
-    const test2 = { title: 'test' };
-    expect(() => suite.addTest(test2)).toThrow();
+    const snapshot2 = { title: 'snapshot' };
+    expect(() => suite.addSnapshot(snapshot2)).toThrow();
   });
 
-  it('sets parent on test being added', () => {
+  it('sets parent on snapshot being added', () => {
     const suite = new Suite('title');
     suite.parent = new Suite('parent');
-    const test = { title: 'test' };
+    const snapshot = { title: 'snapshot' };
 
-    suite.addTest(test);
+    suite.addSnapshot(snapshot);
 
-    expect(test.parent).toEqual(suite);
+    expect(snapshot.parent).toEqual(suite);
   });
 });
 
@@ -78,28 +76,37 @@ describe('fullTitle', () => {
   });
 });
 
-describe('getSizes', () => {
-  it('returns an empty array given no sizes specified and no parent', () => {
+describe('getOptions', () => {
+  it('returns an empty object given no options specified and no parent', () => {
     const suite = new Suite('title');
 
-    expect(suite.getSizes()).toEqual([]);
+    expect(suite.getOptions()).toEqual({});
   });
 
-  it('returns parent sizes given no sizes specified', () => {
+  it('returns parent options given no options specified', () => {
     const suite = new Suite('title');
     suite.parent = {
-      getSizes: () => [320, 768],
+      getOptions: () => ({ widths: [320, 768] }),
     };
 
-    expect(suite.getSizes()).toEqual([320, 768]);
+    expect(suite.getOptions()).toEqual({ widths: [320, 768] });
   });
 
-  it('returns sizes specified on suite, ignoring parent sizes', () => {
-    const suite = new Suite('title', [500, 1024]);
+  it('options specified on suite override options on parent', () => {
+    const suite = new Suite('title', { widths: [500, 1024] });
     suite.parent = {
-      getSizes: () => [320, 768],
+      getOptions: () => ({ widths: [320, 768] }),
     };
 
-    expect(suite.getSizes()).toEqual([500, 1024]);
+    expect(suite.getOptions()).toEqual({ widths: [500, 1024] });
+  });
+
+  it('merges options on suite with options on parent', () => {
+    const suite = new Suite('title', { minimumHeight: 300 });
+    suite.parent = {
+      getOptions: () => ({ widths: [320, 768] }),
+    };
+
+    expect(suite.getOptions()).toEqual({ minimumHeight: 300, widths: [320, 768] });
   });
 });

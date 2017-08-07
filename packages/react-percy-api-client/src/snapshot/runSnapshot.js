@@ -2,32 +2,32 @@ import { getMissingResourceShas, makeRootResource, uploadResources } from '../re
 import createSnapshot from './createSnapshot';
 import finalizeSnapshot from './finalizeSnapshot';
 
-export default async function runSnapshot(percyClient, build, testCase, assets, renderer) {
+export default async function runSnapshot(percyClient, build, snapshot, assets, renderer) {
   try {
-    const html = renderer(testCase.markup, assets);
-    const resource = makeRootResource(percyClient, testCase.name, html);
+    const html = renderer(snapshot.markup, assets);
+    const resource = makeRootResource(percyClient, snapshot.name, html);
 
-    let widths = [];
-    if (testCase.sizes) {
-      widths = testCase.sizes.map(size => size.width);
-    }
-
-    const snapshotOptions = {
-      name: testCase.name,
-      widths,
+    const percySnapshotOptions = {
+      name: snapshot.name,
+      ...snapshot.options,
     };
 
-    const snapshot = await createSnapshot(percyClient, build, [resource], snapshotOptions);
+    const percySnapshot = await createSnapshot(
+      percyClient,
+      build,
+      [resource],
+      percySnapshotOptions,
+    );
 
-    const missingResources = getMissingResourceShas(snapshot);
+    const missingResources = getMissingResourceShas(percySnapshot);
     if (missingResources.length > 0) {
       await uploadResources(percyClient, build, [resource]);
     }
 
-    await finalizeSnapshot(percyClient, snapshot, testCase.name);
+    await finalizeSnapshot(percyClient, percySnapshot, snapshot.name);
   } catch (e) {
     e._percy = {
-      testCase,
+      snapshot,
     };
     throw e;
   }

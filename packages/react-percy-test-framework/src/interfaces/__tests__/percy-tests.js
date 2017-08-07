@@ -87,13 +87,13 @@ it('adds `percySnapshot` to context', () => {
   expect(context.percySnapshot).toBeDefined();
 });
 
-it('`percySnapshot` creates a new test', () => {
-  const title = 'test';
-  const test = jest.fn();
+it('`percySnapshot` creates a new snapshot', () => {
+  const title = 'snapshot';
+  const snapshot = jest.fn();
 
-  context.percySnapshot(title, test);
+  context.percySnapshot(title, snapshot);
 
-  expect(__common.test).toHaveBeenCalledWith(title, test);
+  expect(__common.snapshot).toHaveBeenCalledWith(title, snapshot);
 });
 
 it('adds `suite` to context', () => {
