@@ -19,7 +19,8 @@
     "@percy-io/react-percy-server-render": "^0.1.2",
     "@percy-io/react-percy-test-framework": "^0.1.2",
     "@percy-io/react-percy-webpack": "^0.1.2",
-    "debug": "^2.6.3"
+    "debug": "^2.6.3",
+    "promise-each": "^2.2.0"
   },
   "publishConfig": {
     "access": "public"

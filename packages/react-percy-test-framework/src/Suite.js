@@ -1,4 +1,5 @@
-import { each, mapSeries, reduce } from 'bluebird';
+import each from 'promise-each';
+import mapSeries from 'promise-map-series';
 
 export default class Suite {
   constructor(title, options = {}) {
@@ -81,12 +82,12 @@ export default class Suite {
   }
 
   async getSnapshots() {
-    await each(this.beforeAll, fn => fn());
+    await each(fn => fn())(this.beforeAll);
 
-    const nestedSnapshots = await reduce(
-      mapSeries(Object.values(this.suites), suite => suite.getSnapshots()),
-      (accumulated, snapshots) => [...accumulated, ...snapshots],
-      [],
+    const nestedSnapshots = await mapSeries(Object.values(this.suites), suite =>
+      suite.getSnapshots(),
+    ).then(snapshots =>
+      snapshots.reduce((accumulated, snapshots) => [...accumulated, ...snapshots], []),
     );
 
     const snapshots = await mapSeries(Object.values(this.snapshots), async snapshot => {
@@ -96,7 +97,7 @@ export default class Suite {
       return snapshotResult;
     });
 
-    await each(this.afterAll, fn => fn());
+    await each(fn => fn())(this.afterAll);
 
     return [...nestedSnapshots, ...snapshots];
   }
@@ -106,11 +107,11 @@ export default class Suite {
       await this.parent.runBeforeEach();
     }
 
-    await each(this.beforeEach, fn => fn());
+    await each(fn => fn())(this.beforeEach);
   }
 
   async runAfterEach() {
-    await each(this.afterEach, fn => fn());
+    await each(fn => fn())(this.afterEach);
 
     if (this.parent) {
       await this.parent.runAfterEach();

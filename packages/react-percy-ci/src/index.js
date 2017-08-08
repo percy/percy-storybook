@@ -1,6 +1,7 @@
 import ApiClient from '@percy-io/react-percy-api-client';
 import compileAssets from './compileAssets';
 import createDebug from 'debug';
+import each from 'promise-each';
 import Environment from './Environment';
 import getJsFiles from './getJsFiles';
 import render from '@percy-io/react-percy-server-render';
@@ -15,9 +16,9 @@ export default async function run(percyConfig, webpackConfig, percyToken) {
 
   const environment = new Environment();
   const jsFiles = getJsFiles(assets);
-  jsFiles.forEach(jsFile => {
+  await each(jsFiles, async jsFile => {
     debug('executing %s', jsFile.path);
-    environment.runScript(jsFile);
+    await environment.runScript(jsFile);
   });
 
   debug('getting snapshots');

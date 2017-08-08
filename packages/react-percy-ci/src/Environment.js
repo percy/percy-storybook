@@ -26,13 +26,15 @@ export default class Environment {
     return this.suite.getSnapshots();
   }
 
-  runScript(file) {
+  async runScript(file) {
     const script = new vm.Script(file.src, {
       filename: file.path,
       displayErrors: true,
     });
-    return script.runInContext(this.context, {
-      displayErrors: true,
+    await this.global.suite('', () => {
+      script.runInContext(this.context, {
+        displayErrors: true,
+      });
     });
   }
 }

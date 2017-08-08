@@ -14,11 +14,12 @@
   "files": [
     "lib"
   ],
+  "dependencies": {
+    "promise-each": "^2.2.0",
+    "promise-map-series": "^0.2.3"
+  },
   "devDependencies": {
     "react": "^15.4.2"
-  },
-  "dependencies": {
-    "bluebird": "^3.5.0"
   },
   "publishConfig": {
     "access": "public"
