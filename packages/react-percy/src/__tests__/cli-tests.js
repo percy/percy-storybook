@@ -86,7 +86,7 @@ it('exits with success code given running succeeds', async () => {
 });
 
 it('exits with error code given running fails', async () => {
-  runPercy.mockImplementation(() => Promise.reject());
+  runPercy.mockImplementation(() => Promise.reject('error!'));
 
   await run();
 

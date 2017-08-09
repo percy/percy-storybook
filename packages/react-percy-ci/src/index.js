@@ -16,10 +16,10 @@ export default async function run(percyConfig, webpackConfig, percyToken) {
 
   const environment = new Environment();
   const jsFiles = getJsFiles(assets);
-  await each(jsFiles, async jsFile => {
+  await each(async jsFile => {
     debug('executing %s', jsFile.path);
     await environment.runScript(jsFile);
-  });
+  })(jsFiles);
 
   debug('getting snapshots');
   const snapshots = await environment.getSnapshots();

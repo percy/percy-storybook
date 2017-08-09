@@ -7,8 +7,10 @@ cache:
     - .eslintcache
 matrix:
   include:
-    - node_js: "7"
+    - node_js: "8"
       env: PERCY_ENABLE=1
+    - node_js: "7"
+      env: PERCY_ENABLE=0
     - node_js: "6"
       env: PERCY_ENABLE=0
     - node_js: "4"
@@ -17,4 +19,5 @@ before_install:
   - yarn --version
 script:
   - yarn run test
-  - scripts/run-integration-test-snapshots.sh
+  - yarn run test:integration react-percy
+  - yarn run test:integration react-percy-storybook

@@ -1,0 +1,32 @@
+{
+  "private": true,
+  "name": "react-percy-storybook-integration-tests",
+  "version": "1.0.0",
+  "scripts": {
+    "storybook": "start-storybook -p 9001 -c .storybook -s ./.storybook/public",
+    "storybook:build": "build-storybook -s ./.storybook/public",
+    "storybook:percy-debug": "percy-storybook --debug",
+    "storybook:percy": "build-storybook -s ./.storybook/public && percy-storybook --widths=320,1280 --rtl_regex=Direction",
+    "storybook:percy-no-build": "percy-storybook --widths=320,1280 --rtl_regex=Direction"
+  },
+  "dependencies": {
+    "faker": "^4.1.0",
+    "mockdate": "^2.0.1",
+    "prop-types": "^15.5.10",
+    "react": "^15.6.1",
+    "react-dom": "^15.6.1"
+  },
+  "optionalDependencies": {
+    "react-match-media": "^2.0.1"
+  },
+  "devDependencies": {
+    "@percy-io/in-percy": "*",
+    "@percy-io/react-percy-storybook": "*",
+    "@storybook/addon-actions": "^3.2.0",
+    "@storybook/addon-info": "^3.2.0",
+    "@storybook/addon-knobs": "^3.2.0",
+    "@storybook/addon-links": "^3.2.0",
+    "@storybook/addon-options": "^3.2.3",
+    "@storybook/react": "^3.2.3"
+  }
+}

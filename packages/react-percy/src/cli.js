@@ -38,7 +38,7 @@ export function run(argv) {
     .then(() => process.on('exit', () => process.exit(0)))
     .catch(err => {
       // eslint-disable-next-line no-console
-      console.log(chalk.bold.red(err));
+      console.log(chalk.bold.red(err.stack || err));
       process.on('exit', () => process.exit(1));
     });
 }

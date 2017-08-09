@@ -1,18 +1,18 @@
 {
   "private": true,
   "scripts": {
-    "build": "vitruvius build --src src --dest lib",
+    "build": "vitruvius build --src src --dest lib --ignore-packages \"**/integration-tests/**\"",
     "clean": "rimraf ./packages/*/lib",
     "lint": "eslint . --cache",
-    "postinstall": "yarn run clean && yarn run build",
+    "postinstall": "yarn run clean --silent && yarn run build --silent",
     "precommit": "lint-staged",
     "test": "jest",
-    "test:integration": "sh ./scripts/run-integration-tests.sh"
+    "test:integration": "./scripts/run-integration-tests.sh"
   },
   "devDependencies": {
     "babel-core": "^6.23.1",
     "babel-eslint": "^7.2.3",
-    "babel-jest": "^19.0.0",
+    "babel-jest": "^20.0.3",
     "babel-plugin-transform-class-properties": "^6.23.0",
     "babel-plugin-transform-export-extensions": "^6.22.0",
     "babel-plugin-transform-object-rest-spread": "^6.23.0",
@@ -29,13 +29,13 @@
     "eslint-plugin-react": "^7.1.0",
     "fs-extra": "^2.1.2",
     "husky": "^0.13.2",
-    "jest": "^19.0.2",
+    "jest": "^20.0.4",
     "lerna": "^2.0.0",
     "lint-staged": "^3.3.1",
     "prettier": "^1.5.3",
     "rimraf": "^2.5.4",
     "tar.gz": "^1.0.5",
-    "vitruvius": "^2.0.2"
+    "vitruvius": "^3.0.0"
   },
   "jest": {
     "roots": [
@@ -50,6 +50,7 @@
     ]
   },
   "workspaces": [
+    "integration-tests/*",
     "packages/*"
   ]
 }
