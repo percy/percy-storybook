@@ -9,5 +9,5 @@ process.exit = jest.fn();
 it('handles ES6 webpack configs', async () => {
   await run(['--config', 'webpack/webpack.config.babel.js']);
 
-  expect(percy.createSnapshot).toHaveBeenCalledTimes(2);
+  expect(percy.createSnapshot).toHaveBeenCalledTimes(3);
 });

@@ -14,7 +14,7 @@ export default async function run(percyConfig, webpackConfig, percyToken) {
   debug('compiling assets');
   const assets = await compileAssets(percyConfig, webpackConfig);
 
-  const environment = new Environment();
+  const environment = new Environment(percyConfig);
   const jsFiles = getJsFiles(assets);
   await each(async jsFile => {
     debug('executing %s', jsFile.path);

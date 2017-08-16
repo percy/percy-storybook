@@ -1,12 +1,12 @@
-import Example from '../Example';
 import React from 'react';
+import RedText from '../RedText';
 
-suite('Example', () => {
+suite('RedText', () => {
   percySnapshot('basic components work', () => {
-    return <Example>This is some text</Example>;
+    return <RedText>This is some text</RedText>;
   });
 
   percySnapshot('components with custom dimensions work', { widths: [320, 768] }, () => {
-    return <Example>This is some text</Example>;
+    return <RedText>This is some text</RedText>;
   });
 });

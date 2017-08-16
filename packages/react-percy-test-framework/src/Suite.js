@@ -63,7 +63,7 @@ export default class Suite {
     if (this.parent) {
       const parentTitle = this.parent.fullTitle();
       if (parentTitle) {
-        return `${parentTitle} - ${this.title}`;
+        return `${parentTitle}: ${this.title}`;
       }
     }
 

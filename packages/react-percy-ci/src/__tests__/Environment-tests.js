@@ -17,7 +17,9 @@ beforeEach(() => {
     suite: jest.fn((name, fn) => fn()),
   };
 
-  environment = new Environment();
+  environment = new Environment({
+    rootDir: '/foo',
+  });
 });
 
 it('can parse basic files', () => {
@@ -114,6 +116,6 @@ it('wraps script in a suite', async () => {
         `,
   });
 
-  expect(mockFrameworkGlobals.suite).toHaveBeenCalledWith('', expect.any(Function));
+  expect(mockFrameworkGlobals.suite).toHaveBeenCalledWith('bar.percy.js', expect.any(Function));
   expect(suiteSnapshots).toEqual(['snapshot']);
 });

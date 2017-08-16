@@ -1,14 +1,14 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import styles from './Example.css';
+import styles from './BlueText.css';
 
-const Example = ({ children }) =>
+const BlueText = ({ children }) =>
   <div className={styles.text}>
     {children}
   </div>;
 
-Example.propTypes = {
+BlueText.propTypes = {
   children: PropTypes.string.isRequired,
 };
 
-export default Example;
+export default BlueText;

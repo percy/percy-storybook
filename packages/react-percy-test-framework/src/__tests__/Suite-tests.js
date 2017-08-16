@@ -72,7 +72,7 @@ describe('fullTitle', () => {
       fullTitle: () => 'parent title',
     };
 
-    expect(suite.fullTitle()).toEqual('parent title - title');
+    expect(suite.fullTitle()).toEqual('parent title: title');
   });
 });
 

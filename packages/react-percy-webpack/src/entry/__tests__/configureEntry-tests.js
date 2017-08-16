@@ -9,6 +9,7 @@ it('does not mutate the original Webpack config', () => {
   };
   const percyConfig = {
     includeFiles: [],
+    rootDir: '/foo',
     snapshotPatterns: ['**/__percy__/*.js', '**/*.percy.js'],
   };
   const entry = 'const entry = true;';
@@ -25,6 +26,7 @@ it('percy entry contains snapshot files given no additional includes specified i
   const originalConfig = {};
   const percyConfig = {
     includeFiles: [],
+    rootDir: '/foo',
     snapshotPatterns: ['**/__percy__/*.js', '**/*.percy.js'],
   };
   const entry = 'const entry = true;';
@@ -32,7 +34,8 @@ it('percy entry contains snapshot files given no additional includes specified i
   const modifiedConfig = configureEntry(originalConfig, percyConfig, entry);
 
   expect(modifiedConfig.entry).toEqual({
-    percy: mockSnapshotFiles,
+    '__percy__/bar': '/foo/__percy__/bar.js',
+    'bar.percy': '/foo/bar.percy.js',
   });
 });
 
@@ -40,6 +43,7 @@ it('percy entry contains snapshot files and additional includes specified in per
   const originalConfig = {};
   const percyConfig = {
     includeFiles: ['babel-polyfill', './src/foo.js'],
+    rootDir: '/foo',
     snapshotPatterns: ['**/__percy__/*.js', '**/*.percy.js'],
   };
   const entry = 'const entry = true;';
@@ -47,6 +51,8 @@ it('percy entry contains snapshot files and additional includes specified in per
   const modifiedConfig = configureEntry(originalConfig, percyConfig, entry);
 
   expect(modifiedConfig.entry).toEqual({
-    percy: ['babel-polyfill', './src/foo.js', ...mockSnapshotFiles],
+    __percy_include__: ['babel-polyfill', './src/foo.js'],
+    '__percy__/bar': '/foo/__percy__/bar.js',
+    'bar.percy': '/foo/bar.percy.js',
   });
 });

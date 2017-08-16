@@ -26,7 +26,7 @@ export default class Snapshot {
     if (this.parent) {
       const parentTitle = this.parent.fullTitle();
       if (parentTitle) {
-        return `${parentTitle} - ${this.title}`;
+        return `${parentTitle}: ${this.title}`;
       }
     }
 

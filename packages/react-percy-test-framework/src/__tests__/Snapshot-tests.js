@@ -45,7 +45,7 @@ describe('getSnapshot', () => {
 
     const snapshotResult = await snapshot.getSnapshot();
 
-    expect(snapshotResult.name).toEqual('parent title - title');
+    expect(snapshotResult.name).toEqual('parent title: title');
   });
 
   it('sets markup to the result of synchronous snapshot function', async () => {

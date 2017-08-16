@@ -1,8 +1,8 @@
 import createCompiler from './createCompiler';
 
-export default function compile(webpackConfig) {
+export default function compile(percyConfig, webpackConfig) {
   return new Promise((resolve, reject) => {
-    const compiler = createCompiler(webpackConfig);
+    const compiler = createCompiler(percyConfig, webpackConfig);
     compiler.run((err, stats) => {
       if (err) {
         return reject([err]);
