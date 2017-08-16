@@ -40,6 +40,10 @@
   "jest": {
     "roots": [
       "<rootDir>/packages/"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "<rootDir>/packages/react-percy-webpack/src/entry/__tests__/test-project/"
     ]
   },
   "lint-staged": {

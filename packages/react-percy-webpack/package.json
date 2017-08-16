@@ -18,13 +18,10 @@
     "webpack": "^1.13 || 2.x"
   },
   "dependencies": {
+    "glob": "^7.1.2",
     "interpret": "^1.0.1",
     "memory-fs": "^0.4.1",
-    "virtual-module-webpack-plugin": "^0.3.0",
     "webpack-merge": "^3.0.0"
-  },
-  "devDependencies": {
-    "webpack": "^2.7.0"
   },
   "publishConfig": {
     "access": "public"

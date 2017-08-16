@@ -18,12 +18,12 @@ it('returns an empty object given package with no percy configuration', () => {
 
 it('returns the percy config given package with percy configuration', () => {
   mockPackage.percy = {
-    snapshotRegex: '\\.screenshots.js',
+    snapshotPatterns: ['**/*.screenshots.js'],
   };
 
   const config = loadFromPackage('/fake/package.json');
 
   expect(config).toEqual({
-    snapshotRegex: '\\.screenshots.js',
+    snapshotPatterns: ['**/*.screenshots.js'],
   });
 });

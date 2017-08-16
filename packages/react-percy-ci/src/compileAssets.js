@@ -1,18 +1,6 @@
 import { compile, configureEntry } from '@percy-io/react-percy-webpack';
 
-const escapePathForWindows = path => path.replace(/\\/g, '\\\\');
-
-const getEntry = percyConfig => `
-    const context = require.context('${escapePathForWindows(
-      percyConfig.rootDir,
-    )}', true, ${percyConfig.snapshotRegex});
-    context.keys().forEach(function loadFile(key) {
-        context(key);
-    });
-`;
-
 export default function compileAssets(percyConfig, webpackConfig) {
-  const entry = getEntry(percyConfig);
-  webpackConfig = configureEntry(webpackConfig, percyConfig, entry);
+  webpackConfig = configureEntry(webpackConfig, percyConfig);
   return compile(webpackConfig);
 }

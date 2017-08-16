@@ -1,4 +1,4 @@
 export default {
-  ignoreRegexes: [/node_modules/],
-  snapshotRegex: /(\/__percy__\/.*|(\.|\/)(percy))\.jsx?$/,
+  snapshotIgnorePatterns: ['**/node_modules/**'],
+  snapshotPatterns: ['**/__percy__/**/*.{js,jsx}', '**/*.percy.{js,jsx}'],
 };
