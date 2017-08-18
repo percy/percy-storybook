@@ -2,14 +2,18 @@ import getCommonInterface from '../getCommonInterface';
 import Snapshot from '../../Snapshot';
 import Suite from '../../Suite';
 
-jest.mock('../../Snapshot');
-jest.mock('../../Suite');
-
 let suites;
 let common;
 
 beforeEach(() => {
-  const rootSuite = new Suite();
+  const rootSuite = new Suite('');
+  jest.spyOn(rootSuite, 'addBeforeAll');
+  jest.spyOn(rootSuite, 'addBeforeEach');
+  jest.spyOn(rootSuite, 'addAfterEach');
+  jest.spyOn(rootSuite, 'addAfterAll');
+  jest.spyOn(rootSuite, 'addSuite');
+  jest.spyOn(rootSuite, 'addSnapshot');
+
   suites = [rootSuite];
   common = getCommonInterface(suites);
 });
@@ -55,13 +59,10 @@ describe('afterAll', () => {
 });
 
 describe('suite', () => {
-  it('rejects when no callback is specified', () => {
-    return common
-      .suite('suite')
-      .then(() => {
-        throw new Error('should have rejected');
-      })
-      .catch(e => expect(e).toBeInstanceOf(TypeError));
+  it('adds the suite as a child of the current suite given no callback', async () => {
+    await common.suite('suite');
+
+    expect(suites[0].addSuite).toHaveBeenCalledWith(expect.any(Suite));
   });
 
   it('adds the suite as a child of the current suite given synchronous callback', async () => {
@@ -75,6 +76,12 @@ describe('suite', () => {
     await common.suite('suite', fn);
 
     expect(suites[0].addSuite).toHaveBeenCalledWith(expect.any(Suite));
+  });
+
+  it('returns the new suite given no callback', async () => {
+    const newSuite = await common.suite('suite');
+
+    expect(newSuite).toEqual(expect.any(Suite));
   });
 
   it('returns the new suite given synchronous callback', async () => {
@@ -139,6 +146,45 @@ describe('suite', () => {
 });
 
 describe('snapshot', () => {
+  it('throws if a snapshot with the same name has already been added to the current suite', () => {
+    common.snapshot('snapshot', jest.fn());
+
+    expect(() => common.snapshot('snapshot', jest.fn())).toThrow();
+  });
+
+  it('does not throw if a snapshot with a different name has already been added to the current suite', () => {
+    common.snapshot('snapshot 1', jest.fn());
+
+    expect(() => common.snapshot('snapshot 2', jest.fn())).not.toThrow();
+  });
+
+  it('throws if a snapshot with the same name has already been added to a different suite with the same name', async () => {
+    await common.suite('Suite', () => {
+      common.snapshot('snapshot', jest.fn());
+    });
+
+    try {
+      await common.suite('Suite', () => {
+        common.snapshot('snapshot', jest.fn());
+      });
+    } catch (e) {
+      expect(e).toMatchSnapshot();
+      return;
+    }
+
+    throw new Error('adding second snapshot should have thrown');
+  });
+
+  it('does not throw if a snapshot with the same name has already been added to a different suite with a different name', async () => {
+    await common.suite('Suite 1', () => {
+      common.snapshot('snapshot', jest.fn());
+    });
+
+    await common.suite('Suite 2', () => {
+      common.snapshot('snapshot', jest.fn());
+    });
+  });
+
   it('adds snapshot to the current suite', () => {
     common.snapshot('snapshot', jest.fn());
 

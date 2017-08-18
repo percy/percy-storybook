@@ -2,6 +2,8 @@ import Snapshot from '../Snapshot';
 import Suite from '../Suite';
 
 export default function getCommonInterface(suites) {
+  const snapshotNames = {};
+
   return {
     beforeAll(fn) {
       suites[0].addBeforeAll(fn);
@@ -25,8 +27,6 @@ export default function getCommonInterface(suites) {
       suites.unshift(suite);
       if (typeof fn === 'function') {
         await fn.call(suite);
-      } else {
-        throw new Error(`Suite "${suite.fullTitle()}" was defined but no callback was supplied.`);
       }
       suites.shift();
       return suite;
@@ -34,6 +34,13 @@ export default function getCommonInterface(suites) {
     snapshot(title, options, fn) {
       const snapshot = new Snapshot(title, options, fn);
       suites[0].addSnapshot(snapshot);
+      const snapshotFullTitle = snapshot.fullTitle();
+      if (snapshotNames[snapshotFullTitle]) {
+        throw new Error(
+          `A snapshot named \`${snapshotFullTitle}\` has already been added, please use a different name`,
+        );
+      }
+      snapshotNames[snapshotFullTitle] = true;
       return snapshot;
     },
   };

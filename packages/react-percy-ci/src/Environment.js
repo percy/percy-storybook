@@ -1,5 +1,4 @@
 import createSuite from '@percy-io/react-percy-test-framework';
-import path from 'path';
 import vm from 'vm';
 
 const GLOBALS = [
@@ -33,7 +32,7 @@ export default class Environment {
       filename: file.path,
       displayErrors: true,
     });
-    await this.global.suite(path.relative(this.percyConfig.rootDir, file.path), () => {
+    await this.global.suite('', () => {
       script.runInContext(this.context, {
         displayErrors: true,
       });

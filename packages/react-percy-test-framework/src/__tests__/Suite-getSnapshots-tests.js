@@ -582,9 +582,38 @@ describe('snapshots', () => {
 
     expect(snapshotCases).toEqual([snapshotCase1, snapshotCase2]);
   });
+
+  it('filters out snapshots with no implementation', async () => {
+    const snapshotCase1 = {
+      title: 'snapshot 1',
+      markup: <div>Snapshot 1</div>,
+      options: {},
+    };
+    suite.addSnapshot({
+      title: 'snapshot 1',
+      getSnapshot: () => snapshotCase1,
+    });
+    suite.addSnapshot({
+      title: 'snapshot 2',
+      getSnapshot: () => undefined,
+    });
+    const snapshotCase3 = {
+      title: 'snapshot 3',
+      markup: <div>Snapshot 3</div>,
+      options: {},
+    };
+    suite.addSnapshot({
+      title: 'snapshot 3',
+      getSnapshot: () => snapshotCase3,
+    });
+
+    const snapshotCases = await suite.getSnapshots();
+
+    expect(snapshotCases).toEqual([snapshotCase1, snapshotCase3]);
+  });
 });
 
-it('nested suites', () => {
+describe('nested suites', () => {
   it('returns snapshot cases from nested suites', async () => {
     const snapshotCase = {
       title: 'snapshot',

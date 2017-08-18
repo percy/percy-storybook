@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`snapshot throws if a snapshot with the same name has already been added to a different suite with the same name 1`] = `[Error: A snapshot named \`Suite: snapshot\` has already been added, please use a different name]`;

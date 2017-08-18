@@ -13,10 +13,6 @@ export default class Snapshot {
       throw new Error(`\`options\` should be an "object", but "${typeof options}" was given`);
     }
 
-    if (typeof fn !== 'function') {
-      throw new Error(`\`fn\` should be a "function", but "${typeof fn}" was given`);
-    }
-
     this.title = title;
     this.fn = fn;
     this.options = options || {};
@@ -45,6 +41,10 @@ export default class Snapshot {
   }
 
   async getSnapshot() {
+    if (!this.fn) {
+      return;
+    }
+
     return {
       name: this.fullTitle(),
       markup: await this.fn(),

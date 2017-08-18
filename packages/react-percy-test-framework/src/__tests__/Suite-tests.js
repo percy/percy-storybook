@@ -15,30 +15,9 @@ describe('addSuite', () => {
 
     expect(nestedSuite.parent).toEqual(suite);
   });
-
-  it('throws when suite with the same title has already been added', () => {
-    const suite = new Suite('parent');
-
-    const nestedSuite1 = new Suite('nested');
-    suite.addSuite(nestedSuite1);
-
-    const nestedSuite2 = new Suite('nested');
-    expect(() => suite.addSuite(nestedSuite2)).toThrow();
-  });
 });
 
 describe('addSnapshot', () => {
-  it('throws when snapshot with the same title has already been added', () => {
-    const suite = new Suite('title');
-    suite.parent = new Suite('parent');
-
-    const snapshot1 = { title: 'snapshot' };
-    suite.addSnapshot(snapshot1);
-
-    const snapshot2 = { title: 'snapshot' };
-    expect(() => suite.addSnapshot(snapshot2)).toThrow();
-  });
-
   it('sets parent on snapshot being added', () => {
     const suite = new Suite('title');
     suite.parent = new Suite('parent');

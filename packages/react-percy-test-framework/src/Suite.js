@@ -10,8 +10,8 @@ export default class Suite {
     this.title = title;
     this.options = options;
 
-    this.suites = {};
-    this.snapshots = {};
+    this.suites = [];
+    this.snapshots = [];
 
     this.beforeAll = [];
     this.beforeEach = [];
@@ -36,27 +36,13 @@ export default class Suite {
   }
 
   addSuite(suite) {
-    if (this.suites[suite.title]) {
-      if (!this.parent) {
-        throw new Error(`A suite with name ${suite.title} has already been added`);
-      } else {
-        throw new Error(
-          `A suite with title ${suite.title} has already been added to suite ${this.fullTitle()}`,
-        );
-      }
-    }
     suite.parent = this;
-    this.suites[suite.title] = suite;
+    this.suites.push(suite);
   }
 
   addSnapshot(snapshot) {
-    if (this.snapshots[snapshot.title]) {
-      throw new Error(
-        `A snapshot with name ${snapshot.title} has already been added to suite ${this.fullTitle()}`,
-      );
-    }
     snapshot.parent = this;
-    this.snapshots[snapshot.title] = snapshot;
+    this.snapshots.push(snapshot);
   }
 
   fullTitle() {
@@ -84,22 +70,23 @@ export default class Suite {
   async getSnapshots() {
     await each(fn => fn())(this.beforeAll);
 
-    const nestedSnapshots = await mapSeries(Object.values(this.suites), suite =>
+    const nestedSnapshots = await mapSeries(this.suites, suite =>
       suite.getSnapshots(),
     ).then(snapshots =>
       snapshots.reduce((accumulated, snapshots) => [...accumulated, ...snapshots], []),
     );
 
-    const snapshots = await mapSeries(Object.values(this.snapshots), async snapshot => {
+    const snapshots = await mapSeries(this.snapshots, async snapshot => {
       await this.runBeforeEach();
       const snapshotResult = await snapshot.getSnapshot();
       await this.runAfterEach();
       return snapshotResult;
     });
+    const nonEmptySnapshots = snapshots.filter(snapshot => snapshot !== undefined);
 
     await each(fn => fn())(this.afterAll);
 
-    return [...nestedSnapshots, ...snapshots];
+    return [...nestedSnapshots, ...nonEmptySnapshots];
   }
 
   async runBeforeEach() {

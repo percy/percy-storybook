@@ -9,13 +9,17 @@ describe('constructor', () => {
   it('throws when no title is specified', () => {
     expect(() => new Snapshot(() => {})).toThrow();
   });
-
-  it('throws when title and options, but no function is specified', () => {
-    expect(() => new Snapshot('snapshot', { widths: [320, 1024] })).toThrow();
-  });
 });
 
 describe('getSnapshot', () => {
+  it('returns undefined given no function was specified', async () => {
+    const snapshot = new Snapshot('title');
+
+    const snapshotResult = await snapshot.getSnapshot();
+
+    expect(snapshotResult).toBeUndefined();
+  });
+
   it('sets name to title given no parent', async () => {
     const snapshot = new Snapshot('title', () => {});
 
