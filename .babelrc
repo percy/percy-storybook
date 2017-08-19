@@ -9,6 +9,7 @@
   ],
   "plugins": [
     "transform-class-properties",
+    "transform-es2015-shorthand-properties",
     "transform-export-extensions",
     "transform-object-rest-spread",
     "transform-runtime"
