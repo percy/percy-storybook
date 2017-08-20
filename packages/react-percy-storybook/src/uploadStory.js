@@ -10,6 +10,10 @@ export default async function uploadStory(
   try {
     const resource = percyClient.makeRootResource(story.name, storyHtml, story.encodedParams);
 
+    if (story.options) {
+      widths = story.options.widths || widths;
+    }
+
     const snapshotOptions = {
       name: story.name,
       widths,

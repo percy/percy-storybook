@@ -1,4 +1,5 @@
 import jsdom from 'jsdom';
+import { storiesKey } from './constants';
 
 // jsdom doesn't support Web Workers yet.
 // We use workerMock to allow the user's preview.js to interact with the Worker API.
@@ -60,13 +61,13 @@ function getStoriesFromDom(previewJavascriptCode, options) {
       src: [workerMock, localStorageMock, matchMediaMock, previewJavascriptCode],
       done: (err, window) => {
         if (err) return reject(err.response.body);
-        if (!window || !window.__storybook_stories__) {
+        if (!window || !window[storiesKey]) {
           const message =
-            'Storybook object not found on window. Check ' +
-            "window.__storybook_stories__ is set in your Storybook's config.js.";
+            'Storybook object not found on window. ' +
+            "Check your call to serializeStories in your Storybook's config.js.";
           reject(new Error(message));
         }
-        resolve(window.__storybook_stories__);
+        resolve(window[storiesKey]);
       },
     };
     if (options.debug) {

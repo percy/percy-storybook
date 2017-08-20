@@ -71,3 +71,21 @@ it('finalizes the snapshot', async () => {
 
   expect(percyClient.finalizeSnapshot).toHaveBeenCalledWith(mockSnapshot, 'test case');
 });
+
+it('uses widths in options', async () => {
+  const widths = [1, 2, 3];
+  const story = {
+    name: 'test case',
+    markup: '<div>test</div>',
+    options: { widths },
+  };
+
+  await uploadStory(percyClient, build, story, assets, storyHtml);
+
+  expect(percyClient.createSnapshot).toHaveBeenCalledWith(expect.anything(), expect.anything(), {
+    name: expect.anything(),
+    widths,
+    minimumHeight: expect.anything(),
+    enableJavaScript: expect.anything(),
+  });
+});

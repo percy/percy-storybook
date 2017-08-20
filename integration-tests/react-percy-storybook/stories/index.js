@@ -1,5 +1,6 @@
 import React from 'react';
 import { storiesOf, action } from '@storybook/react';
+import { withInfo } from '@storybook/addon-info';
 import faker from 'faker';
 import { MatchMediaHOC } from 'react-match-media';
 import Example from '../src/Example';
@@ -73,7 +74,10 @@ if (window && window.location && window.location.search.indexOf('direction=rtl')
   direction = 'rtl';
 }
 
-storiesOf('Direction Demo', module).add('Show the direction', () =>
+// --rtl_regex=Direction is used, so we create some stories that get matched
+const rtlRegex = 'Direction';
+
+storiesOf(`${rtlRegex} Demo`, module).add('Show the direction', () =>
   <div className={direction}>
     <p>
       The direction is {direction}.
@@ -86,3 +90,34 @@ storiesOf('Direction Demo', module).add('Show the direction', () =>
 storiesOf('Hierarchy.separator.is.supported', module).add('story', () =>
   <span>Hello hierarchySeparator</span>,
 );
+
+storiesOf('addWithPercyOptions', module)
+  .addWithPercyOptions('multiple widths', { widths: [222, 333] }, () =>
+    <span>Renders in multiple widths</span>,
+  )
+  .addWithPercyOptions('single width', { widths: [444] }, () => <span>Renders in one width</span>)
+  .addWithPercyOptions('without options', () => <span>Renders with the fallback width(s)</span>)
+  .addWithPercyOptions('with RTL of true for a single story', { rtl: true }, () =>
+    <div className={direction}>
+      <span>
+        The direction is {direction}.
+      </span>
+    </div>,
+  )
+  .addWithPercyOptions(
+    `${rtlRegex}: with RTL override of false even though the RTL regex matches`,
+    // rtl: false trumps a positive rtl_regex match
+    { rtl: false },
+    () =>
+      <span>
+        This story will only render in one direction. The direction is {direction} == ltr.
+      </span>,
+  );
+
+storiesOf('With info addon', module)
+  .add('some story', withInfo('doc string about my component')(() => <span>info story</span>))
+  .addWithPercyOptions(
+    'with withInfo instead of addWithInfo',
+    { widths: [555] },
+    withInfo('doc string about my component')(() => <span>info 555px width</span>),
+  );

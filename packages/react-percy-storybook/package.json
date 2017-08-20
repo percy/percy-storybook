@@ -13,6 +13,7 @@
   "bin": {
     "percy-storybook": "./bin/percy-storybook.js"
   },
+  "main": "lib/index.js",
   "files": [
     "bin",
     "lib"
@@ -26,6 +27,7 @@
   "dependencies": {
     "@percy-io/react-percy-api-client": "^0.1.4",
     "debug": "^2.6.3",
+    "es6-error": "^4.0.2",
     "es6-promise-pool": "^2.4.4",
     "jsdom": "^9.12.0",
     "walk": "^2.3.9",
@@ -33,5 +35,10 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "eslintConfig": {
+    "globals": {
+      "window": true
+    }
   }
 }

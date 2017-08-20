@@ -23,10 +23,10 @@
     "@percy-io/in-percy": "*",
     "@percy-io/react-percy-storybook": "*",
     "@storybook/addon-actions": "^3.2.0",
-    "@storybook/addon-info": "^3.2.0",
+    "@storybook/addon-info": "^3.2.4",
     "@storybook/addon-knobs": "^3.2.0",
     "@storybook/addon-links": "^3.2.0",
-    "@storybook/addon-options": "^3.2.3",
-    "@storybook/react": "^3.2.3"
+    "@storybook/addon-options": "^3.2.4",
+    "@storybook/react": "^3.2.4"
   }
 }
