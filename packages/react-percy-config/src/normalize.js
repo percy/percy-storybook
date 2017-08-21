@@ -6,6 +6,8 @@ export default function normalize(config, packageRoot) {
 
   normalizedConfig.includeFiles = config.includeFiles || [];
 
+  normalizedConfig.renderer = config.renderer || defaults.renderer;
+
   normalizedConfig.rootDir = config.rootDir ? path.normalize(config.rootDir) : packageRoot;
 
   normalizedConfig.snapshotIgnorePatterns =

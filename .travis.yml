@@ -21,6 +21,6 @@ before_install:
   - yarn --version
 script:
   - yarn lint
-  - yarn test
+  - yarn test -- --ci --coverage
   - yarn test:integration react-percy
   - yarn test:integration react-percy-storybook

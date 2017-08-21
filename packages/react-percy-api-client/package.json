@@ -15,6 +15,7 @@
     "lib"
   ],
   "dependencies": {
+    "debug": "^2.6.3",
     "es6-promise-pool": "^2.4.4",
     "mime-types": "^2.1.14",
     "percy-client": "^2.1.0",

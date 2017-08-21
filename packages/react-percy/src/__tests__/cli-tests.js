@@ -1,5 +1,5 @@
 import { run } from '../cli';
-import runPercy from '../runPercy';
+import runPercy from '@percy-io/react-percy-ci';
 import yargs from 'yargs';
 
 const VERSION = require('../../package.json').version;
@@ -22,7 +22,7 @@ jest.mock('@percy-io/react-percy-webpack', () => ({
   resolve: () => mockWebpackConfig,
 }));
 
-jest.mock('../runPercy', () => jest.fn());
+jest.mock('@percy-io/react-percy-ci', () => jest.fn());
 
 let argv;
 let stdout;

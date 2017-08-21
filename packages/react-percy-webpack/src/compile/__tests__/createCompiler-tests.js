@@ -4,10 +4,15 @@ class WebpackCompiler {}
 const mockCompiler = () => new WebpackCompiler();
 jest.mock('webpack', () => () => mockCompiler());
 
-const webpackConfig = { config: true };
-
 it('returns a webpack compiler', () => {
-  const compiler = createCompiler(webpackConfig);
+  const percyConfig = {
+    rootDir: '/foo/bar',
+  };
+  const webpackConfig = {
+    config: true,
+  };
+
+  const compiler = createCompiler(percyConfig, webpackConfig);
 
   expect(compiler).toBeInstanceOf(WebpackCompiler);
 });

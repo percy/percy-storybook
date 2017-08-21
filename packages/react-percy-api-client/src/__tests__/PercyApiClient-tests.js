@@ -61,17 +61,17 @@ it('makeResources injects percy client arg', () => {
 it('runSnapshots injects percy client arg', () => {
   const build = { id: 'buildid' };
   const snapshots = [{ snapshot: 1 }, { snapshot: 2 }];
-  const assets = { 'foo.css': '.foo { color: red }' };
-  const renderer = () => {};
+  const html = '<html><body>some html</body></html>';
+  const getQueryParams = jest.fn();
 
-  apiClient.runSnapshots(build, snapshots, assets, renderer);
+  apiClient.runSnapshots(build, snapshots, html, getQueryParams);
 
   expect(runSnapshots).toHaveBeenCalledWith(
     expect.any(PercyClient),
     build,
     snapshots,
-    assets,
-    renderer,
+    html,
+    getQueryParams,
   );
 });
 

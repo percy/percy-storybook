@@ -11,57 +11,103 @@ describe('constructor', () => {
   });
 });
 
-describe('getSnapshot', () => {
-  it('returns undefined given no function was specified', async () => {
+describe('getDefinition', () => {
+  it('returns undefined given no function was specified', () => {
     const snapshot = new Snapshot('title');
 
-    const snapshotResult = await snapshot.getSnapshot();
+    const definition = snapshot.getDefinition();
 
-    expect(snapshotResult).toBeUndefined();
+    expect(definition).toBeUndefined();
   });
 
-  it('sets name to title given no parent', async () => {
+  it('sets name to title given no parent', () => {
     const snapshot = new Snapshot('title', () => {});
 
-    const snapshotResult = await snapshot.getSnapshot();
+    const definition = snapshot.getDefinition();
 
-    expect(snapshotResult.name).toEqual('title');
+    expect(definition.name).toEqual('title');
   });
 
-  it('sets name to title given parent with no title', async () => {
+  it('sets name to title given parent with no title', () => {
     const snapshot = new Snapshot('title', () => {});
     snapshot.parent = {
       fullTitle: () => '',
       getOptions: () => [],
     };
 
-    const snapshotResult = await snapshot.getSnapshot();
+    const definition = snapshot.getDefinition();
 
-    expect(snapshotResult.name).toEqual('title');
+    expect(definition.name).toEqual('title');
   });
 
-  it('sets name to combined title given parent with title', async () => {
+  it('sets name to combined title given parent with title', () => {
     const snapshot = new Snapshot('title', () => {});
     snapshot.parent = {
       fullTitle: () => 'parent title',
       getOptions: () => [],
     };
 
-    const snapshotResult = await snapshot.getSnapshot();
+    const definition = snapshot.getDefinition();
 
-    expect(snapshotResult.name).toEqual('parent title: title');
+    expect(definition.name).toEqual('parent title: title');
   });
 
-  it('sets markup to the result of synchronous snapshot function', async () => {
+  it('sets options to an empty object given no options specified and no parent', async () => {
+    const snapshot = new Snapshot('title', () => {});
+
+    const definition = snapshot.getDefinition();
+
+    expect(definition.options).toEqual({});
+  });
+
+  it('sets options to parent options given no options specified', () => {
+    const snapshot = new Snapshot('title', () => {});
+    snapshot.parent = {
+      fullTitle: () => '',
+      getOptions: () => ({ widths: [320, 768] }),
+    };
+
+    const definition = snapshot.getDefinition();
+
+    expect(definition.options).toEqual({ widths: [320, 768] });
+  });
+
+  it('options on snapshot override same options specified on parent', () => {
+    const snapshot = new Snapshot('title', { widths: [375, 1024] }, () => {});
+    snapshot.parent = {
+      fullTitle: () => '',
+      getOptions: () => ({ widths: [320, 768] }),
+    };
+
+    const definition = snapshot.getDefinition();
+
+    expect(definition.options).toEqual({ widths: [375, 1024] });
+  });
+
+  it('options on snapshot are merged with parent options', () => {
+    const snapshot = new Snapshot('title', { minimumHeight: 300 }, () => {});
+    snapshot.parent = {
+      fullTitle: () => '',
+      getOptions: () => ({ widths: [320, 768] }),
+    };
+
+    const definition = snapshot.getDefinition();
+
+    expect(definition.options).toEqual({ minimumHeight: 300, widths: [320, 768] });
+  });
+});
+
+describe('getMarkup', () => {
+  it('returns the result of synchronous snapshot function', async () => {
     const markup = <div>Snapshot</div>;
     const snapshot = new Snapshot('title', () => markup);
 
-    const snapshotResult = await snapshot.getSnapshot();
+    const snapshotMarkup = await snapshot.getMarkup();
 
-    expect(snapshotResult.markup).toEqual(markup);
+    expect(snapshotMarkup).toEqual(markup);
   });
 
-  it('sets markup to the result of asynchronous snapshot function', async () => {
+  it('returns the result of asynchronous snapshot function', async () => {
     const markup = <div>Snapshot</div>;
     const snapshot = new Snapshot(
       'title',
@@ -71,61 +117,17 @@ describe('getSnapshot', () => {
         }),
     );
 
-    const snapshotResult = await snapshot.getSnapshot();
+    const snapshotMarkup = await snapshot.getMarkup();
 
-    expect(snapshotResult.markup).toEqual(markup);
+    expect(snapshotMarkup).toEqual(markup);
   });
 
-  it('sets markup to the result of the snapshot function when options are also specified', async () => {
+  it('returns the result of the snapshot function when options are also specified', async () => {
     const markup = <div>Snapshot</div>;
     const snapshot = new Snapshot('title', { widths: [320, 768] }, () => markup);
 
-    const snapshotResult = await snapshot.getSnapshot();
+    const snapshotMarkup = await snapshot.getMarkup();
 
-    expect(snapshotResult.markup).toEqual(markup);
-  });
-
-  it('sets options to an empty empty given no options specified and no parent', async () => {
-    const snapshot = new Snapshot('title', () => {});
-
-    const snapshotResult = await snapshot.getSnapshot();
-
-    expect(snapshotResult.options).toEqual({});
-  });
-
-  it('sets options to parent options given no options specified', async () => {
-    const snapshot = new Snapshot('title', () => {});
-    snapshot.parent = {
-      fullTitle: () => '',
-      getOptions: () => ({ widths: [320, 768] }),
-    };
-
-    const snapshotResult = await snapshot.getSnapshot();
-
-    expect(snapshotResult.options).toEqual({ widths: [320, 768] });
-  });
-
-  it('options on snapshot override same options specified on parent', async () => {
-    const snapshot = new Snapshot('title', { widths: [375, 1024] }, () => {});
-    snapshot.parent = {
-      fullTitle: () => '',
-      getOptions: () => ({ widths: [320, 768] }),
-    };
-
-    const snapshotResult = await snapshot.getSnapshot();
-
-    expect(snapshotResult.options).toEqual({ widths: [375, 1024] });
-  });
-
-  it('options on snapshot are merged with parent options', async () => {
-    const snapshot = new Snapshot('title', { minimumHeight: 300 }, () => {});
-    snapshot.parent = {
-      fullTitle: () => '',
-      getOptions: () => ({ widths: [320, 768] }),
-    };
-
-    const snapshotResult = await snapshot.getSnapshot();
-
-    expect(snapshotResult.options).toEqual({ minimumHeight: 300, widths: [320, 768] });
+    expect(snapshotMarkup).toEqual(markup);
   });
 });

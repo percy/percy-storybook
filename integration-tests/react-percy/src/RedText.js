@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import styles from './RedText.css';
+import './RedText.css';
 
 const RedText = ({ children }) =>
-  <div className={styles.text}>
+  <div className="red-text">
     {children}
   </div>;
 

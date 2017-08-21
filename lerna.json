@@ -2,15 +2,6 @@
   "version": "independent",
   "lerna": "2.0.0",
   "npmClient": "yarn",
-  "commands": {
-    "bootstrap": {
-      "ignore": "react-percy-integration-tests"
-    }
-  },
-  "packages": [
-    "packages/*",
-    "integration-tests/*"
-  ],
   "registry": "https://registry.npmjs.org/",
   "useWorkspaces": true
 }

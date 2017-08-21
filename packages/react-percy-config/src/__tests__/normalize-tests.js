@@ -21,6 +21,26 @@ it('sets `includeFiles` to `includeFiles` from config', () => {
   expect(normalizedConfig.includeFiles).toEqual(['foo.js', 'bar']);
 });
 
+it('sets `renderer` to `renderer` from config', () => {
+  const config = {
+    renderer: 'foo',
+  };
+  const packageRoot = '/package/root';
+
+  const normalizedConfig = normalize(config, packageRoot);
+
+  expect(normalizedConfig.renderer).toBe('foo');
+});
+
+it('sets `renderer` to @percy-io/percy-snapshot-render-react given no `renderer` in config', () => {
+  const config = {};
+  const packageRoot = '/package/root';
+
+  const normalizedConfig = normalize(config, packageRoot);
+
+  expect(normalizedConfig.renderer).toBe('@percy-io/percy-snapshot-render-react');
+});
+
 it('sets `rootDir` to the package root given no `rootDir` in config', () => {
   const config = {};
   const packageRoot = '/package/root';

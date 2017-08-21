@@ -21,11 +21,46 @@ describe('addSnapshot', () => {
   it('sets parent on snapshot being added', () => {
     const suite = new Suite('title');
     suite.parent = new Suite('parent');
-    const snapshot = { title: 'snapshot' };
+    const snapshot = { fullTitle: () => 'parent: title: snapshot' };
 
     suite.addSnapshot(snapshot);
 
     expect(snapshot.parent).toEqual(suite);
+  });
+});
+
+describe('hasSnapshot', () => {
+  it('returns true when suite contains snapshot with specified full title', () => {
+    const suite = new Suite('title');
+    suite.parent = new Suite('parent');
+    const snapshot = { fullTitle: () => 'parent: title: snapshot' };
+    suite.addSnapshot(snapshot);
+
+    expect(suite.hasSnapshot('parent: title: snapshot')).toBe(true);
+  });
+
+  it('returns true when suite contains nested suite with snapshot with specified full title', () => {
+    const suite = new Suite('title');
+    suite.parent = new Suite('parent');
+    const nestedSuite = new Suite('nested');
+    const nestedSnapshot = { fullTitle: () => 'parent: title: nested: snapshot' };
+    nestedSuite.addSnapshot(nestedSnapshot);
+    suite.addSuite(nestedSuite);
+
+    expect(suite.hasSnapshot('parent: title: nested: snapshot')).toBe(true);
+  });
+
+  it('returns false when neither suite nor nested suites contain snapshot with specified full title', () => {
+    const suite = new Suite('title');
+    suite.parent = new Suite('parent');
+    const nestedSuite = new Suite('nested');
+    const nestedSnapshot = { fullTitle: () => 'parent: title: nested: snapshot' };
+    nestedSuite.addSnapshot(nestedSnapshot);
+    suite.addSuite(nestedSuite);
+    const snapshot = { fullTitle: () => 'parent: title: snapshot' };
+    suite.addSnapshot(snapshot);
+
+    expect(suite.hasSnapshot('some: other: snapshot')).toBe(false);
   });
 });
 

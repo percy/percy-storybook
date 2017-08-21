@@ -40,7 +40,7 @@ export default class PercyApiClient {
   }
 
   finalizeSnapshot(snapshot) {
-    finalizeSnapshot(this._client, snapshot);
+    return finalizeSnapshot(this._client, snapshot);
   }
 
   makeResources(assets) {
@@ -51,8 +51,8 @@ export default class PercyApiClient {
     return makeRootResource(this._client, name, html, encodedResourceParams);
   }
 
-  runSnapshots(build, snapshots, assets, renderer) {
-    return runSnapshots(this._client, build, snapshots, assets, renderer);
+  runSnapshots(build, snapshots, html, getQueryParams) {
+    return runSnapshots(this._client, build, snapshots, html, getQueryParams);
   }
 
   uploadResources(build, resources) {

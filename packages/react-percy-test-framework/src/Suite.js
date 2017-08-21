@@ -1,5 +1,4 @@
 import each from 'promise-each';
-import mapSeries from 'promise-map-series';
 
 export default class Suite {
   constructor(title, options = {}) {
@@ -11,7 +10,8 @@ export default class Suite {
     this.options = options;
 
     this.suites = [];
-    this.snapshots = [];
+    this.orderedSnapshots = [];
+    this.snapshotsLookup = {};
 
     this.beforeAll = [];
     this.beforeEach = [];
@@ -42,7 +42,18 @@ export default class Suite {
 
   addSnapshot(snapshot) {
     snapshot.parent = this;
-    this.snapshots.push(snapshot);
+    this.orderedSnapshots.push(snapshot);
+    this.snapshotsLookup[snapshot.fullTitle()] = snapshot;
+  }
+
+  hasSnapshot(title) {
+    if (this.snapshotsLookup[title]) {
+      return true;
+    }
+    if (this.suites.find(suite => suite.hasSnapshot(title))) {
+      return true;
+    }
+    return false;
   }
 
   fullTitle() {
@@ -67,26 +78,47 @@ export default class Suite {
     return this.options;
   }
 
-  async getSnapshots() {
-    await each(fn => fn())(this.beforeAll);
+  getSnapshotDefinitions() {
+    const nestedDefinitions = this.suites
+      .map(suite => suite.getSnapshotDefinitions())
+      .reduce((accumulated, definitions) => [...accumulated, ...definitions], []);
 
-    const nestedSnapshots = await mapSeries(this.suites, suite =>
-      suite.getSnapshots(),
-    ).then(snapshots =>
-      snapshots.reduce((accumulated, snapshots) => [...accumulated, ...snapshots], []),
-    );
+    const definitions = this.orderedSnapshots
+      .map(snapshot => snapshot.getDefinition())
+      .filter(definition => definition !== undefined);
 
-    const snapshots = await mapSeries(this.snapshots, async snapshot => {
-      await this.runBeforeEach();
-      const snapshotResult = await snapshot.getSnapshot();
-      await this.runAfterEach();
-      return snapshotResult;
+    return [...nestedDefinitions, ...definitions];
+  }
+
+  getSnapshotMarkup(title) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        if (this.snapshotsLookup[title]) {
+          await this.runBeforeAll();
+          await this.runBeforeEach();
+          const markup = await this.snapshotsLookup[title].getMarkup();
+          await this.runAfterEach();
+          await this.runAfterAll();
+          return resolve(markup);
+        }
+
+        const suiteWithSnapshot = this.suites.find(suite => suite.hasSnapshot(title));
+        if (suiteWithSnapshot) {
+          await this.runBeforeAll();
+          const markup = await suiteWithSnapshot.getSnapshotMarkup(title);
+          await this.runAfterAll();
+          return resolve(markup);
+        }
+
+        return reject(`Could not find snapshot with title "${title}"`);
+      } catch (e) {
+        reject(e);
+      }
     });
-    const nonEmptySnapshots = snapshots.filter(snapshot => snapshot !== undefined);
+  }
 
-    await each(fn => fn())(this.afterAll);
-
-    return [...nestedSnapshots, ...nonEmptySnapshots];
+  async runBeforeAll() {
+    await each(fn => fn())(this.beforeAll);
   }
 
   async runBeforeEach() {
@@ -103,5 +135,9 @@ export default class Suite {
     if (this.parent) {
       await this.parent.runAfterEach();
     }
+  }
+
+  async runAfterAll() {
+    await each(fn => fn())(this.afterAll);
   }
 }

@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders error message into the DOM element when rendering fails 1`] = `"<div data-reactroot=\\"\\">Cannot read property 'format' of undefined</div>"`;
+
+exports[`renders the specified React markup into the DOM element 1`] = `"<div data-reactroot=\\"\\">some markup</div>"`;

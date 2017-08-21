@@ -17,105 +17,32 @@ beforeEach(() => {
     suite: jest.fn((name, fn) => fn()),
   };
 
-  environment = new Environment({
-    rootDir: '/foo',
-  });
+  environment = new Environment();
 });
 
-it('can parse basic files', () => {
-  expect(() =>
-    environment.runScript({
-      path: '/foo/bar.percy.js',
-      src: `
-            const a = 1;
-        `,
-    }),
-  ).not.toThrow();
+it('can parse basic files', async () => {
+  await environment.runScript(`
+    const a = 1;
+  `);
 });
 
-it('references to global work', () => {
-  expect(() =>
-    environment.runScript({
-      path: '/foo/bar.percy.js',
-      src: `
-            global.foo = 'bar';
-        `,
-    }),
-  ).not.toThrow();
+it('references to window work', async () => {
+  await environment.runScript(`
+    const location = window.location.href;
+  `);
 });
 
-it('immediate works', () => {
-  expect(() =>
-    environment.runScript({
-      path: '/foo/bar.percy.js',
-      src: `
-            const x = setImmediate(() => {});
-            clearImmediate(x);
-        `,
-    }),
-  ).not.toThrow();
-});
-
-it('intervals work', () => {
-  expect(() =>
-    environment.runScript({
-      path: '/foo/bar.percy.js',
-      src: `
-            const x = setInterval(() => {}, 10);
-            clearInterval(x);
-        `,
-    }),
-  ).not.toThrow();
-});
-
-it('timeouts work', () => {
-  expect(() =>
-    environment.runScript({
-      path: '/foo/bar.percy.js',
-      src: `
-            const x = setTimeout(() => {}, 10);
-            clearTimeout(x);
-        `,
-    }),
-  ).not.toThrow();
-});
-
-it('console works', async () => {
-  // eslint-disable-next-line no-console
-  console.log = jest.fn();
-
-  await environment.runScript({
-    path: '/foo/bar.percy.js',
-    src: `
-            console.log('foo');
-        `,
-  });
-
-  // eslint-disable-next-line no-console
-  expect(console.log).toHaveBeenCalledWith('foo');
+it('references to document work', async () => {
+  await environment.runScript(`
+    const body = document.body;
+  `);
 });
 
 it('framework globals work', async () => {
-  await environment.runScript({
-    path: '/foo/bar.percy.js',
-    src: `
-            percySnapshot('snapshot', () => {
-            });
-        `,
-  });
+  await environment.runScript(`
+    percySnapshot('snapshot', () => {
+    });
+  `);
 
   expect(mockFrameworkGlobals.percySnapshot).toHaveBeenCalledWith('snapshot', expect.any(Function));
-});
-
-it('wraps script in a suite', async () => {
-  await environment.runScript({
-    path: '/foo/bar.percy.js',
-    src: `
-            percySnapshot('snapshot', () => {
-            });
-        `,
-  });
-
-  expect(mockFrameworkGlobals.suite).toHaveBeenCalledWith('', expect.any(Function));
-  expect(suiteSnapshots).toEqual(['snapshot']);
 });

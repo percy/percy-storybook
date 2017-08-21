@@ -21,6 +21,7 @@
     "glob": "^7.1.2",
     "interpret": "^1.0.1",
     "memory-fs": "^0.4.1",
+    "tmp": "^0.0.33",
     "webpack-merge": "^3.0.0"
   },
   "publishConfig": {

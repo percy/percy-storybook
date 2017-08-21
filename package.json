@@ -2,14 +2,14 @@
   "private": true,
   "scripts": {
     "build": "vitruvius build --src src --dest lib --ignore-packages \"**/integration-tests/**\"",
-    "prebuild": "rimraf ./packages/*/lib",
     "lint": "eslint . --cache",
     "postinstall": "yarn build --silent",
+    "prebuild": "rimraf ./packages/*/lib",
     "precommit": "lint-staged",
     "storybook": "lerna run --scope=react-percy-storybook-integration-tests storybook --stream",
-    "test": "jest --ci --coverage",
-    "test:watch": "jest --watch --notify",
-    "test:integration": "./scripts/run-integration-tests.sh"
+    "test": "jest",
+    "test:integration": "./scripts/run-integration-tests.sh",
+    "test:watch": "jest --watch --notify"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",

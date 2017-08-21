@@ -40,15 +40,18 @@ export default class Snapshot {
     return this.options;
   }
 
-  async getSnapshot() {
+  getDefinition() {
     if (!this.fn) {
       return;
     }
 
     return {
       name: this.fullTitle(),
-      markup: await this.fn(),
       options: this.getOptions(),
     };
+  }
+
+  async getMarkup() {
+    return await this.fn();
   }
 }
