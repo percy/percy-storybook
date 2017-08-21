@@ -40,5 +40,6 @@
     "globals": {
       "window": true
     }
-  }
+  },
+  "typings": "src/react-percy-storybook.d.ts"
 }
