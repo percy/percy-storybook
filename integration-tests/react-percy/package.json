@@ -3,7 +3,7 @@
   "name": "react-percy-integration-tests",
   "version": "1.0.2",
   "scripts": {
-    "test": "jest"
+    "percy": "react-percy --config webpack/webpack.config.js"
   },
   "dependencies": {
     "prop-types": "^15.5.10",
@@ -12,12 +12,7 @@
   },
   "devDependencies": {
     "@percy-io/react-percy": "^0.1.6",
-    "babel-jest": "^20.0.3",
     "extract-text-webpack-plugin": "^2.1.2",
-    "jest": "^20.0.4",
     "webpack": "^2.7.0"
-  },
-  "jest": {
-    "setupTestFrameworkScriptFile": "<rootDir>/jest.setup.js"
   }
 }

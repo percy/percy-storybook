@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ev
 
 SUITE=$1
 
@@ -31,7 +31,7 @@ elif [ "$SUITE" = "react-percy" ]; then
   cd integration-tests/react-percy
   link react-percy
   link react-percy-webpack
-  yarn test
+  DEBUG="react-percy:*" yarn percy -- --color
 else
   cat <<EOF
 Valid targets are:

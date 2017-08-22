@@ -8,19 +8,33 @@ cache:
 matrix:
   include:
     - node_js: "8"
-      env: PERCY_ENABLE=1
-    - node_js: "7"
-      env: PERCY_ENABLE=0
-    - node_js: "6"
-      env: PERCY_ENABLE=0
+      env: LINT=true
     - node_js: "4"
-      env: PERCY_ENABLE=0
+      env: UNIT_TEST=true COVERAGE=false
+    - node_js: "6"
+      env: UNIT_TEST=true COVERAGE=false
+    - node_js: "7"
+      env: UNIT_TEST=true COVERAGE=false
+    - node_js: "8"
+      env: UNIT_TEST=true COVERAGE=true
+    - node_js: "8"
+      env: INTEGRATION_TEST=react-percy-storybook PERCY_PROJECT=percy/react-percy-storybook PERCY_TOKEN="$STORYBOOK_PERCY_TOKEN"
+    - node_js: "8"
+      env: INTEGRATION_TEST=react-percy PERCY_PROJECT=percy/react-percy PERCY_TOKEN="$REACT_PERCY_TOKEN"
 before_install:
   - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 0.27.5
   - export PATH="$HOME/.yarn/bin:$PATH"
   - yarn --version
 script:
-  - yarn lint
-  - yarn test -- --ci --coverage
-  - yarn test:integration react-percy
-  - yarn test:integration react-percy-storybook
+  - |
+      if [ "$LINT" = "true" ]; then
+        yarn lint -- --color
+      fi
+  - |
+      if [ "$UNIT_TEST" = "true" ]; then
+        yarn test -- --ci --coverage=$COVERAGE --maxWorkers=4 --color
+      fi
+  - |
+      if [ "$INTEGRATION_TEST" != "" ]; then
+        yarn test:integration $INTEGRATION_TEST
+      fi

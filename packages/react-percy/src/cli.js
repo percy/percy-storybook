@@ -40,7 +40,7 @@ export function run(argv) {
     })
     .catch(err => {
       // eslint-disable-next-line no-console
-      console.log(chalk.bold.red(err.stack || err));
+      console.log(chalk.bold.red(err.stack || JSON.stringify(err)));
       process.on('exit', () => process.exit(1));
     });
 }
