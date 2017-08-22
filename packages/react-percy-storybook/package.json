@@ -41,5 +41,5 @@
       "window": true
     }
   },
-  "typings": "src/react-percy-storybook.d.ts"
+  "typings": "lib/react-percy-storybook.d.ts"
 }
