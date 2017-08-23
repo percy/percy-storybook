@@ -1,5 +1,5 @@
 **/coverage/**
 **/node_modules/**
-integration-tests/lib/**
+integration-tests/create-react-app/**
 packages/*/bin/**
 packages/*/lib/**

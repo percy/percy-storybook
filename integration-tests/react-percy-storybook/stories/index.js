@@ -24,7 +24,7 @@ storiesOf('Managing Dynamic Data.Frozen Time', module).add('Show the current dat
       thanks to mockdate and inPercy.
     </p>
     <p>
-      See .storybook/config.js or&nbsp;
+      See storybook/config.js or&nbsp;
       <a href="https://github.com/boblauer/MockDate">mockdate&apos;s docs</a>
       &nbsp;for how it&apos;s configured.
     </p>
@@ -44,7 +44,7 @@ storiesOf('Managing Dynamic Data.Faker', module).add('Show a fake name and email
       faker&apos;s seed and inPercy.
     </p>
     <p>
-      See .storybook/config.js or&nbsp;
+      See storybook/config.js or&nbsp;
       <a href="https://www.npmjs.com/package/faker#setting-a-randomness-seed">faker&apos;s docs</a>
       &nbsp;for how it&apos;s configured.
     </p>

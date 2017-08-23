@@ -3,10 +3,10 @@
   "name": "react-percy-storybook-integration-tests",
   "version": "1.0.3",
   "scripts": {
-    "storybook": "start-storybook -p 9001 -c .storybook -s ./.storybook/public",
-    "storybook:build": "build-storybook -s ./.storybook/public",
+    "storybook": "start-storybook -p 9001 -c storybook -s ./storybook/public",
+    "storybook:build": "build-storybook -c storybook -s ./storybook/public",
     "storybook:percy-debug": "percy-storybook --debug",
-    "storybook:percy": "build-storybook -s ./.storybook/public && percy-storybook --widths=320,1280 --rtl_regex=Direction",
+    "storybook:percy": "build-storybook -c storybook -s ./storybook/public && percy-storybook --widths=320,1280 --rtl_regex=Direction",
     "storybook:percy-no-build": "percy-storybook --widths=320,1280 --rtl_regex=Direction"
   },
   "dependencies": {

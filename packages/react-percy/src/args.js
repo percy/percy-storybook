@@ -4,7 +4,6 @@ export const options = {
   config: {
     alias: 'c',
     description: 'Path to the webpack config file',
-    requiresArg: true,
   },
 };
 

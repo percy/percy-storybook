@@ -12,7 +12,10 @@
   },
   "devDependencies": {
     "@percy-io/react-percy": "^0.1.6",
+    "babel-loader": "^7.1.2",
+    "css-loader": "^0.28.5",
     "extract-text-webpack-plugin": "^2.1.2",
+    "style-loader": "^0.18.2",
     "webpack": "^2.7.0"
   }
 }

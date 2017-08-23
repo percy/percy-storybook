@@ -37,7 +37,6 @@
     "@percy-io/react-percy-config": "^0.1.4",
     "@percy-io/react-percy-webpack": "^0.1.4",
     "chalk": "^1.1.3",
-    "pkg-dir": "^1.0.0",
     "yargs": "^7.0.2"
   },
   "publishConfig": {

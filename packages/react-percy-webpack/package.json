@@ -15,7 +15,7 @@
     "lib"
   ],
   "peerDependencies": {
-    "webpack": "^1.13 || 2.x"
+    "webpack": "^1.13 || 2.x || 3.x"
   },
   "dependencies": {
     "glob": "^7.1.2",

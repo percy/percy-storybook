@@ -1,11 +1,14 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as percy from 'percy-client';
+import path from 'path';
 import { run } from '@percy-io/react-percy/lib/cli';
 
 jest.mock('percy-client');
 
 // eslint-disable-next-line no-undef
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 60000;
+
+const packageRoot = path.resolve(path.join(__dirname, '../'));
 
 beforeEach(() => {
   percy.createBuild.mockClear();
@@ -27,13 +30,13 @@ const expectPercyToHaveRunSnapshots = () => {
 };
 
 it('handles ES5 webpack configs', async () => {
-  await run(['--config', require.resolve('../webpack/webpack.config.js')]);
+  await run(['--config', require.resolve('../webpack/webpack.config.js')], packageRoot);
 
   expectPercyToHaveRunSnapshots();
 });
 
 it('handles ES6 webpack configs', async () => {
-  await run(['--config', require.resolve('../webpack/webpack.config.babel.js')]);
+  await run(['--config', require.resolve('../webpack/webpack.config.babel.js')], packageRoot);
 
   expectPercyToHaveRunSnapshots();
 });

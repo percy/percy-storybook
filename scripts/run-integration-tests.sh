@@ -32,10 +32,16 @@ elif [ "$SUITE" = "react-percy" ]; then
   link react-percy
   link react-percy-webpack
   DEBUG="react-percy:*" yarn percy -- --color
+elif [ "$SUITE" = "create-react-app" ]; then
+  cd integration-tests/create-react-app
+  link react-percy
+  link react-percy-webpack
+  DEBUG="react-percy:*" yarn percy -- --color
 else
   cat <<EOF
 Valid targets are:
 * react-percy-storybook
 * react-percy
+* create-react-app
 EOF
 fi
