@@ -1,6 +1,6 @@
 {
   "name": "@percy-io/react-percy-ci",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/percy/react-percy.git"
@@ -15,9 +15,9 @@
     "lib"
   ],
   "dependencies": {
-    "@percy-io/react-percy-api-client": "^0.1.6",
-    "@percy-io/react-percy-test-framework": "^0.1.4",
-    "@percy-io/react-percy-webpack": "^0.1.4",
+    "@percy-io/react-percy-api-client": "^0.2.0",
+    "@percy-io/react-percy-test-framework": "^0.2.0",
+    "@percy-io/react-percy-webpack": "^0.2.0",
     "debug": "^2.6.3",
     "jsdom": "^9.12.0"
   },
