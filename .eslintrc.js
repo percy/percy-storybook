@@ -57,7 +57,6 @@ module.exports = {
     },
     {
       files: ['**/__percy__/**/*.{js,jsx}', '**/*.percy.{js,jsx}'],
-      globals: reactPercy.environments.globals.globals,
     },
     {
       files: ['integration-tests/**'],
