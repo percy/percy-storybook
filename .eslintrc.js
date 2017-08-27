@@ -1,5 +1,3 @@
-const reactPercy = require('./packages/eslint-plugin-react-percy');
-
 module.exports = {
   extends: ['eslint:recommended', 'prettier', 'plugin:react/recommended'],
 
