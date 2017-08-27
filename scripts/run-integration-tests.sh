@@ -27,16 +27,6 @@ if [ "$SUITE" = "react-percy-storybook" ]; then
     # This is local, when invoking yarn test:integration react-percy-storybook w/o PERCY_TOKEN
     error "No PERCY_TOKEN given"
   fi
-elif [ "$SUITE" = "react-percy" ]; then
-  cd integration-tests/react-percy
-  link react-percy
-  link react-percy-webpack
-  DEBUG="react-percy:*" yarn percy -- --color
-elif [ "$SUITE" = "create-react-app" ]; then
-  cd integration-tests/create-react-app
-  link react-percy
-  link react-percy-webpack
-  DEBUG="react-percy:*" yarn percy -- --color
 else
   cat <<EOF
 Valid targets are:

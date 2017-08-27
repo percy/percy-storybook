@@ -45,9 +45,7 @@
       "<rootDir>/packages/"
     ],
     "testPathIgnorePatterns": [
-      "/node_modules/",
-      "<rootDir>/integration-tests/create-react-app",
-      "<rootDir>/packages/react-percy-webpack/src/entry/__tests__/test-project/"
+      "/node_modules/"
     ]
   },
   "lint-staged": {

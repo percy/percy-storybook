@@ -1,3 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`prepends ESLint comment whitelisting Percy globals to source code 1`] = `"/* global after:false, afterAll:false, afterEach:false, before:false, beforeAll:false, beforeEach:false, percySnapshot:false, suite:false */ import foo from './bar';"`;

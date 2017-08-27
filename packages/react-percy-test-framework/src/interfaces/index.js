@@ -1,1 +1,0 @@
-export percy from './percy';
