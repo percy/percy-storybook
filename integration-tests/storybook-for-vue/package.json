@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "storybook-for-react-integration-tests",
+  "name": "storybook-for-vue-integration-tests",
   "version": "1.1.2",
   "scripts": {
     "storybook": "start-storybook -p 9001 -c storybook -s ./storybook/public",
@@ -13,11 +13,8 @@
     "faker": "^4.1.0",
     "mockdate": "^2.0.1",
     "prop-types": "^15.5.10",
-    "react": "^15.6.1",
-    "react-dom": "^15.6.1"
-  },
-  "optionalDependencies": {
-    "react-match-media": "^2.0.1"
+    "vue": "^2.4.2",
+    "vuex": "^2.3.1"
   },
   "devDependencies": {
     "@percy-io/in-percy": "*",
@@ -27,6 +24,6 @@
     "@storybook/addon-knobs": "^3.2.0",
     "@storybook/addon-links": "^3.2.0",
     "@storybook/addon-options": "^3.2.4",
-    "@storybook/react": "^3.2.8"
+    "@storybook/vue": "^3.2.8"
   }
 }
