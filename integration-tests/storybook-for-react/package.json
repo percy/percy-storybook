@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "react-percy-storybook-integration-tests",
+  "name": "storybook-for-react-integration-tests",
   "version": "1.1.2",
   "scripts": {
     "storybook": "start-storybook -p 9001 -c storybook -s ./storybook/public",

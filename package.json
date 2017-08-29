@@ -6,7 +6,7 @@
     "postinstall": "yarn build --silent",
     "prebuild": "rimraf ./packages/*/lib",
     "precommit": "lint-staged",
-    "storybook": "lerna run --scope=react-percy-storybook-integration-tests storybook --stream",
+    "storybook": "lerna run --scope=storybook-for-react-integration-tests storybook --stream",
     "test": "jest",
     "test:integration": "./scripts/run-integration-tests.sh",
     "test:watch": "jest --watch --notify"
