@@ -21,7 +21,7 @@ if [ "$SUITE" = "react-percy-storybook" ]; then
   # take snapshots of the react-percy-storybook integration tests's stories.
   if [[ "$PERCY_ENABLE" != "0" && -n "$PERCY_TOKEN" ]] ; then
     cd integration-tests/react-percy-storybook
-    link react-percy-storybook
+    link percy-storybook
     yarn storybook:percy
   elif [[ "$PERCY_ENABLE" != "0" && "$TRAVIS" != true ]] ; then
     # This is local, when invoking yarn test:integration react-percy-storybook w/o PERCY_TOKEN
@@ -31,7 +31,5 @@ else
   cat <<EOF
 Valid targets are:
 * react-percy-storybook
-* react-percy
-* create-react-app
 EOF
 fi

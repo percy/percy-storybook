@@ -1,7 +1,7 @@
 import { configure, getStorybook, setAddon } from '@storybook/react';
 import { setOptions } from '@storybook/addon-options';
 import infoAddon, { setDefaults } from '@storybook/addon-info';
-import createPercyAddon from '@percy-io/react-percy-storybook';
+import createPercyAddon from '@percy-io/percy-storybook';
 
 import inPercy from '@percy-io/in-percy';
 import faker from 'faker';
