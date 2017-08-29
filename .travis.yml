@@ -18,7 +18,9 @@ matrix:
     - node_js: "8"
       env: UNIT_TEST=true COVERAGE=true
     - node_js: "8"
-      env: INTEGRATION_TEST=storybook-for-react PERCY_PROJECT=percy/percy-storybook PERCY_TOKEN="$STORYBOOK_PERCY_TOKEN"
+      env: INTEGRATION_TEST=storybook-for-react PERCY_PROJECT=percy/storybook-for-react PERCY_TOKEN="$STORYBOOK_FOR_REACT_PERCY_TOKEN"
+    - node_js: "8"
+      env: INTEGRATION_TEST=storybook-for-vue PERCY_PROJECT=percy/storybook-for-vue PERCY_TOKEN="$STORYBOOK_FOR_VUE_PERCY_TOKEN"
 before_install:
   - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 0.27.5
   - export PATH="$HOME/.yarn/bin:$PATH"
