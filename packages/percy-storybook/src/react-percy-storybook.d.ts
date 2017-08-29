@@ -1,4 +1,4 @@
-declare module '@percy-io/react-percy-storybook' {
+declare module '@percy-io/percy-storybook' {
 
   import { RenderFunction, StoryBucket } from '@storybook/react';
 
