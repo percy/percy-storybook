@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@percy-io/react-percy-api-client": "^0.2.0",
+    "babel-runtime": "^6.26.0",
     "debug": "^2.6.3",
     "es6-error": "^4.0.2",
     "es6-promise-pool": "^2.4.4",
