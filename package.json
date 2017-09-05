@@ -2,10 +2,12 @@
   "private": true,
   "scripts": {
     "build": "vitruvius build --src src --dest lib --ignore-packages \"**/integration-tests/**\"",
+    "lerna:publish": "lerna publish",
     "lint": "eslint . --cache --ignore-pattern '!.*'",
     "postinstall": "yarn build --silent",
     "prebuild": "rimraf ./packages/*/lib",
     "precommit": "lint-staged",
+    "prelerna:publish": "yarn build --silent",
     "storybook": "lerna run --scope=storybook-for-react-integration-tests storybook --stream",
     "test": "jest",
     "test:integration": "./scripts/run-integration-tests.sh",
