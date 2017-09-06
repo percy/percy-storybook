@@ -17,7 +17,7 @@
     "vuex": "^2.3.1"
   },
   "devDependencies": {
-    "@percy-io/in-percy": "*",
+    "@percy-io/in-percy": "^0.1.7",
     "@percy-io/percy-storybook": "^1.2.2",
     "@storybook/addon-actions": "^3.2.0",
     "@storybook/addon-info": "^3.2.4",

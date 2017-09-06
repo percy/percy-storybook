@@ -6,9 +6,9 @@
   version "3.0.9"
   resolved "https://registry.yarnpkg.com/@hypnosphi/fuse.js/-/fuse.js-3.0.9.tgz#ea99f6121b4a8f065b4c71f85595db2714498807"
 
-"@percy-io/in-percy@*":
-  version "0.1.5"
-  resolved "https://registry.yarnpkg.com/@percy-io/in-percy/-/in-percy-0.1.5.tgz#adb049b13635c5b87870b1c2a861f4992f019d8d"
+"@percy-io/in-percy@^0.1.7":
+  version "0.1.7"
+  resolved "https://registry.yarnpkg.com/@percy-io/in-percy/-/in-percy-0.1.7.tgz#50a7a37b4ebded0d1f3477c8fedbbf05fb86c1b4"
 
 "@percy-io/react-percy-api-client@^0.2.0":
   version "0.2.2"
