@@ -8,7 +8,8 @@ const SKIPPED_ASSETS = [
   'index.html',
   'iframe.html',
   'favicon.ico',
-  'static/',
+  'static/manager.*.bundle.js',
+  'static/preview.*.bundle.js',
   /\.map$/,
   /\.log$/,
   /\.DS_Store$/,
@@ -25,12 +26,14 @@ function gatherBuildResources(buildDir) {
     listeners: {
       file(root, fileStats, next) {
         const absolutePath = path.join(root, fileStats.name);
-        let resourceUrl = absolutePath.replace(buildDir, '');
+        let resourceUrl = absolutePath;
 
         if (path.sep === '\\') {
           // Windows support: transform filesystem backslashes into forward-slashes for the URL.
-          resourceUrl = resourceUrl.replace('\\', '/');
+          resourceUrl = resourceUrl.replace(/\\/g, '/');
         }
+
+        resourceUrl = resourceUrl.replace(buildDir, '');
 
         // Remove the leading /
         if (resourceUrl.charAt(0) === '/') {
