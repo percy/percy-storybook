@@ -9,12 +9,7 @@ install:
   # Get the latest stable version of Node.js
   - ps: Install-Product node $env:nodejs_version
 
-  - Write-Host "Installing Latest Yarn..." -ForegroundColor Cyan
-  - $msiPath = "$env:TEMP\yarn.msi"
-  - (New-Object Net.WebClient).DownloadFile('https://yarnpkg.com/latest.msi', $msiPath)
-  - Write-Host "Installing..."
-  - cmd /c start /wait msiexec /i "$msiPath" /quiet
-  - Write-Host "Yarn installed" -ForegroundColor Green
+  - npm install yarn
 
   # install modules
   - yarn install
