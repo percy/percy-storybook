@@ -75,7 +75,7 @@ export default function getStaticAssets(options = {}) {
 
   // Load the special static/preview.js that contains all stories
   const storybookJavascriptPath = storyHtml.match(
-    /<script src="(.*?static\/preview.*?)"><\/script>/,
+    /<script (?:type="text\/javascript" )src="(.*?static\/preview.*?)"><\/script>/,
   )[1];
   const storyJavascript = fs.readFileSync(
     path.join(storybookStaticPath, storybookJavascriptPath),
