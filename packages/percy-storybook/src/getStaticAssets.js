@@ -69,8 +69,9 @@ function gatherBuildResources(buildDir) {
 }
 
 export function getStorybookJavascriptPath(storyHtml) {
+  // Get the full static/preview script path from the storyHtml
   return storyHtml.match(
-    /<script (?:type="text\/javascript" )?src="(.*?static\/preview.*?)"><\/script>/,
+    /<script [^>]*src\s*=\s*["'](.*?static\/preview.*?)["'][^>]*>/,
   )[1];
 }
 
