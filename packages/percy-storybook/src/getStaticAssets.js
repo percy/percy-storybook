@@ -70,9 +70,7 @@ function gatherBuildResources(buildDir) {
 
 export function getStorybookJavascriptPath(storyHtml) {
   // Get the full static/preview script path from the storyHtml
-  return storyHtml.match(
-    /<script [^>]*src\s*=\s*["'](.*?static\/preview.*?)["'][^>]*>/,
-  )[1];
+  return storyHtml.match(/<script [^>]*src\s*=\s*["'](.*?static\/preview.*?)["'][^>]*>/)[1];
 }
 
 export default function getStaticAssets(options = {}) {

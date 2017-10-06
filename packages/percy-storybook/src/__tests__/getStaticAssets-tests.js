@@ -10,7 +10,7 @@ it('parses and returns path', () => {
 it('parses and returns path when single quotes used', () => {
   const html =
     '<html><head></head><body>' +
-    '<script src=\'static/preview.ca96e23c5dfccc147bb6.bundle.js\'></script></body></html>';
+    "<script src='static/preview.ca96e23c5dfccc147bb6.bundle.js'></script></body></html>";
   expect(getStorybookJavascriptPath(html)).toEqual('static/preview.ca96e23c5dfccc147bb6.bundle.js');
 });
 
