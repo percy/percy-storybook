@@ -68,15 +68,19 @@ function gatherBuildResources(buildDir) {
   return hashToResource;
 }
 
+export function getStorybookJavascriptPath(storyHtml) {
+  return storyHtml.match(
+    /<script (?:type="text\/javascript" )?src="(.*?static\/preview.*?)"><\/script>/,
+  )[1];
+}
+
 export default function getStaticAssets(options = {}) {
   // Load iframe.html that is used for every snapshot asset
   const storybookStaticPath = path.resolve(options.buildDir);
   const storyHtml = fs.readFileSync(path.join(storybookStaticPath, 'iframe.html'), 'utf8');
 
   // Load the special static/preview.js that contains all stories
-  const storybookJavascriptPath = storyHtml.match(
-    /<script (?:type="text\/javascript" )src="(.*?static\/preview.*?)"><\/script>/,
-  )[1];
+  const storybookJavascriptPath = getStorybookJavascriptPath(storyHtml);
   const storyJavascript = fs.readFileSync(
     path.join(storybookStaticPath, storybookJavascriptPath),
     'utf8',
