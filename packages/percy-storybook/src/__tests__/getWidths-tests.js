@@ -6,6 +6,7 @@ it('returns empty array for a nil or empty string', () => {
 });
 
 it('returns numbers in an array for a comma delimited list of numbers', () => {
+  expect(getWidths(1)).toEqual([1]);
   expect(getWidths('1')).toEqual([1]);
   expect(getWidths('380,1280')).toEqual([380, 1280]);
 });
