@@ -127,4 +127,48 @@ describe('selectStories', () => {
       expect(selectStories(stories, /.*/gim)).toEqual(expectedSelectedStories);
     });
   });
+
+  describe('skip option', () => {
+    it('excludes story when enabled', () => {
+      const options = { skip: true };
+      const stories = [
+        {
+          kind: 'ImagePost',
+          stories: [{ name: 'a', options }, { name: 'b' }],
+        },
+      ];
+
+      const expectedSelectedStories = [
+        {
+          encodedParams: 'selectedKind=ImagePost&selectedStory=b',
+          name: 'ImagePost: b',
+        },
+      ];
+
+      expect(selectStories(stories)).toEqual(expectedSelectedStories);
+    });
+
+    it('trumps rtl option', () => {
+      const options = { skip: true, rtl: true };
+      const stories = [
+        {
+          kind: 'ImagePost',
+          stories: [{ name: 'a', options }, { name: 'b' }],
+        },
+      ];
+
+      const expectedSelectedStories = [
+        {
+          encodedParams: 'selectedKind=ImagePost&selectedStory=b',
+          name: 'ImagePost: b',
+        },
+        {
+          encodedParams: 'selectedKind=ImagePost&selectedStory=b&direction=rtl',
+          name: 'ImagePost: b [RTL]',
+        },
+      ];
+
+      expect(selectStories(stories, /.*/gim)).toEqual(expectedSelectedStories);
+    });
+  });
 });
