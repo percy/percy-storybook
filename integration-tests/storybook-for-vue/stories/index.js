@@ -33,4 +33,9 @@ storiesOf('addWithPercyOptions', module)
     components: { MyButton },
     template: '<my-button @click="action">I have snapshots in a single width</my-button>',
     methods: { action: action('clicked') },
+  }))
+  .addWithPercyOptions('skipped', { skip: true }, () => ({
+    components: { MyButton },
+    template: '<my-button @click="action">I will not render</my-button>',
+    methods: { action: action('clicked') },
   }));
