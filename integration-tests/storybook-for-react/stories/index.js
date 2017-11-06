@@ -89,6 +89,7 @@ storiesOf('addWithPercyOptions', module)
   ))
   .addWithPercyOptions('single width', { widths: [444] }, () => <span>Renders in one width</span>)
   .addWithPercyOptions('without options', () => <span>Renders with the fallback width(s)</span>)
+  .addWithPercyOptions('with skip option', { skip: true }, () => <span>Will not Render</span>)
   .addWithPercyOptions('with RTL of true for a single story', { rtl: true }, () => (
     <div className={direction}>
       <span>The direction is {direction}.</span>
