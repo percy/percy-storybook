@@ -5,6 +5,7 @@ declare module '@percy-io/percy-storybook' {
   export interface PercyOptions {
     rtl?: boolean;
     widths?: number[];
+    skip?: boolean;
   }
 
   export interface PercyAddon {
