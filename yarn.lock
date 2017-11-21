@@ -10,15 +10,15 @@
   version "0.1.9"
   resolved "https://registry.yarnpkg.com/@percy-io/in-percy/-/in-percy-0.1.9.tgz#e7f8a7533ba686958b5c06b1427b4c5bbf69d40b"
 
-"@percy-io/react-percy-api-client@^0.2.0":
-  version "0.2.5"
-  resolved "https://registry.yarnpkg.com/@percy-io/react-percy-api-client/-/react-percy-api-client-0.2.5.tgz#c98974d8c1bc53e2ae38c1549b0ec967fdde628f"
+"@percy-io/react-percy-api-client@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/@percy-io/react-percy-api-client/-/react-percy-api-client-0.3.0.tgz#e28141b4afc418508e866e51aed22fec96333c4b"
   dependencies:
     babel-runtime "^6.26.0"
     debug "^2.6.3"
     es6-promise-pool "^2.4.4"
     mime-types "^2.1.14"
-    percy-client "^2.1.0"
+    percy-client "^2.3.0"
     slugify "^1.1.0"
 
 "@storybook/addon-actions@^3.2.12", "@storybook/addon-actions@^3.2.14":
@@ -5705,7 +5705,7 @@ pbkdf2@^3.0.3:
     safe-buffer "^5.0.1"
     sha.js "^2.4.8"
 
-percy-client@^2.1.0:
+percy-client@^2.3.0:
   version "2.4.2"
   resolved "https://registry.yarnpkg.com/percy-client/-/percy-client-2.4.2.tgz#e0548cbab92bf1279929a322f1d097b13750181d"
   dependencies:
