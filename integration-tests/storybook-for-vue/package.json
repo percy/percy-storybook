@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "storybook-for-vue-integration-tests",
-  "version": "1.1.9",
+  "version": "1.1.10",
   "scripts": {
     "storybook": "start-storybook -p 9001 -c storybook -s ./storybook/public",
     "storybook:build": "build-storybook -c storybook -s ./storybook/public",
@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@percy-io/in-percy": "^0.1.7",
-    "@percy-io/percy-storybook": "^1.2.6",
+    "@percy-io/percy-storybook": "^1.2.7",
     "@storybook/addon-actions": "^3.2.14",
     "@storybook/addon-info": "^3.2.14",
     "@storybook/addon-knobs": "^3.2.14",
