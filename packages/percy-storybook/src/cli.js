@@ -51,7 +51,9 @@ export async function run(argv) {
 
   if (process.env.PERCY_ENABLE === '0') {
     // eslint-disable-next-line no-console
-    console.log(options.json ? '{}' : 'The PERCY_ENABLE environment variable is set to 0. Exiting.');
+    console.log(
+      options.json ? '{}' : 'The PERCY_ENABLE environment variable is set to 0. Exiting.',
+    );
     return;
   }
 
@@ -84,5 +86,13 @@ export async function run(argv) {
     `storybook/${storybookVersion()} react/${reactVersion()}`,
   );
 
-  return uploadStorybook(client, selectedStories, widths, minimumHeight, storyHtml, assets, options.json);
+  return uploadStorybook(
+    client,
+    selectedStories,
+    widths,
+    minimumHeight,
+    storyHtml,
+    assets,
+    options.json,
+  );
 }

@@ -10,8 +10,10 @@ export default async function uploadStorybook(
   jsonOutput,
 ) {
   const snapshotPluralization = selectedStories.length === 1 ? 'snapshot' : 'snapshots';
-  // eslint-disable-next-line no-console
-  !jsonOutput && console.log('\nUploading', selectedStories.length, snapshotPluralization, 'to Percy.');
+
+  !jsonOutput &&
+    // eslint-disable-next-line no-console
+    console.log('\nUploading', selectedStories.length, snapshotPluralization, 'to Percy.');
 
   const resources = client.makeResources(assets);
   const build = await client.createBuild(resources);
@@ -21,6 +23,7 @@ export default async function uploadStorybook(
   await client.finalizeBuild(build);
 
   if (jsonOutput) {
+    // eslint-disable-next-line no-console
     console.log(JSON.stringify(build.attributes));
   } else {
     // eslint-disable-next-line no-console
