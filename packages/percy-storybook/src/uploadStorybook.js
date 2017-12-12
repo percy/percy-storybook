@@ -7,10 +7,13 @@ export default async function uploadStorybook(
   minimumHeight,
   storyHtml,
   assets,
+  jsonOutput,
 ) {
   const snapshotPluralization = selectedStories.length === 1 ? 'snapshot' : 'snapshots';
-  // eslint-disable-next-line no-console
-  console.log('\nUploading', selectedStories.length, snapshotPluralization, 'to Percy.');
+
+  !jsonOutput &&
+    // eslint-disable-next-line no-console
+    console.log('\nUploading', selectedStories.length, snapshotPluralization, 'to Percy.');
 
   const resources = client.makeResources(assets);
   const build = await client.createBuild(resources);
@@ -19,9 +22,14 @@ export default async function uploadStorybook(
   await uploadStories(client, build, selectedStories, widths, minimumHeight, assets, storyHtml);
   await client.finalizeBuild(build);
 
-  // eslint-disable-next-line no-console
-  console.log(
-    'Percy snapshots uploaded. Visual diffs are now processing:',
-    build.attributes['web-url'],
-  );
+  if (jsonOutput) {
+    // eslint-disable-next-line no-console
+    console.log(JSON.stringify(build.attributes));
+  } else {
+    // eslint-disable-next-line no-console
+    console.log(
+      'Percy snapshots uploaded. Visual diffs are now processing:',
+      build.attributes['web-url'],
+    );
+  }
 }

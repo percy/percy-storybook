@@ -20,6 +20,10 @@ export const options = {
     description: 'Directory to load the static storybook built by build-storybook from',
     requiresArg: true,
   },
+  json: {
+    description: 'Log the build parameters in JSON. Incompatible with --debug',
+    requiresArg: false,
+  },
   rtl: {
     description: 'Runs stories a second time with a direction parameter set to rtl',
     requiresArg: false,
