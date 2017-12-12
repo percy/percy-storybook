@@ -46,11 +46,12 @@ export async function run(argv) {
   const options = {
     debug: argv.debug,
     buildDir: argv.build_dir,
+    json: argv.json && !argv.debug,
   };
 
   if (process.env.PERCY_ENABLE === '0') {
     // eslint-disable-next-line no-console
-    console.log('The PERCY_ENABLE environment variable is set to 0. Exiting.');
+    console.log(options.json ? '{}' : 'The PERCY_ENABLE environment variable is set to 0. Exiting.');
     return;
   }
 
@@ -66,13 +67,13 @@ export async function run(argv) {
   // debug('assets %o', assets);
 
   const stories = await getStories(assets[storybookJavascriptPath], options);
-  debug('stories %o', stories);
+  options.debug && debug('stories %o', stories);
 
   const selectedStories = selectStories(stories, rtlRegex);
-  debug('selectedStories %o', selectedStories);
+  options.debug && debug('selectedStories %o', selectedStories);
 
   if (selectedStories.length === 0) {
-    console.log('WARNING: No stories were found.'); // eslint-disable-line no-console
+    console.log(options.json ? '{}' : 'WARNING: No stories were found.'); // eslint-disable-line no-console
     return;
   }
 
@@ -83,5 +84,5 @@ export async function run(argv) {
     `storybook/${storybookVersion()} react/${reactVersion()}`,
   );
 
-  return uploadStorybook(client, selectedStories, widths, minimumHeight, storyHtml, assets);
+  return uploadStorybook(client, selectedStories, widths, minimumHeight, storyHtml, assets, options.json);
 }
