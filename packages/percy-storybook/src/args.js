@@ -21,7 +21,7 @@ export const options = {
     requiresArg: true,
   },
   output_format: {
-    description: 'Specify JSON to log the build parameters in JSON. Incompatible with --debug.',
+    description: 'Specify JSON to log the build parameters in JSON. Note: --debug outputs non-JSON',
     requiresArg: true,
   },
   rtl: {
@@ -34,4 +34,4 @@ export const options = {
   },
 };
 
-export const usage = 'Usage: $0 --widths=320,1280 --output_format=JSON';
+export const usage = 'Usage: $0 --widths=320,1280 --debug';

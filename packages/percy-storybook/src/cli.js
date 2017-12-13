@@ -4,7 +4,7 @@ import getStories from './getStories';
 import getStaticAssets from './getStaticAssets';
 import getWidths from './getWidths';
 import getMinimumHeight from './getMinimumHeight';
-import getOutputFormat from '../getOutputFormat';
+import getOutputFormat from './getOutputFormat';
 import getRtlRegex from './getRtlRegex';
 import selectStories from './selectStories';
 import uploadStorybook from './uploadStorybook';
@@ -74,10 +74,10 @@ export async function run(argv) {
   // debug('assets %o', assets);
 
   const stories = await getStories(assets[storybookJavascriptPath], options);
-  debug('stories %o', stories);
+  options.debug && debug('stories %o', stories);
 
   const selectedStories = selectStories(stories, rtlRegex);
-  debug('selectedStories %o', selectedStories);
+  options.debug && debug('selectedStories %o', selectedStories);
 
   if (selectedStories.length === 0) {
     if (options.outputFormat == 'text') {
