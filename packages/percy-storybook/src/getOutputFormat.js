@@ -1,11 +1,11 @@
 export default function getOutputFormat(outputFormatString) {
-  const outputFormatLowerCaseString = outputFormatString.toLowerCase();
+  const normalizedOutputFormat = outputFormatString.toLowerCase();
 
-  if (outputFormatLowerCaseString != 'text' && outputFormatLowerCaseString != 'json') {
+  if (normalizedOutputFormat != 'text' && normalizedOutputFormat != 'json') {
     throw new Error(
       `Output format must be either 'text' or 'json'. Received: ${outputFormatString}`,
     );
   }
 
-  return outputFormatLowerCaseString;
+  return normalizedOutputFormat;
 }
