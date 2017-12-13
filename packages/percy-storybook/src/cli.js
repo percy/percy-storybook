@@ -46,10 +46,14 @@ export async function run(argv) {
   const rtlRegex = getRtlRegex(argv.rtl, argv.rtl_regex);
 
   const options = {
-    debug: argv.debug,
+    // Configure debug logging if flag specified, or if it was already enabled via DEBUG env var
+    debug: argv.debug || debug.enabled,
     buildDir: argv.build_dir,
     outputFormat: getOutputFormat(argv.output_format),
   };
+
+  // Enable debug logging based on options.
+  debug.enabled = options.debug;
 
   if (process.env.PERCY_ENABLE === '0') {
     if (options.outputFormat == 'text') {
@@ -74,10 +78,10 @@ export async function run(argv) {
   // debug('assets %o', assets);
 
   const stories = await getStories(assets[storybookJavascriptPath], options);
-  options.debug && debug('stories %o', stories);
+  debug('stories %o', stories);
 
   const selectedStories = selectStories(stories, rtlRegex);
-  options.debug && debug('selectedStories %o', selectedStories);
+  debug('selectedStories %o', selectedStories);
 
   if (selectedStories.length === 0) {
     if (options.outputFormat == 'text') {
