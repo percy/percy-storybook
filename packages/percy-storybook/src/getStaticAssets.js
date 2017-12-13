@@ -33,7 +33,12 @@ function gatherBuildResources(buildDir) {
           resourceUrl = resourceUrl.replace(/\\/g, '/');
         }
 
-        resourceUrl = resourceUrl.replace(buildDir, '');
+        // Strip the buildDir from the start of the resourceUrl
+        if (buildDir.startsWith('./')) {
+          resourceUrl = resourceUrl.replace(buildDir.substr(2), '');
+        } else {
+          resourceUrl = resourceUrl.replace(buildDir, '');
+        }
 
         // Remove the leading /
         if (resourceUrl.charAt(0) === '/') {

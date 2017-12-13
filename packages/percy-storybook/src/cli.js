@@ -4,6 +4,7 @@ import getStories from './getStories';
 import getStaticAssets from './getStaticAssets';
 import getWidths from './getWidths';
 import getMinimumHeight from './getMinimumHeight';
+import getOutputFormat from './getOutputFormat';
 import getRtlRegex from './getRtlRegex';
 import selectStories from './selectStories';
 import uploadStorybook from './uploadStorybook';
@@ -27,6 +28,7 @@ export async function run(argv) {
     .options(args.options)
     .epilogue(args.docs)
     .default('build_dir', 'storybook-static')
+    .default('output_format', 'text')
     .default('minimum_height', '800').argv;
 
   if (argv.help) {
@@ -44,13 +46,23 @@ export async function run(argv) {
   const rtlRegex = getRtlRegex(argv.rtl, argv.rtl_regex);
 
   const options = {
-    debug: argv.debug,
+    // Configure debug logging if flag specified, or if it was already enabled via DEBUG env var
+    debug: argv.debug || debug.enabled,
     buildDir: argv.build_dir,
+    outputFormat: getOutputFormat(argv.output_format),
   };
 
+  // Enable debug logging based on options.
+  debug.enabled = options.debug;
+
   if (process.env.PERCY_ENABLE === '0') {
-    // eslint-disable-next-line no-console
-    console.log('The PERCY_ENABLE environment variable is set to 0. Exiting.');
+    if (options.outputFormat == 'text') {
+      // eslint-disable-next-line no-console
+      console.log('The PERCY_ENABLE environment variable is set to 0. Exiting.');
+    } else if (options.outputFormat == 'json') {
+      // eslint-disable-next-line no-console
+      console.log(`{'exitReason':'The PERCY_ENABLE environment variable is set to 0.'}`);
+    }
     return;
   }
 
@@ -72,7 +84,13 @@ export async function run(argv) {
   debug('selectedStories %o', selectedStories);
 
   if (selectedStories.length === 0) {
-    console.log('WARNING: No stories were found.'); // eslint-disable-line no-console
+    if (options.outputFormat == 'text') {
+      // eslint-disable-next-line no-console
+      console.log('No stories were found.');
+    } else if (options.outputFormat == 'json') {
+      // eslint-disable-next-line no-console
+      console.log(`{'exitReason':'No stories were found.'}`);
+    }
     return;
   }
 
@@ -83,5 +101,13 @@ export async function run(argv) {
     `storybook/${storybookVersion()} react/${reactVersion()}`,
   );
 
-  return uploadStorybook(client, selectedStories, widths, minimumHeight, storyHtml, assets);
+  return uploadStorybook(
+    client,
+    selectedStories,
+    widths,
+    minimumHeight,
+    storyHtml,
+    assets,
+    options.outputFormat,
+  );
 }
