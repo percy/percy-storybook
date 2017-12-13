@@ -1,6 +1,6 @@
 import getMinimumHeight from '../getMinimumHeight';
 
-it('returns number when passed a number ', () => {
+it('returns number when passed a number', () => {
   expect(getMinimumHeight(100)).toEqual(100);
 });
 

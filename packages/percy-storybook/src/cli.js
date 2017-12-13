@@ -4,6 +4,7 @@ import getStories from './getStories';
 import getStaticAssets from './getStaticAssets';
 import getWidths from './getWidths';
 import getMinimumHeight from './getMinimumHeight';
+import getOutputFormat from '../getOutputFormat';
 import getRtlRegex from './getRtlRegex';
 import selectStories from './selectStories';
 import uploadStorybook from './uploadStorybook';
@@ -27,6 +28,7 @@ export async function run(argv) {
     .options(args.options)
     .epilogue(args.docs)
     .default('build_dir', 'storybook-static')
+    .default('output_format', 'text')
     .default('minimum_height', '800').argv;
 
   if (argv.help) {
@@ -46,14 +48,17 @@ export async function run(argv) {
   const options = {
     debug: argv.debug,
     buildDir: argv.build_dir,
-    json: argv.json && !argv.debug,
+    outputFormat: getOutputFormat(argv.output_format),
   };
 
   if (process.env.PERCY_ENABLE === '0') {
-    // eslint-disable-next-line no-console
-    console.log(
-      options.json ? '{}' : 'The PERCY_ENABLE environment variable is set to 0. Exiting.',
-    );
+    if (options.outputFormat == 'text') {
+      // eslint-disable-next-line no-console
+      console.log('The PERCY_ENABLE environment variable is set to 0. Exiting.');
+    } else if (options.outputFormat == 'JSON') {
+      // eslint-disable-next-line no-console
+      console.log(`{'exitReason':'The PERCY_ENABLE environment variable is set to 0.'}`);
+    }
     return;
   }
 
@@ -69,13 +74,19 @@ export async function run(argv) {
   // debug('assets %o', assets);
 
   const stories = await getStories(assets[storybookJavascriptPath], options);
-  options.debug && debug('stories %o', stories);
+  debug('stories %o', stories);
 
   const selectedStories = selectStories(stories, rtlRegex);
-  options.debug && debug('selectedStories %o', selectedStories);
+  debug('selectedStories %o', selectedStories);
 
   if (selectedStories.length === 0) {
-    console.log(options.json ? '{}' : 'WARNING: No stories were found.'); // eslint-disable-line no-console
+    if (options.outputFormat == 'text') {
+      // eslint-disable-next-line no-console
+      console.log('No stories were found.');
+    } else if (options.outputFormat == 'JSON') {
+      // eslint-disable-next-line no-console
+      console.log(`{'exitReason':'No stories were found.'}`);
+    }
     return;
   }
 
@@ -93,6 +104,6 @@ export async function run(argv) {
     minimumHeight,
     storyHtml,
     assets,
-    options.json,
+    options.outputFormat,
   );
 }
