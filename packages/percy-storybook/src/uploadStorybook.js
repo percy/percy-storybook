@@ -23,7 +23,7 @@ export default async function uploadStorybook(
   await uploadStories(client, build, selectedStories, widths, minimumHeight, assets, storyHtml);
   await client.finalizeBuild(build);
 
-  if (outputFormat == 'JSON') {
+  if (outputFormat == 'json') {
     // eslint-disable-next-line no-console
     console.log(JSON.stringify(build.attributes));
   } else if (outputFormat == 'text') {

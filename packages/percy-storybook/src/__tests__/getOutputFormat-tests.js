@@ -1,11 +1,13 @@
 import getOutputFormat from '../getOutputFormat';
 
 it('returns text when passed text', () => {
+  expect(getOutputFormat('TEXT')).toEqual('text');
   expect(getOutputFormat('text')).toEqual('text');
 });
 
-it('returns JSON when passed JSON', () => {
-  expect(getOutputFormat('JSON')).toEqual('JSON');
+it('returns json when passed JSON', () => {
+  expect(getOutputFormat('JSON')).toEqual('json');
+  expect(getOutputFormat('json')).toEqual('json');
 });
 
 it('raises an error if called with an invalid value', () => {

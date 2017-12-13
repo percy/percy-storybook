@@ -55,7 +55,7 @@ export async function run(argv) {
     if (options.outputFormat == 'text') {
       // eslint-disable-next-line no-console
       console.log('The PERCY_ENABLE environment variable is set to 0. Exiting.');
-    } else if (options.outputFormat == 'JSON') {
+    } else if (options.outputFormat == 'json') {
       // eslint-disable-next-line no-console
       console.log(`{'exitReason':'The PERCY_ENABLE environment variable is set to 0.'}`);
     }
@@ -83,7 +83,7 @@ export async function run(argv) {
     if (options.outputFormat == 'text') {
       // eslint-disable-next-line no-console
       console.log('No stories were found.');
-    } else if (options.outputFormat == 'JSON') {
+    } else if (options.outputFormat == 'json') {
       // eslint-disable-next-line no-console
       console.log(`{'exitReason':'No stories were found.'}`);
     }
