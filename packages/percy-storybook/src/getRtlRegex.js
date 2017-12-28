@@ -5,7 +5,7 @@ export default function getRtlRegex(rtl, rtlRegex) {
 
   // If rtl is set, match all story names
   if (rtl) {
-    return /.*/gim;
+    return /.*/im;
   }
 
   if (rtlRegex) {
