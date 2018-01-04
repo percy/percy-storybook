@@ -29,3 +29,12 @@ it('parses and returns path when type last', () => {
     '</body></html>';
   expect(getStorybookJavascriptPath(html)).toEqual('static/preview.ca96e23c5dfccc147bb8.bundle.js');
 });
+
+it('parses and returns path when last script of multiple on one line', () => {
+  const html =
+    '<html><head></head><body>' +
+    '<script src="static/other.ca96e23c5dfccc147bb8.bundle.js" type="text/javascript"></script>' +
+    '<script src="static/preview.ca96e23c5dfccc147bb8.bundle.js" type="text/javascript"></script>' +
+    '</body></html>';
+  expect(getStorybookJavascriptPath(html)).toEqual('static/preview.ca96e23c5dfccc147bb8.bundle.js');
+});
