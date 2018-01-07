@@ -26,7 +26,7 @@
     "@storybook/addon-options": "^3.3.4",
     "@storybook/vue": "^3.3.4",
     "css-loader": "^0.28.7",
-    "vue-loader": "^13.6.1",
+    "vue-loader": "^13.6.2",
     "vue-template-compiler": "^2.5.13"
   }
 }
