@@ -1,3 +1,4 @@
+import {} from 'jasmine';
 import { AppPage } from './app.po';
 
 describe('storybook-for-angular App', () => {
@@ -9,6 +10,6 @@ describe('storybook-for-angular App', () => {
 
   it('should display welcome message', () => {
     page.navigateTo();
-    expect(page.getParagraphText()).toEqual('Welcome to app!');
+    expect<any>(page.getParagraphText()).toEqual('Welcome to app!');
   });
 });
