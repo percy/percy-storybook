@@ -60,6 +60,7 @@ module.exports = {
       files: ['integration-tests/**'],
       env: {
         browser: true,
+        jasmine: true,
       },
     },
   ],
