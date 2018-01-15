@@ -202,18 +202,7 @@
   version "0.0.13"
   resolved "https://registry.yarnpkg.com/@schematics/schematics/-/schematics-0.0.13.tgz#f7eda5c7caab714f2675dca9cb8301a737acdba2"
 
-"@storybook/addon-actions@^3.3.9":
-  version "3.3.9"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-actions/-/addon-actions-3.3.9.tgz#2b191548928467fe1dd26dcba606feafbf182d36"
-  dependencies:
-    deep-equal "^1.0.1"
-    global "^4.3.2"
-    make-error "^1.3.2"
-    prop-types "^15.6.0"
-    react-inspector "^2.2.2"
-    uuid "^3.1.0"
-
-"@storybook/addon-actions@^3.4.0-alpha.4", "@storybook/addon-actions@^v3.4.0-alpha.1":
+"@storybook/addon-actions@^3.4.0-alpha.4":
   version "3.4.0-alpha.4"
   resolved "https://registry.yarnpkg.com/@storybook/addon-actions/-/addon-actions-3.4.0-alpha.4.tgz#64060d4f7d7c0a4438a25716ba4e3def6f988774"
   dependencies:
@@ -224,7 +213,7 @@
     react-inspector "^2.2.2"
     uuid "^3.1.0"
 
-"@storybook/addon-info@^v3.4.0-alpha.1":
+"@storybook/addon-info@^3.4.0-alpha.4":
   version "3.4.0-alpha.4"
   resolved "https://registry.yarnpkg.com/@storybook/addon-info/-/addon-info-3.4.0-alpha.4.tgz#82469b69d3a82e5fe80cdb3081e5dc4c105800a1"
   dependencies:
@@ -238,7 +227,7 @@
     react-addons-create-fragment "^15.5.3"
     util-deprecate "^1.0.2"
 
-"@storybook/addon-knobs@^v3.4.0-alpha.1":
+"@storybook/addon-knobs@^3.4.0-alpha.4":
   version "3.4.0-alpha.4"
   resolved "https://registry.yarnpkg.com/@storybook/addon-knobs/-/addon-knobs-3.4.0-alpha.4.tgz#5ae2dc9a7929dba0e9b576e4db589a887e9fe0c8"
   dependencies:
@@ -254,15 +243,7 @@
     react-textarea-autosize "^5.2.1"
     util-deprecate "^1.0.2"
 
-"@storybook/addon-links@^3.3.9":
-  version "3.3.9"
-  resolved "https://registry.yarnpkg.com/@storybook/addon-links/-/addon-links-3.3.9.tgz#13781ac1c21ddfe347ece6ceab8518c8d1f98a0f"
-  dependencies:
-    "@storybook/components" "^3.3.9"
-    global "^4.3.2"
-    prop-types "^15.5.10"
-
-"@storybook/addon-links@^3.4.0-alpha.4", "@storybook/addon-links@^v3.4.0-alpha.1":
+"@storybook/addon-links@^3.4.0-alpha.4":
   version "3.4.0-alpha.4"
   resolved "https://registry.yarnpkg.com/@storybook/addon-links/-/addon-links-3.4.0-alpha.4.tgz#67774b824853df699b461f598b0ff78110304064"
   dependencies:
@@ -270,30 +251,27 @@
     global "^4.3.2"
     prop-types "^15.5.10"
 
-"@storybook/addon-options@^v3.4.0-alpha.1":
+"@storybook/addon-options@^3.4.0-alpha.4":
   version "3.4.0-alpha.4"
   resolved "https://registry.yarnpkg.com/@storybook/addon-options/-/addon-options-3.4.0-alpha.4.tgz#dad4ec274b0a912b9692ba0584e1dc0d6dd4fb5c"
-
-"@storybook/addons@^3.3.9":
-  version "3.3.9"
-  resolved "https://registry.yarnpkg.com/@storybook/addons/-/addons-3.3.9.tgz#356ce7f1de892d88ca4bc5f686d06e07dd8c2108"
 
 "@storybook/addons@^3.4.0-alpha.4":
   version "3.4.0-alpha.4"
   resolved "https://registry.yarnpkg.com/@storybook/addons/-/addons-3.4.0-alpha.4.tgz#e87fdbee64cf4fe4f5d8ff321638a57e7d4f3bbd"
 
-"@storybook/angular@^3.3.9":
-  version "3.3.9"
-  resolved "https://registry.yarnpkg.com/@storybook/angular/-/angular-3.3.9.tgz#e7c4aded9b6852823d1528e83248116acc1e6351"
+"@storybook/angular@^3.4.0-alpha.4":
+  version "3.4.0-alpha.4"
+  resolved "https://registry.yarnpkg.com/@storybook/angular/-/angular-3.4.0-alpha.4.tgz#57959b87c4355bcfe71dc67992a95a7d3693a594"
   dependencies:
-    "@storybook/addon-actions" "^3.3.9"
-    "@storybook/addon-links" "^3.3.9"
-    "@storybook/addons" "^3.3.9"
-    "@storybook/channel-postmessage" "^3.3.9"
-    "@storybook/ui" "^3.3.9"
+    "@storybook/addon-actions" "^3.4.0-alpha.4"
+    "@storybook/addon-links" "^3.4.0-alpha.4"
+    "@storybook/addons" "^3.4.0-alpha.4"
+    "@storybook/channel-postmessage" "^3.4.0-alpha.4"
+    "@storybook/core" "^3.4.0-alpha.4"
+    "@storybook/ui" "^3.4.0-alpha.4"
     airbnb-js-shims "^1.1.1"
     angular2-template-loader "^0.6.2"
-    autoprefixer "^7.1.1"
+    autoprefixer "^7.2.5"
     babel-core "^6.26.0"
     babel-loader "^7.0.0"
     babel-plugin-react-docgen "^1.6.0"
@@ -304,8 +282,8 @@
     babel-runtime "^6.23.0"
     case-sensitive-paths-webpack-plugin "^2.0.0"
     chalk "^2.1.0"
-    commander "^2.11.0"
-    common-tags "^1.4.0"
+    commander "^2.13.0"
+    common-tags "^1.7.2"
     configstore "^3.1.0"
     core-js "^2.4.1"
     cross-env "^5.1.1"
@@ -321,10 +299,11 @@
     json5 "^0.5.1"
     lodash.pick "^4.4.0"
     markdown-loader "^2.0.2"
+    node-sass "^4.7.2"
     postcss-flexbugs-fixes "^3.0.0"
-    postcss-loader "^2.0.5"
+    postcss-loader "^2.0.10"
     prop-types "^15.5.10"
-    qs "^6.4.0"
+    qs "^6.5.1"
     raw-loader "^0.5.1"
     react "^16.0.0"
     react-dom "^16.0.0"
@@ -332,8 +311,9 @@
     redux "^3.6.0"
     request "^2.81.0"
     rxjs "^5.4.2"
+    sass-loader "^6.0.6"
     serve-favicon "^2.4.3"
-    shelljs "^0.7.8"
+    shelljs "^0.8.0"
     style-loader "^0.18.2"
     ts-loader "^2.2.2"
     uglifyjs-webpack-plugin "^1.1.6"
@@ -343,15 +323,7 @@
     webpack "^2.5.1 || ^3.0.0"
     webpack-dev-middleware "^1.10.2"
     webpack-hot-middleware "^2.18.0"
-    zone.js "^0.8.19"
-
-"@storybook/channel-postmessage@^3.3.9":
-  version "3.3.9"
-  resolved "https://registry.yarnpkg.com/@storybook/channel-postmessage/-/channel-postmessage-3.3.9.tgz#a59220f9ecbdbe05deac6ac4339715aa587d41dd"
-  dependencies:
-    "@storybook/channels" "^3.3.9"
-    global "^4.3.2"
-    json-stringify-safe "^5.0.1"
+    zone.js "^0.8.20"
 
 "@storybook/channel-postmessage@^3.4.0-alpha.4":
   version "3.4.0-alpha.4"
@@ -361,10 +333,6 @@
     global "^4.3.2"
     json-stringify-safe "^5.0.1"
 
-"@storybook/channels@^3.3.9":
-  version "3.3.9"
-  resolved "https://registry.yarnpkg.com/@storybook/channels/-/channels-3.3.9.tgz#3116a6c5e441fd057558870b254c34fe3a9fbfb0"
-
 "@storybook/channels@^3.4.0-alpha.4":
   version "3.4.0-alpha.4"
   resolved "https://registry.yarnpkg.com/@storybook/channels/-/channels-3.4.0-alpha.4.tgz#837754ab5a731d4cc5f59aa145fec6235ada61cc"
@@ -372,14 +340,6 @@
 "@storybook/client-logger@^3.4.0-alpha.4":
   version "3.4.0-alpha.4"
   resolved "https://registry.yarnpkg.com/@storybook/client-logger/-/client-logger-3.4.0-alpha.4.tgz#b473d8d6a495f840c7f8f1d395d7100bae87c6fa"
-
-"@storybook/components@^3.3.9":
-  version "3.3.9"
-  resolved "https://registry.yarnpkg.com/@storybook/components/-/components-3.3.9.tgz#1f7ced8b10a0e405c1d3fd6fe7ef7b8957ddf89f"
-  dependencies:
-    glamor "^2.20.40"
-    glamorous "^4.11.2"
-    prop-types "^15.6.0"
 
 "@storybook/components@^3.4.0-alpha.4":
   version "3.4.0-alpha.4"
@@ -438,7 +398,7 @@
   dependencies:
     babel-runtime "^6.5.0"
 
-"@storybook/react@^v3.4.0-alpha.1":
+"@storybook/react@^3.4.0-alpha.4":
   version "3.4.0-alpha.4"
   resolved "https://registry.yarnpkg.com/@storybook/react/-/react-3.4.0-alpha.4.tgz#ada19d1e8efeee84ac406e38cf944e1620e991e6"
   dependencies:
@@ -501,34 +461,6 @@
     webpack-dev-middleware "^1.12.2"
     webpack-hot-middleware "^2.21.0"
 
-"@storybook/ui@^3.3.9":
-  version "3.3.9"
-  resolved "https://registry.yarnpkg.com/@storybook/ui/-/ui-3.3.9.tgz#abb1df557131b174bf3c0879863a309ee85de8e3"
-  dependencies:
-    "@storybook/components" "^3.3.9"
-    "@storybook/mantra-core" "^1.7.2"
-    "@storybook/react-komposer" "^2.0.3"
-    babel-runtime "^6.26.0"
-    deep-equal "^1.0.1"
-    events "^1.1.1"
-    fuse.js "^3.2.0"
-    global "^4.3.2"
-    json-stringify-safe "^5.0.1"
-    keycode "^2.1.9"
-    lodash.debounce "^4.0.8"
-    lodash.pick "^4.4.0"
-    lodash.sortby "^4.7.0"
-    podda "^1.2.2"
-    prop-types "^15.6.0"
-    qs "^6.5.1"
-    react-fuzzy "^0.5.1"
-    react-icons "^2.2.7"
-    react-inspector "^2.2.2"
-    react-modal "^3.1.10"
-    react-split-pane "^0.1.74"
-    react-treebeard "^2.1.0"
-    redux "^3.7.2"
-
 "@storybook/ui@^3.4.0-alpha.4":
   version "3.4.0-alpha.4"
   resolved "https://registry.yarnpkg.com/@storybook/ui/-/ui-3.4.0-alpha.4.tgz#35fcf441af16e9e382036e366b0eb636e17c8469"
@@ -557,7 +489,7 @@
     react-treebeard "^2.1.0"
     redux "^3.7.2"
 
-"@storybook/vue@^v3.4.0-alpha.1":
+"@storybook/vue@^3.4.0-alpha.4":
   version "3.4.0-alpha.4"
   resolved "https://registry.yarnpkg.com/@storybook/vue/-/vue-3.4.0-alpha.4.tgz#f71fea5f002880ed2f7863062e729ad91d6da5db"
   dependencies:
@@ -1039,7 +971,7 @@ autoprefixer@^6.3.1:
     postcss "^5.2.16"
     postcss-value-parser "^3.2.3"
 
-autoprefixer@^7.1.1, autoprefixer@^7.2.3, autoprefixer@^7.2.5:
+autoprefixer@^7.2.3, autoprefixer@^7.2.5:
   version "7.2.5"
   resolved "https://registry.yarnpkg.com/autoprefixer/-/autoprefixer-7.2.5.tgz#04ccbd0c6a61131b6d13f53d371926092952d192"
   dependencies:
@@ -2803,7 +2735,7 @@ commander@^2.11.0, commander@^2.12.1, commander@^2.13.0, commander@^2.9.0, comma
   version "2.13.0"
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.13.0.tgz#6964bca67685df7c1f1430c584f07d7597885b9c"
 
-common-tags@^1.3.1, common-tags@^1.4.0, common-tags@^1.7.2:
+common-tags@^1.3.1, common-tags@^1.7.2:
   version "1.7.2"
   resolved "https://registry.yarnpkg.com/common-tags/-/common-tags-1.7.2.tgz#24d9768c63d253a56ecff93845b44b4df1d52771"
   dependencies:
@@ -7229,7 +7161,7 @@ node-pre-gyp@^0.6.39:
     tar "^2.2.1"
     tar-pack "^3.4.0"
 
-node-sass@^4.3.0:
+node-sass@^4.3.0, node-sass@^4.7.2:
   version "4.7.2"
   resolved "https://registry.yarnpkg.com/node-sass/-/node-sass-4.7.2.tgz#9366778ba1469eb01438a9e8592f4262bcb6794e"
   dependencies:
@@ -7968,7 +7900,7 @@ postcss-load-plugins@^2.3.0:
     cosmiconfig "^2.1.1"
     object-assign "^4.1.0"
 
-postcss-loader@^2.0.10, postcss-loader@^2.0.5:
+postcss-loader@^2.0.10:
   version "2.0.10"
   resolved "https://registry.yarnpkg.com/postcss-loader/-/postcss-loader-2.0.10.tgz#090db0540140bd56a7a7f717c41bc29aeef4c674"
   dependencies:
@@ -8355,7 +8287,7 @@ qjobs@^1.1.4:
   version "1.1.5"
   resolved "https://registry.yarnpkg.com/qjobs/-/qjobs-1.1.5.tgz#659de9f2cf8dcc27a1481276f205377272382e73"
 
-qs@6.5.1, qs@^6.4.0, qs@^6.5.1, qs@~6.5.1:
+qs@6.5.1, qs@^6.5.1, qs@~6.5.1:
   version "6.5.1"
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.5.1.tgz#349cdf6eef89ec45c12d7d5eb3fc0c870343a6d8"
 
@@ -9173,7 +9105,7 @@ sass-graph@^2.2.4:
     scss-tokenizer "^0.2.3"
     yargs "^7.0.0"
 
-sass-loader@^6.0.3:
+sass-loader@^6.0.3, sass-loader@^6.0.6:
   version "6.0.6"
   resolved "https://registry.yarnpkg.com/sass-loader/-/sass-loader-6.0.6.tgz#e9d5e6c1f155faa32a4b26d7a9b7107c225e40f9"
   dependencies:
@@ -9388,14 +9320,6 @@ shell-quote@^1.6.1:
     array-map "~0.0.0"
     array-reduce "~0.0.0"
     jsonify "~0.0.0"
-
-shelljs@^0.7.8:
-  version "0.7.8"
-  resolved "https://registry.yarnpkg.com/shelljs/-/shelljs-0.7.8.tgz#decbcf874b0d1e5fb72e14b164a9683048e9acb3"
-  dependencies:
-    glob "^7.0.0"
-    interpret "^1.0.0"
-    rechoir "^0.6.2"
 
 shelljs@^0.8.0:
   version "0.8.0"
@@ -11090,6 +11014,6 @@ yn@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/yn/-/yn-2.0.0.tgz#e5adabc8acf408f6385fc76495684c88e6af689a"
 
-zone.js@^0.8.14, zone.js@^0.8.19:
+zone.js@^0.8.14, zone.js@^0.8.19, zone.js@^0.8.20:
   version "0.8.20"
   resolved "https://registry.yarnpkg.com/zone.js/-/zone.js-0.8.20.tgz#a218c48db09464b19ff6fc8f0d4bb5b1046e185d"
