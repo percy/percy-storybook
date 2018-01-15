@@ -38,7 +38,6 @@
     "lint-staged": "^4.1.0",
     "prettier": "^1.6.0",
     "rimraf": "^2.5.4",
-    "tar.gz": "^1.0.5",
     "vitruvius": "^3.0.0"
   },
   "jest": {
