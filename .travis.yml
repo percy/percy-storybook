@@ -18,6 +18,8 @@ matrix:
     - node_js: "8"
       env: INTEGRATION_TEST=storybook-for-react PERCY_PROJECT=percy/storybook-for-react PERCY_TOKEN="$STORYBOOK_FOR_REACT_PERCY_TOKEN"
     - node_js: "8"
+      env: INTEGRATION_TEST=storybook-for-react PERCY_PROJECT=percy/storybook-for-react-chrome PERCY_TOKEN="$STORYBOOK_FOR_REACT_CHROME_PERCY_TOKEN"
+    - node_js: "8"
       env: INTEGRATION_TEST=storybook-for-vue PERCY_PROJECT=percy/storybook-for-vue PERCY_TOKEN="$STORYBOOK_FOR_VUE_PERCY_TOKEN"
     - node_js: "8"
       env: INTEGRATION_TEST=storybook-for-angular PERCY_PROJECT=percy/storybook-for-angular PERCY_TOKEN="$STORYBOOK_FOR_ANGULAR_PERCY_TOKEN"
