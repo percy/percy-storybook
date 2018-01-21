@@ -8,7 +8,7 @@ import faker from 'faker';
 import mockdate from 'mockdate';
 
 // This demonstrates how to run code specifically for Percy's rendering environment
-if (inPercy() || 1 == 1) {
+if (inPercy()) {
   // Seed faker so it generates deterministic fake data
   faker.seed(123);
   // Mock the current date
