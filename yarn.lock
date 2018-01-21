@@ -177,9 +177,9 @@
     tree-kill "^1.0.0"
     webpack-sources "^1.1.0"
 
-"@percy-io/in-percy@^0.1.7", "@percy-io/in-percy@^0.1.9":
-  version "0.1.9"
-  resolved "https://registry.yarnpkg.com/@percy-io/in-percy/-/in-percy-0.1.9.tgz#e7f8a7533ba686958b5c06b1427b4c5bbf69d40b"
+"@percy-io/in-percy@^0.1.10":
+  version "0.1.10"
+  resolved "https://registry.yarnpkg.com/@percy-io/in-percy/-/in-percy-0.1.10.tgz#20b0f5e2b99c56cac6ce22dcd41e4e5246e1e753"
 
 "@percy-io/react-percy-api-client@^0.3.0":
   version "0.3.0"

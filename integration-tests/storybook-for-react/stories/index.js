@@ -48,6 +48,7 @@ storiesOf('Managing Dynamic Data.Faker', module).add('Show a fake name and email
     </p>
     <p>The name is: {name}</p>
     <p>The email is: {email}</p>
+    <p>The hostname is: {window.location.hostname}</p>
   </div>
 ));
 
