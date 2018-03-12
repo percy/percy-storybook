@@ -61,13 +61,29 @@ function getStoriesFromDom(previewJavascriptCode, options) {
       src: [workerMock, localStorageMock, matchMediaMock, previewJavascriptCode],
       done: (err, window) => {
         if (err) return reject(err.response.body);
-        if (!window || !window[storiesKey]) {
-          const message =
-            'Storybook object not found on window. ' +
-            "Check your call to serializeStories in your Storybook's config.js.";
-          reject(new Error(message));
-        }
-        resolve(window[storiesKey]);
+        if (!window) return reject(new Error('Window not found when looking for stories.'));
+
+        // Check if the window has stories every 100ms for up to 10 seconds.
+        // This allows 10 seconds for any async pre-tasks (like fetch) to complete.
+        // Usually stories will be found on the first loop.
+        var checkStories = function(timesCalled) {
+          if (window[storiesKey]) {
+            // Found the stories, return them.
+            resolve(window[storiesKey]);
+          } else if (timesCalled < 100) {
+            // Stories not found yet, try again 100ms from now
+            setTimeout(() => {
+              checkStories(timesCalled + 1);
+            }, 100);
+          } else {
+            // Attempted 100 times, give up.
+            const message =
+              'Storybook object not found on window. ' +
+              "Check your call to serializeStories in your Storybook's config.js.";
+            reject(new Error(message));
+          }
+        };
+        checkStories(0);
       },
     };
     if (options.debug) {
