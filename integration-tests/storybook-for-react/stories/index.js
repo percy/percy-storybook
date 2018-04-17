@@ -14,7 +14,9 @@ storiesOf('Static CSS', module)
     <p className="green">Hi there! This text should be green.</p>
   ))
   .add('blue text using static css in sub_dir', () => (
-    <p className="blue">Hi there! This text should be blue when rendered in Percy.</p>
+    <p className="blue">
+      Hi there! This text should be blue when rendered in Percy. New blue sentence.
+    </p>
   ));
 
 storiesOf('Managing Dynamic Data.Frozen Time', module).add('Show the current date', () => (
