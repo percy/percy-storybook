@@ -38,5 +38,6 @@ script:
       fi
   - |
       if [ "$INTEGRATION_TEST" != "" ]; then
+        git show  --format='COMMITTER_EMAIL:%ae%nCOMMIT_MESSAGE:%B' --quiet
         yarn test:integration $INTEGRATION_TEST
       fi
