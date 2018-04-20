@@ -17,7 +17,6 @@ install:
 # Post-install test scripts.
 test_script:
   # Output useful info for debugging.
-  - git show  --format='COMMITTER_EMAIL:%ae%nCOMMIT_MESSAGE:%B' --quiet
   - node --version
   - yarn --version
   # run tests

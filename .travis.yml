@@ -38,6 +38,7 @@ script:
       fi
   - |
       if [ "$INTEGRATION_TEST" != "" ]; then
-        git show  --format='COMMITTER_EMAIL:%ae%nCOMMIT_MESSAGE:%B' --quiet
+        echo 'TRAVIS_PULL_REQUEST_SHA: ' + $TRAVIS_PULL_REQUEST_SHA
+        git show  --format='AUTHOR_EMAIL:%aeCOMMITTER_EMAIL:%ce%nCOMMIT_SHA:%H%nCOMMIT_MESSAGE:%B' --quiet
         yarn test:integration $INTEGRATION_TEST
       fi
