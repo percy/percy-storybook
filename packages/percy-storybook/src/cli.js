@@ -11,7 +11,7 @@ import uploadStorybook from './uploadStorybook';
 import storybookVersion from './storybookVersion';
 import reactVersion from './reactVersion';
 
-import ApiClient from '@percy-io/react-percy-api-client';
+import ApiClient from '@percy/react-percy-api-client';
 import createDebug from 'debug';
 
 import yargs from 'yargs';
