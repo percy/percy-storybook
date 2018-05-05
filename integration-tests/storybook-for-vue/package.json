@@ -14,7 +14,7 @@
     "mockdate": "^2.0.1",
     "prop-types": "^15.5.10",
     "vue": "^2.5.13",
-    "vuex": "^2.3.1"
+    "vuex": "^3.0.1"
   },
   "devDependencies": {
     "@percy-io/percy-storybook": "^1.3.5",
@@ -25,7 +25,7 @@
     "@storybook/addon-options": "^3.4.0-alpha.4",
     "@storybook/vue": "^3.4.0-alpha.4",
     "css-loader": "^0.28.7",
-    "vue-loader": "^13.7.0",
+    "vue-loader": "^15.0.9",
     "vue-template-compiler": "^2.5.13"
   }
 }
