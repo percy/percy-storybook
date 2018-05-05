@@ -9139,7 +9139,7 @@ react-lifecycles-compat@^3.0.0:
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/react-lifecycles-compat/-/react-lifecycles-compat-3.0.2.tgz#7279047275bd727a912e25f734c0559527e84eff"
 
-react-match-media@^2.0.1:
+react-match-media@^2.2.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/react-match-media/-/react-match-media-2.2.0.tgz#6ceaceffc84120e7e531fe92c86d1ab71df1ccec"
 

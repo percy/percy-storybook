@@ -2,8 +2,10 @@ import React from 'react';
 import { storiesOf, action } from '@storybook/react';
 import { withInfo } from '@storybook/addon-info';
 import faker from 'faker';
-import { MatchMediaHOC } from 'react-match-media';
-import Example from '../src/Example';
+
+// Disabling the two lines below until react-match-media that works with react 16 is released
+// import { MatchMediaHOC } from 'react-match-media';
+// import Example from '../src/Example';
 
 storiesOf('Button', module)
   .add('with text', () => <button onClick={action('clicked')}>Hello Button</button>)
@@ -52,17 +54,18 @@ storiesOf('Managing Dynamic Data.Faker', module).add('Show a fake name and email
   </div>
 ));
 
-const ComponentForBigScreen = MatchMediaHOC(Example, '(min-width: 800px)');
-const ComponentForSmallScreen = MatchMediaHOC(Example, '(max-width: 500px)');
+// Disabling these until a new release of react-match-media that's compatible with react 16
+// const ComponentForBigScreen = MatchMediaHOC(Example, '(min-width: 800px)');
+// const ComponentForSmallScreen = MatchMediaHOC(Example, '(max-width: 500px)');
 
-storiesOf('MatchMedia', module)
-  .add('Example control without MatchMedia', () => <Example>This is the Example control</Example>)
-  .add('Example control with MatchMedia', () => (
-    <div>
-      <ComponentForBigScreen>Example for big screen</ComponentForBigScreen>
-      <ComponentForSmallScreen>Example for small screen</ComponentForSmallScreen>
-    </div>
-  ));
+// storiesOf('MatchMedia', module)
+//   .add('Example control without MatchMedia', () => <Example>This is the Example control</Example>)
+//   .add('Example control with MatchMedia', () => (
+//     <div>
+//       <ComponentForBigScreen>Example for big screen</ComponentForBigScreen>
+//       <ComponentForSmallScreen>Example for small screen</ComponentForSmallScreen>
+//     </div>
+//   ));
 
 let direction = 'ltr';
 if (window && window.location && window.location.search.indexOf('direction=rtl') > -1) {

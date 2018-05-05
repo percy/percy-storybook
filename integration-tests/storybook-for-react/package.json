@@ -15,7 +15,7 @@
     "prop-types": "^15.5.10",
     "react": "^16.3.2",
     "react-dom": "^16.3.2",
-    "react-match-media": "^2.0.1"
+    "react-match-media": "^2.2.0"
   },
   "devDependencies": {
     "@percy-io/in-percy": "^0.1.10",
