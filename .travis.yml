@@ -38,5 +38,9 @@ script:
       fi
   - |
       if [ "$INTEGRATION_TEST" != "" ]; then
+        echo 'TRAVIS_COMMIT: ' + $TRAVIS_COMMIT
+        echo 'TRAVIS_COMMIT_RANGE: ' + $TRAVIS_COMMIT_RANGE
+        echo 'TRAVIS_PULL_REQUEST_SHA: ' + $TRAVIS_PULL_REQUEST_SHA
+        git show  --format='AUTHOR_EMAIL:%aeCOMMITTER_EMAIL:%ce%nCOMMIT_SHA:%H%nCOMMIT_MESSAGE:%B' --quiet
         yarn test:integration $INTEGRATION_TEST
       fi
