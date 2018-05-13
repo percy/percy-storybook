@@ -93,8 +93,19 @@ function getStoriesFromDom(previewJavascriptCode, options) {
   });
 }
 
-export default async function getStories(storybookCode, options = {}) {
-  if (!storybookCode || storybookCode === '') throw new Error('Storybook code was not received.');
+export default async function getStories(assets, javascriptPaths, options = {}) {
+  if (!javascriptPaths || javascriptPaths === []) {
+    throw new Error('Static javascript files could not be located in iframe.html.');
+  }
+
+  let storybookCode = '';
+  javascriptPaths.forEach(function(path) {
+    if (!assets[encodeURI(path)]) {
+      throw new Error('Javascript file not found for: ' + path);
+    }
+    storybookCode = storybookCode + '\n' + assets[encodeURI(path)];
+  });
+
   const stories = await getStoriesFromDom(storybookCode, options);
   return stories;
 }

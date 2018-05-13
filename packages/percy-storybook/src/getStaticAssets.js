@@ -9,7 +9,6 @@ const SKIPPED_ASSETS = [
   'iframe.html',
   'favicon.ico',
   'static/manager.*.bundle.js',
-  'static/preview.*.bundle.js',
   /\.map$/,
   /\.log$/,
   /\.DS_Store$/,
@@ -73,9 +72,18 @@ function gatherBuildResources(buildDir) {
   return hashToResource;
 }
 
-export function getStorybookJavascriptPath(storyHtml) {
-  // Get the full static/preview script path from the storyHtml
-  return storyHtml.match(/<script [^>]*src\s*=\s*["']([^"']*static\/preview[^"']*)["'][^>]*>/)[1];
+export function getStorybookJavascriptPaths(storyHtml) {
+  // Get an array of all of the scripts included from static/ script path from the storyHtml
+  let matches = [];
+  let regex = /<script [^>]*src\s*=\s*["']([^"']*static\/[^"']*)["'][^>]*>/g;
+
+  let match = regex.exec(storyHtml);
+  while (match != null) {
+    matches.push(match[1]);
+    match = regex.exec(storyHtml);
+  }
+
+  return matches;
 }
 
 export default function getStaticAssets(options = {}) {
@@ -83,16 +91,11 @@ export default function getStaticAssets(options = {}) {
   const storybookStaticPath = path.resolve(options.buildDir);
   const storyHtml = fs.readFileSync(path.join(storybookStaticPath, 'iframe.html'), 'utf8');
 
-  // Load the special static/preview.js that contains all stories
-  const storybookJavascriptPath = getStorybookJavascriptPath(storyHtml);
-  const storyJavascript = fs.readFileSync(
-    path.join(storybookStaticPath, storybookJavascriptPath),
-    'utf8',
-  );
-
-  // Load other build assets
+  // Load build assets
   const assets = gatherBuildResources(options.buildDir);
-  assets[storybookJavascriptPath] = storyJavascript;
 
-  return { storyHtml, assets, storybookJavascriptPath };
+  // Fetch the javascript filepaths from the storyHtml
+  const storybookJavascriptPaths = getStorybookJavascriptPaths(storyHtml);
+
+  return { storyHtml, assets, storybookJavascriptPaths };
 }
