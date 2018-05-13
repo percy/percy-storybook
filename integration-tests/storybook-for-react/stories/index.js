@@ -1,6 +1,8 @@
 import React from 'react';
-import { storiesOf, action } from '@storybook/react';
+import { storiesOf } from '@storybook/react';
 import { withInfo } from '@storybook/addon-info';
+import { action } from '@storybook/addon-actions';
+import { Button } from '@storybook/react/demo';
 import faker from 'faker';
 
 // Disabling the two lines below until react-match-media that works with react 16 is released
@@ -8,8 +10,14 @@ import faker from 'faker';
 // import Example from '../src/Example';
 
 storiesOf('Button', module)
-  .add('with text', () => <button onClick={action('clicked')}>Hello Button</button>)
-  .add('with some emoji', () => <button onClick={action('clicked')}>😀 😎 👍 💯</button>);
+  .add('with text', () => <Button onClick={action('clicked')}>Hello Button</Button>)
+  .add('with some emoji', () => (
+    <Button onClick={action('clicked')}>
+      <span role="img" aria-label="so cool">
+        😀 😎 👍 💯
+      </span>
+    </Button>
+  ));
 
 storiesOf('Static CSS', module)
   .add('green text using static css', () => (
