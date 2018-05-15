@@ -74,10 +74,10 @@ export async function run(argv) {
     throw new Error('The PERCY_PROJECT environment variable is missing.');
   }
 
-  const { storyHtml, assets, storybookJavascriptPath } = getStaticAssets(options);
+  const { storyHtml, assets, storybookJavascriptPaths } = getStaticAssets(options);
   // debug('assets %o', assets);
 
-  const stories = await getStories(assets[storybookJavascriptPath], options);
+  const stories = await getStories(assets, storybookJavascriptPaths, options);
   debug('stories %o', stories);
 
   const selectedStories = selectStories(stories, rtlRegex);
