@@ -125,3 +125,10 @@ storiesOf('With info addon', module)
     { widths: [555] },
     withInfo('doc string about my component')(() => <span>info 555px width</span>),
   );
+
+storiesOf('@names that need sanitizing', module)
+  .add('name with [square] brackets & {braces}', () => (
+    <span>Has a name with [square] brackets & braces</span>
+  ))
+  .add('name with "double" quotes', () => <span>Has a name with double quotes</span>)
+  .add("name with 'single' quotes", () => <span>Has a name with single quotes</span>);

@@ -281,9 +281,9 @@
   version "0.1.10"
   resolved "https://registry.yarnpkg.com/@percy-io/in-percy/-/in-percy-0.1.10.tgz#20b0f5e2b99c56cac6ce22dcd41e4e5246e1e753"
 
-"@percy/react-percy-api-client@^0.4.1":
-  version "0.4.1"
-  resolved "https://registry.yarnpkg.com/@percy/react-percy-api-client/-/react-percy-api-client-0.4.1.tgz#1ef1fdfbbdbd063f64e425f450348905f96d8930"
+"@percy/react-percy-api-client@^0.4.3":
+  version "0.4.3"
+  resolved "https://registry.yarnpkg.com/@percy/react-percy-api-client/-/react-percy-api-client-0.4.3.tgz#3375ee6ce2721c0323187df4017c13c01625b107"
   dependencies:
     babel-runtime "^6.26.0"
     debug "^2.6.3"
