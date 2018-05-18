@@ -127,5 +127,8 @@ storiesOf('With info addon', module)
   );
 
 storiesOf('@names that need sanitizing', module)
+  .add('name with [square] brackets & {braces}', () => (
+    <span>Has a name with [square] brackets & braces</span>
+  ))
   .add('name with "double" quotes', () => <span>Has a name with double quotes</span>)
   .add("name with 'single' quotes", () => <span>Has a name with single quotes</span>);
