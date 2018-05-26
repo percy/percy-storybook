@@ -72,30 +72,12 @@ function gatherBuildResources(buildDir) {
   return hashToResource;
 }
 
-export function getStorybookJavascriptPaths(storyHtml) {
-  // Get an array of all of the scripts included from static/ script path from the storyHtml
-  let matches = [];
-  let regex = /<script [^>]*src\s*=\s*["']([^"']*static\/[^"']*)["'][^>]*>/g;
-
-  let match = regex.exec(storyHtml);
-  while (match != null) {
-    matches.push(match[1]);
-    match = regex.exec(storyHtml);
-  }
-
-  return matches;
-}
-
 export default function getStaticAssets(options = {}) {
   // Load iframe.html that is used for every snapshot asset
-  const storybookStaticPath = path.resolve(options.buildDir);
-  const storyHtml = fs.readFileSync(path.join(storybookStaticPath, 'iframe.html'), 'utf8');
+  const storyHtml = fs.readFileSync(options.iframePath, 'utf8');
 
   // Load build assets
   const assets = gatherBuildResources(options.buildDir);
 
-  // Fetch the javascript filepaths from the storyHtml
-  const storybookJavascriptPaths = getStorybookJavascriptPaths(storyHtml);
-
-  return { storyHtml, assets, storybookJavascriptPaths };
+  return { storyHtml, assets };
 }

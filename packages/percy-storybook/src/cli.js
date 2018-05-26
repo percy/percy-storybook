@@ -1,5 +1,6 @@
 import * as args from './args';
 
+import getIframePath from './getIframePath';
 import getStories from './getStories';
 import getStaticAssets from './getStaticAssets';
 import getWidths from './getWidths';
@@ -74,10 +75,13 @@ export async function run(argv) {
     throw new Error('The PERCY_PROJECT environment variable is missing.');
   }
 
-  const { storyHtml, assets, storybookJavascriptPaths } = getStaticAssets(options);
+  // Not skipping, so get the iframe path and verify it exists
+  options.iframePath = getIframePath(options);
+
+  const { storyHtml, assets } = getStaticAssets(options);
   // debug('assets %o', assets);
 
-  const stories = await getStories(assets, storybookJavascriptPaths, options);
+  const stories = await getStories(options);
   debug('stories %o', stories);
 
   const selectedStories = selectStories(stories, rtlRegex);
