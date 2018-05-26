@@ -32,7 +32,17 @@ const fetchStoriesFromWindow = `(async () => {
 })()`;
 
 export default async function getStories(options = {}) {
-  const browser = await puppeteer.launch({ headless: true });
+  let launchArgs = [];
+
+  // Travis CI requires Chrome to be launched without the sandbox
+  // See https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
+  // See https://docs.travis-ci.com/user/chrome#Sandboxing
+  const isTravisCI = process.env.TRAVIS;
+  if (isTravisCI) {
+    launchArgs.push('--no-sandbox');
+  }
+
+  const browser = await puppeteer.launch({ headless: true, args: launchArgs });
   const page = await browser.newPage();
 
   await page.goto('file://' + options.iframePath);
