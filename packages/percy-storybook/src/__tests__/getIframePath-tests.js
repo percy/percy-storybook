@@ -12,10 +12,10 @@ it("raises an error if storybook doesn't exist in buildDir", () => {
 
 it('returns the iframe path when the storybook exists', () => {
   mock({
-    '/tmp': {
+    '/tmp-test': {
       'iframe.html': 'file content here',
     },
   });
-  expect(getIframePath({ buildDir: '/tmp' })).toEqual('/tmp/iframe.html');
+  expect(getIframePath({ buildDir: '/tmp-test' })).toEqual('/tmp-test/iframe.html');
   mock.restore();
 });
