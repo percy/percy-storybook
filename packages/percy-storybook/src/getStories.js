@@ -1,3 +1,4 @@
+const os = require('os');
 const puppeteer = require('puppeteer');
 import { storiesKey } from './constants';
 
@@ -34,11 +35,10 @@ const fetchStoriesFromWindow = `(async () => {
 export default async function getStories(options = {}) {
   let launchArgs = [];
 
-  // Travis CI requires Chrome to be launched without the sandbox
+  // Some CI platforms including Travis requires Chrome to be launched without the sandbox
   // See https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
   // See https://docs.travis-ci.com/user/chrome#Sandboxing
-  const isTravisCI = process.env.TRAVIS;
-  if (isTravisCI) {
+  if (os.platform() === 'linux') {
     launchArgs.push('--no-sandbox');
   }
 
