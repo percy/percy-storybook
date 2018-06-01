@@ -22,7 +22,8 @@
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
-    "babel-register": "^6.26.0"
+    "babel-register": "^6.26.0",
+    "mock-fs": "^4.5.0"
   },
   "dependencies": {
     "@percy/react-percy-api-client": "^0.4.3",
