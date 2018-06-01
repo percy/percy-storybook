@@ -5,7 +5,7 @@ let originalTimeout = 0;
 
 beforeEach(function() {
   originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = 15000;
+  jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
 });
 
 afterEach(function() {
