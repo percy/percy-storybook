@@ -25,8 +25,7 @@ it('raises an error when no stories loaded', async () => {
   expect.assertions(1);
 });
 
-// Need to rethink this one
-// it('returns the value window[storiesKey] is set to', async () => {
-//   const stories = await getStories({ buildDir: './' });
-//   expect(stories).toEqual('hi');
-// });
+it('returns the value window[storiesKey] is set to', async () => {
+  const stories = await getStories({ iframePath: __dirname + '/iframe.html' });
+  expect(stories).toEqual('hi');
+});
