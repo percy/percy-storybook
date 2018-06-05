@@ -1,111 +1,70 @@
-import jsdom from 'jsdom';
+const os = require('os');
+const puppeteer = require('puppeteer');
 import { storiesKey } from './constants';
 
-// jsdom doesn't support Web Workers yet.
-// We use workerMock to allow the user's preview.js to interact with the Worker API.
-const workerMock = `
-    function MockWorker(path) {
-      var api = this;
-
-      function addEventListener() {}
-      function removeEventListener() {}
-      function postMessage() {}
-      function terminate() {}
-
-      api.postMessage = postMessage;
-      api.addEventListener = addEventListener;
-      api.removeEventListener = removeEventListener;
-      api.terminate = terminate;
-
-      return api;
-    }
-    window.Worker = MockWorker;
-`;
-
-// jsdom doesn't support localStorage yet.
-// We use localStorageMock to allow the user's preview.js to interact with localStorage.
-const localStorageMock = `
-    var localStorageMock = (function() {
-      var store = {};
-      return {
-        getItem: function(key) {
-          return store[key];
-        },
-        setItem: function(key, value) {
-          store[key] = value.toString();
-        },
-        clear: function() {
-          store = {};
-        }
-      };
-    })();
-    Object.defineProperty(window, 'localStorage', { value: localStorageMock });
-    `;
-
-// jsdom doesn't support matchMedia yet.
-const matchMediaMock = `
-    window.matchMedia = window.matchMedia || (() => {
-      return {
-        matches: false,
-        addListener: () => {},
-        removeListener: () => {},
-      };
-    });
-    `;
-
-function getStoriesFromDom(previewJavascriptCode, options) {
-  return new Promise((resolve, reject) => {
-    const jsDomConfig = {
-      html: '',
-      url: 'https://example.com/iframe.js?selectedKind=none&selectedStory=none',
-      src: [workerMock, localStorageMock, matchMediaMock, previewJavascriptCode],
-      done: (err, window) => {
-        if (err) return reject(err.response.body);
-        if (!window) return reject(new Error('Window not found when looking for stories.'));
-
-        // Check if the window has stories every 100ms for up to 10 seconds.
-        // This allows 10 seconds for any async pre-tasks (like fetch) to complete.
-        // Usually stories will be found on the first loop.
-        var checkStories = function(timesCalled) {
-          if (window[storiesKey]) {
-            // Found the stories, return them.
-            resolve(window[storiesKey]);
-          } else if (timesCalled < 100) {
-            // Stories not found yet, try again 100ms from now
-            setTimeout(() => {
-              checkStories(timesCalled + 1);
-            }, 100);
-          } else {
-            // Attempted 100 times, give up.
-            const message =
-              'Storybook object not found on window. ' +
-              "Check your call to serializeStories in your Storybook's config.js.";
-            reject(new Error(message));
-          }
-        };
-        checkStories(0);
-      },
+// The function below needs to be in a template string to prevent babel from transforming it.
+// If babel transformed it, puppeteer wouldn't be able to evaluate it properly.
+// See: https://github.com/GoogleChrome/puppeteer/issues/1665#issuecomment-354241717
+// Also see comment below about Debugging page.evaluate
+const fetchStoriesFromWindow = `(async () => {
+  return await new Promise((resolve, reject) => {
+    const storiesKey = '${storiesKey}';
+    // Check if the window has stories every 100ms for up to 10 seconds.
+    // This allows 10 seconds for any async pre-tasks (like fetch) to complete.
+    // Usually stories will be found on the first loop.
+    var checkStories = function(timesCalled) {
+      if (window[storiesKey]) {
+        // Found the stories, return them.
+        resolve(window[storiesKey]);
+      } else if (timesCalled < 100) {
+        // Stories not found yet, try again 100ms from now
+        setTimeout(() => {
+          checkStories(timesCalled + 1);
+        }, 100);
+      } else {
+        reject(new Error(
+          'Stories not found on window within 10 seconds. ' +
+          "Check your call to serializeStories in your Storybook's config.js."
+        ));
+      }
     };
-    if (options.debug) {
-      jsDomConfig.virtualConsole = jsdom.createVirtualConsole().sendTo(console);
-    }
-    jsdom.env(jsDomConfig);
+    checkStories(0);
   });
-}
+})()`;
 
-export default async function getStories(assets, javascriptPaths, options = {}) {
-  if (!javascriptPaths || javascriptPaths === []) {
-    throw new Error('Static javascript files could not be located in iframe.html.');
+export default async function getStories(options = {}) {
+  let launchArgs = [];
+
+  // Some CI platforms including Travis requires Chrome to be launched without the sandbox
+  // See https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
+  // See https://docs.travis-ci.com/user/chrome#Sandboxing
+  if (os.platform() === 'linux') {
+    launchArgs.push('--no-sandbox');
   }
 
-  let storybookCode = '';
-  javascriptPaths.forEach(function(path) {
-    if (!assets[encodeURI(path)]) {
-      throw new Error('Javascript file not found for: ' + path);
-    }
-    storybookCode = storybookCode + '\n' + assets[encodeURI(path)];
-  });
+  const browser = await puppeteer.launch({ headless: true, args: launchArgs });
+  const page = await browser.newPage();
 
-  const stories = await getStoriesFromDom(storybookCode, options);
+  await page.goto('file://' + options.iframePath);
+
+  let stories;
+
+  try {
+    // Debugging page.evaluate is easier if you:
+    // 1: Launch puppeteer with headless: false above
+    // 2: Comment out await browser.close() below
+    // 3: Add console.log statements inside fetchStoriesFromWindow above.
+    stories = await page.evaluate(fetchStoriesFromWindow);
+  } finally {
+    await browser.close();
+  }
+
+  if (!stories) {
+    const message =
+      'Storybook object not found on window. ' +
+      "Check your call to serializeStories in your Storybook's config.js.";
+    throw new Error(message);
+  }
+
   return stories;
 }
