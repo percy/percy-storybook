@@ -16,6 +16,13 @@ it('returns the iframe path when the storybook exists', () => {
       'iframe.html': 'file content here',
     },
   });
-  expect(getIframePath({ buildDir: '/tmp-test' })).toEqual('/tmp-test/iframe.html');
-  mock.restore();
+  try {
+    if (process.platform === 'win32') {
+      expect(getIframePath({ buildDir: '/tmp-test' })).toEqual('C:\\tmp-test\\iframe.html');
+    } else {
+      expect(getIframePath({ buildDir: '/tmp-test' })).toEqual('/tmp-test/iframe.html');
+    }
+  } finally {
+    mock.restore();
+  }
 });
