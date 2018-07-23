@@ -7,7 +7,7 @@
   },
   "license": "MIT",
   "engines": {
-    "node": ">=4.0",
+    "node": ">=6.0",
     "npm": ">=3.0"
   },
   "bin": {
