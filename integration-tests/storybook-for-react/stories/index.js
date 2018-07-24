@@ -4,6 +4,8 @@ import { withInfo } from '@storybook/addon-info';
 import { action } from '@storybook/addon-actions';
 import { Button } from '@storybook/react/demo';
 import faker from 'faker';
+import firstImageFile from './identical-image-1.png';
+import secondImageFile from './identical-image-2.png';
 
 // Disabling the two lines below until react-match-media that works with react 16 is released
 // import { MatchMediaHOC } from 'react-match-media';
@@ -39,6 +41,24 @@ storiesOf('Managing Dynamic Data.Frozen Time', module).add('Show the current dat
       &nbsp;for how it&apos;s configured.
     </p>
     <p>The current date is: {new Date().toLocaleDateString()}</p>
+  </div>
+));
+
+const firstImage = {
+  src: firstImageFile,
+  alt: 'First Image',
+};
+
+const secondImage = {
+  src: secondImageFile,
+  alt: 'Second Image',
+};
+
+storiesOf('Duplicate Assets', module).add('Registers the assets as different resources', () => (
+  <div>
+    <p>With multiple assets with time same image data, both assets should be shown:</p>
+    <img src={firstImage.src} alt={firstImage.alt} />
+    <img src={secondImage.src} alt={secondImage.alt} />
   </div>
 ));
 

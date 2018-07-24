@@ -48,6 +48,7 @@ packages/*/yarn.lock
 # Output directories
 integration-tests/lib
 packages/*/lib
+storybook-static
 
 # Packed npm
 *.tgz

@@ -4,6 +4,7 @@ import { linkTo } from '@storybook/addon-links';
 
 import MyButton from './MyButton.vue';
 import Welcome from './Welcome.vue';
+import Assets from './Assets.vue';
 
 storiesOf('Welcome', module).add('to Storybook', () => ({
   components: { Welcome },
@@ -22,6 +23,11 @@ storiesOf('Button', module)
     template: '<my-button @click="action">😀 😎 👍 💯</my-button>',
     methods: { action: action('clicked') },
   }));
+
+storiesOf('Duplicate assets', module).add('registers the assets as different resources', () => ({
+  components: { Assets },
+  template: '<assets />',
+}));
 
 storiesOf('addWithPercyOptions', module)
   .addWithPercyOptions('multiple widths', { widths: [222, 333] }, () => ({

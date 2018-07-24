@@ -78,9 +78,6 @@ export async function run(argv) {
   // Not skipping, so get the iframe path and verify it exists
   options.iframePath = getIframePath(options);
 
-  const { storyHtml, assets } = getStaticAssets(options);
-  // debug('assets %o', assets);
-
   const stories = await getStories(options);
   debug('stories %o', stories);
 
@@ -104,6 +101,9 @@ export async function run(argv) {
     `percy-storybook/${VERSION}`,
     `storybook/${storybookVersion()} react/${reactVersion()}`,
   );
+
+  const { storyHtml, assets } = getStaticAssets(client, options);
+  // debug('assets %o', assets);
 
   return uploadStorybook(
     client,
