@@ -281,15 +281,15 @@
   version "0.1.10"
   resolved "https://registry.yarnpkg.com/@percy-io/in-percy/-/in-percy-0.1.10.tgz#20b0f5e2b99c56cac6ce22dcd41e4e5246e1e753"
 
-"@percy/react-percy-api-client@^0.4.3":
-  version "0.4.3"
-  resolved "https://registry.yarnpkg.com/@percy/react-percy-api-client/-/react-percy-api-client-0.4.3.tgz#3375ee6ce2721c0323187df4017c13c01625b107"
+"@percy/react-percy-api-client@^0.4.4":
+  version "0.4.4"
+  resolved "https://registry.yarnpkg.com/@percy/react-percy-api-client/-/react-percy-api-client-0.4.4.tgz#70c929086ac4160b81c87906c39591fe8b7c7674"
   dependencies:
     babel-runtime "^6.26.0"
     debug "^2.6.3"
     es6-promise-pool "^2.4.4"
     mime-types "^2.1.14"
-    percy-client "^2.8.2"
+    percy-client "^2.10.0"
     slugify "^1.1.0"
 
 "@schematics/angular@~0.1.12":
@@ -8998,9 +8998,9 @@ pend@~1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/pend/-/pend-1.2.0.tgz#7a57eb550a6783f9115331fcf4663d5c8e007a50"
 
-percy-client@^2.8.2:
-  version "2.8.2"
-  resolved "https://registry.yarnpkg.com/percy-client/-/percy-client-2.8.2.tgz#2415dcc5d07bd4dea913df5f237cff4f0295839a"
+percy-client@^2.10.0:
+  version "2.10.0"
+  resolved "https://registry.yarnpkg.com/percy-client/-/percy-client-2.10.0.tgz#9e70e5c51dc32721ea72fd35efe4b18657e897a6"
   dependencies:
     base64-js "^1.2.3"
     bluebird "^3.5.1"
@@ -9010,6 +9010,7 @@ percy-client@^2.8.2:
     regenerator-runtime "^0.11.1"
     request "^2.85.0"
     request-promise "^4.2.2"
+    walk "^2.3.14"
   optionalDependencies:
     lint-staged "^7.0.4"
 
@@ -12103,6 +12104,12 @@ w3c-hr-time@^1.0.1:
   resolved "https://registry.yarnpkg.com/w3c-hr-time/-/w3c-hr-time-1.0.1.tgz#82ac2bff63d950ea9e3189a58a65625fedf19045"
   dependencies:
     browser-process-hrtime "^0.1.2"
+
+walk@^2.3.14:
+  version "2.3.14"
+  resolved "https://registry.yarnpkg.com/walk/-/walk-2.3.14.tgz#60ec8631cfd23276ae1e7363ce11d626452e1ef3"
+  dependencies:
+    foreachasync "^3.0.0"
 
 walk@^2.3.9:
   version "2.3.13"
