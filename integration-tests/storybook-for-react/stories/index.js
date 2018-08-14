@@ -27,6 +27,10 @@ storiesOf('Static CSS', module)
     <p className="blue">Hi there! This text should be blue when rendered in Percy.</p>
   ));
 
+storiesOf('Percy specific CSS', module).add('purple text using percy specific css', () => (
+  <p className="purple-in-percy">Hi there! This text should be Purple in Percy screenshots.</p>
+));
+
 storiesOf('Managing Dynamic Data.Frozen Time', module).add('Show the current date', () => (
   <div>
     <p>
