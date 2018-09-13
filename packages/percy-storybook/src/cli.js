@@ -71,10 +71,6 @@ export async function run(argv) {
     throw new Error('The PERCY_TOKEN environment variable is missing.');
   }
 
-  if (!process.env.PERCY_PROJECT) {
-    throw new Error('The PERCY_PROJECT environment variable is missing.');
-  }
-
   // Not skipping, so get the iframe path and verify it exists
   options.iframePath = getIframePath(options);
 
