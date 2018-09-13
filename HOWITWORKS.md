@@ -4,7 +4,7 @@ This repository contains the percy-storybook client in packages/percy-storybook.
 ## Tests
 After you've installed packages with `yarn`, you can:
 * run unit tests for percy-storybook with `yarn test`
-* run the integration tests by changing into the relevant folder ./integration-tests folder, exporting your Percy project and token, and running `yarn storybook:percy`.
+* run the integration tests by changing into the relevant folder ./integration-tests folder, exporting your Percy token, and running `yarn storybook:percy`.
 
 Unit tests and all 3 integration tests are configured to run in CI on both Travis and Appveyor.
 
