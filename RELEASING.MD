@@ -1,6 +1,6 @@
 # Releasing
 
-1. check that you are using the percy-admin npm account: `npm whoami`
+1. Check that you are using the percy-admin npm account: `npm whoami`
 1. If you are not, sign out and sign as percy-admin
 1. `git pull origin master`
 1. `git checkout -b X.X.X`
@@ -13,3 +13,8 @@
 1. Announce the new release,
    making sure to say "thank you" to the contributors
    who helped shape this version!
+
+If you run into issues and your packages are tagged but not published use these 2 commands to clean up the messy state
+  1. `git reset --hard HEAD~1`: delete the version commit that lerna made
+  1. `git tag -d $(git log --date-order --tags --simplify-by-decoration --pretty=format:'%d' | head -1 | tr -d '()' | sed 's/,* tag://g')`: delete the latest batch of tags
+  Taken from https://github.com/lerna/lerna/issues/524#issuecomment-298219612
