@@ -31,12 +31,23 @@ elif [ "$SUITE" = "storybook-for-vue" ]; then
   fi
 elif [ "$SUITE" = "storybook-for-angular" ]; then
   # If Percy is enabled, and there's a PERCY_TOKEN supplied (it's not on community PRs),
-  # take snapshots of the storybook-for-vue integration tests's stories.
+  # take snapshots of the storybook-for-angular integration tests's stories.
   if [[ "$PERCY_ENABLE" != "0" && -n "$PERCY_TOKEN" ]] ; then
     cd integration-tests/storybook-for-angular
     yarn storybook:percy
   elif [[ "$PERCY_ENABLE" != "0" && "$TRAVIS" != true ]] ; then
     # This is local, when invoking yarn test:integration storybook-for-angular w/o PERCY_TOKEN
+    error "No PERCY_TOKEN given"
+  fi
+elif [ "$SUITE" = "storybook-for-ember" ]; then
+  # If Percy is enabled, and there's a PERCY_TOKEN supplied (it's not on community PRs),
+  # take snapshots of the storybook-for-ember integration tests's stories.
+  if [[ "$PERCY_ENABLE" != "0" && -n "$PERCY_TOKEN" ]] ; then
+    cd integration-tests/storybook-for-ember
+    npm i
+    npm run storybook:percy
+  elif [[ "$PERCY_ENABLE" != "0" && "$TRAVIS" != true ]] ; then
+    # This is local, when invoking npm run test:integration storybook-for-ember w/o PERCY_TOKEN
     error "No PERCY_TOKEN given"
   fi
 else
@@ -45,5 +56,6 @@ Valid targets are:
 * storybook-for-react
 * storybook-for-vue
 * storybook-for-angular
+* storybook-for-ember
 EOF
 fi
