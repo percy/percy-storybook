@@ -52,6 +52,6 @@
   },
   "dependencies": {
     "ember-template-compiler": "^1.9.0-alpha",
-    "handlebars": "^2.0.0"
+    "handlebars": "^4.0.0"
   }
 }
