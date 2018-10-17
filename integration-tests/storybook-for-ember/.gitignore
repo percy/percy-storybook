@@ -14,5 +14,5 @@ build
 npm-debug.log
 tmp
 
-# build ember app
+# built ember app distribution folder
 dist
