@@ -5,7 +5,7 @@ addDecorator(
   withOptions({
     hierarchySeparator: /\/|\./,
     hierarchyRootSeparator: /\|/,
-  })
+  }),
 );
 
 function loadStories() {
