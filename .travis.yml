@@ -11,8 +11,6 @@ matrix:
       env: LINT=true
     - node_js: "6"
       env: UNIT_TEST=true COVERAGE=false
-    - node_js: "7"
-      env: UNIT_TEST=true COVERAGE=false
     - node_js: "8"
       env: UNIT_TEST=true COVERAGE=true
     - node_js: "8"
