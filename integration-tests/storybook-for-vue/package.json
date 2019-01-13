@@ -13,19 +13,22 @@
     "faker": "^4.1.0",
     "mockdate": "^2.0.1",
     "prop-types": "^15.5.10",
-    "vue": "^2.5.13",
+    "vue": "^2.5.22",
     "vuex": "^3.0.1"
   },
   "devDependencies": {
+    "@babel/core": "^7.2.2",
     "@percy-io/percy-storybook": "^2.1.0",
-    "@storybook/addon-actions": "^3.4.0-alpha.4",
-    "@storybook/addon-info": "^3.4.0-alpha.4",
-    "@storybook/addon-knobs": "^3.4.0-alpha.4",
-    "@storybook/addon-links": "^3.4.0-alpha.4",
-    "@storybook/addon-options": "^3.4.0-alpha.4",
-    "@storybook/vue": "^3.4.0-alpha.4",
-    "css-loader": "^0.28.7",
-    "vue-loader": "^14.0.0",
-    "vue-template-compiler": "^2.5.13"
+    "@storybook/addons": "4.1.6",
+    "@storybook/addon-actions": "4.1.6",
+    "@storybook/addon-info": "4.1.6",
+    "@storybook/addon-knobs": "4.1.6",
+    "@storybook/addon-links": "4.1.6",
+    "@storybook/addon-options": "4.1.6",
+    "@storybook/vue": "4.1.6",
+    "babel-loader": "^8.0.5",
+    "babel-preset-vue": "^2.0.2",
+    "vue-loader": "^15.5.1",
+    "vue-template-compiler": "^2.5.22"
   }
 }
