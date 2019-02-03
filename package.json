@@ -6,7 +6,6 @@
     "lint": "eslint . --cache --ignore-pattern '!.*'",
     "postinstall": "yarn build --silent",
     "prebuild": "rimraf ./packages/*/lib",
-    "precommit": "lint-staged",
     "prelerna:publish": "yarn build --silent",
     "storybook": "lerna run --scope=storybook-for-react-integration-tests storybook --stream",
     "test": "jest",
@@ -15,7 +14,7 @@
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
-    "babel-eslint": "^8.2.3",
+    "babel-eslint": "^10.0.0",
     "babel-jest": "^22.4.3",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-export-extensions": "^6.22.0",
@@ -23,19 +22,19 @@
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-env": "^1.6.0",
     "babel-preset-react": "^6.24.1",
-    "chalk": "^2.4.1",
-    "eslint": "^4.3.0",
-    "eslint-config-prettier": "^2.3.0",
+    "chalk": "^2.4.2",
+    "eslint": "^5.13.0",
+    "eslint-config-prettier": "^4.0.0",
     "eslint-plugin-import": "^2.7.0",
     "eslint-plugin-jasmine": "*",
-    "eslint-plugin-jest": "^21.15.1",
-    "eslint-plugin-prettier": "^2.1.2",
+    "eslint-plugin-jest": "^22.0.0",
+    "eslint-plugin-prettier": "^3.0.0",
     "eslint-plugin-react": "^7.1.0",
-    "fs-extra": "^6.0.0",
-    "husky": "^0.14.3",
-    "jest": "^22.4.3",
+    "fs-extra": "^7.0.0",
+    "husky": "^1.0.0",
+    "jest": "^23.0.0",
     "lerna": "^2.0.0",
-    "lint-staged": "^6.0.0",
+    "lint-staged": "^8.0.0",
     "mock-fs": "^4.5.0",
     "prettier": "^1.6.0",
     "rimraf": "^2.5.4",
@@ -46,6 +45,7 @@
       "<rootDir>/integration-tests/",
       "<rootDir>/packages/"
     ],
+    "testEnvironment": "node",
     "testPathIgnorePatterns": [
       "/node_modules/"
     ]
@@ -60,5 +60,10 @@
   "workspaces": [
     "integration-tests/*",
     "packages/*"
-  ]
+  ],
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  }
 }
