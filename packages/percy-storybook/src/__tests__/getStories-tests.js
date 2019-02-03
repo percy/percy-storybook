@@ -13,12 +13,11 @@ afterEach(function() {
 
 it('raises an error when no stories loaded', async () => {
   try {
-    await getStories({ iframePath: '.' });
+    await getStories({ iframePath: __dirname + '/iframe-without-stories.html' });
   } catch (e) {
     const message =
       'Evaluation failed: Error: Stories not found on window within 10 seconds. ' +
       "Check your call to serializeStories in your Storybook's config.js.";
-    expect(e.message).toEqual('');
     expect(e.message.startsWith(message)).toEqual(true);
   }
 
