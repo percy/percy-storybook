@@ -18,7 +18,7 @@
     "react-match-media": "^2.2.0"
   },
   "devDependencies": {
-    "@percy-io/in-percy": "^0.1.10",
+    "@percy-io/in-percy": "^0.1.11",
     "@percy-io/percy-storybook": "^2.1.0",
     "@storybook/addons": "4.1.6",
     "@storybook/addon-actions": "4.1.6",
