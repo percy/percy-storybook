@@ -6,7 +6,6 @@
     "lint": "eslint . --cache --ignore-pattern '!.*'",
     "postinstall": "yarn build --silent",
     "prebuild": "rimraf ./packages/*/lib",
-    "precommit": "lint-staged",
     "prelerna:publish": "yarn build --silent",
     "storybook": "lerna run --scope=storybook-for-react-integration-tests storybook --stream",
     "test": "jest",
@@ -61,5 +60,10 @@
   "workspaces": [
     "integration-tests/*",
     "packages/*"
-  ]
+  ],
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  }
 }
