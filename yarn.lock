@@ -92,12 +92,12 @@
   optionalDependencies:
     node-sass "^4.3.0"
 
-"@angular/common@^5.1.0":
-  version "5.2.11"
-  resolved "https://registry.yarnpkg.com/@angular/common/-/common-5.2.11.tgz#ee7520b02510a2868f30b1f91897102d48324edf"
-  integrity sha512-LniJjGAeftUJDJh+2+LEjltcGen08C/VMxQ/eUYmesytKy1sN+MWzh3GbpKfEWtWmyUsYTG9lAAJNo3L3jPwsw==
+"@angular/common@^7.2.3":
+  version "7.2.3"
+  resolved "https://registry.yarnpkg.com/@angular/common/-/common-7.2.3.tgz#0a500843c4c859805f36fb1364b1fe97b32e4816"
+  integrity sha512-VZOTZdvkitaKEhkxL6daHxPcKqAFwNJm0U4NFB4LRP9KspsFTE60QFVB63o129PTIH9iOQ2D3HRKSRl4o78ZKg==
   dependencies:
-    tslib "^1.7.1"
+    tslib "^1.9.0"
 
 "@angular/compiler-cli@^5.1.0":
   version "5.2.11"
