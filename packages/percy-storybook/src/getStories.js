@@ -1,6 +1,6 @@
 const os = require('os');
 const puppeteer = require('puppeteer');
-import { storiesKey } from './constants';
+import { storybookClientAPIKey, storyStoreKey, dataKey } from './constants';
 
 // The function below needs to be in a template string to prevent babel from transforming it.
 // If babel transformed it, puppeteer wouldn't be able to evaluate it properly.
@@ -8,14 +8,16 @@ import { storiesKey } from './constants';
 // Also see comment below about Debugging page.evaluate
 const fetchStoriesFromWindow = `(async () => {
   return await new Promise((resolve, reject) => {
-    const storiesKey = '${storiesKey}';
+    const storybookClientAPIKey = '${storybookClientAPIKey}';
+    const storyStoreKey = '${storyStoreKey}';
+    const dataKey = '${dataKey}';
     // Check if the window has stories every 100ms for up to 10 seconds.
     // This allows 10 seconds for any async pre-tasks (like fetch) to complete.
     // Usually stories will be found on the first loop.
     var checkStories = function(timesCalled) {
-      if (window[storiesKey]) {
+      if (window[storybookClientAPIKey]) {
         // Found the stories, return them.
-        resolve(window[storiesKey]);
+        resolve(window[storybookClientAPIKey].raw());
       } else if (timesCalled < 100) {
         // Stories not found yet, try again 100ms from now
         setTimeout(() => {
@@ -23,8 +25,8 @@ const fetchStoriesFromWindow = `(async () => {
         }, 100);
       } else {
         reject(new Error(
-          'Stories not found on window within 10 seconds. ' +
-          "Check your call to serializeStories in your Storybook's config.js."
+          'Storybook object not found on window. ' +
+          'Open your storybook and check the console for errors.'
         ));
       }
     };
@@ -32,7 +34,7 @@ const fetchStoriesFromWindow = `(async () => {
   });
 })()`;
 
-export default async function getStories(options = {}) {
+export default async function getStoryStory(options = {}) {
   let launchArgs = [];
 
   // Some CI platforms including Travis requires Chrome to be launched without the sandbox
@@ -61,8 +63,7 @@ export default async function getStories(options = {}) {
 
   if (!stories) {
     const message =
-      'Storybook object not found on window. ' +
-      "Check your call to serializeStories in your Storybook's config.js.";
+      'Storybook object not found on window. Open your storybook and check the console for errors.';
     throw new Error(message);
   }
 

@@ -1,4 +1,4 @@
-import { configure, addDecorator, getStorybook, setAddon } from '@storybook/ember';
+import { configure, addDecorator } from '@storybook/ember';
 import { withOptions } from '@storybook/addon-options';
 
 addDecorator(
@@ -15,10 +15,4 @@ function loadStories() {
   req.keys().forEach(filename => req(filename));
 }
 
-import createPercyAddon from '@percy-io/percy-storybook';
-const { percyAddon, serializeStories } = createPercyAddon();
-setAddon(percyAddon);
-
 configure(loadStories, module);
-
-serializeStories(getStorybook);
