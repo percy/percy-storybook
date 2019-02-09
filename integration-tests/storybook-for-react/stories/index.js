@@ -100,34 +100,42 @@ storiesOf('Hierarchy.separator.is.supported', module).add('story', () => (
 ));
 
 storiesOf('addWithPercyOptions', module)
-  .addWithPercyOptions('multiple widths', { widths: [222, 333] }, () => (
-    <span>Renders in multiple widths</span>
-  ))
-  .addWithPercyOptions('single width', { widths: [444] }, () => <span>Renders in one width</span>)
-  .addWithPercyOptions('without options', () => <span>Renders with the fallback width(s)</span>)
-  .addWithPercyOptions('with skip option', { skip: true }, () => <span>Will not Render</span>)
-  .addWithPercyOptions('with RTL of true for a single story', { rtl: true }, () => (
-    <div className={direction}>
-      <span>The direction is {direction}.</span>
-    </div>
-  ))
-  .addWithPercyOptions(
+  .add('multiple widths', () => <span>Renders in multiple widths</span>, {
+    percy: { widths: [222, 333] },
+  })
+  .add('single width', () => <span>Renders in one width</span>, {
+    percy: { widths: [444] },
+  })
+  .add('without options', () => <span>Renders with the fallback width(s)</span>)
+  .add('with skip option', () => <span>Will not Render</span>, {
+    percy: { skip: true },
+  })
+  .add(
+    'with RTL of true for a single story',
+    () => (
+      <div className={direction}>
+        <span>The direction is {direction}.</span>
+      </div>
+    ),
+    { percy: { rtl: true } },
+  )
+  .add(
     `${rtlRegex}: with RTL override of false even though the RTL regex matches`,
     // rtl: false trumps a positive rtl_regex match
-    { rtl: false },
     () => (
       <span>
         This story will only render in one direction. The direction is {direction} == ltr.
       </span>
     ),
+    { percy: { rtl: false } },
   );
 
 storiesOf('With info addon', module)
   .add('some story', withInfo('doc string about my component')(() => <span>info story</span>))
-  .addWithPercyOptions(
+  .add(
     'with withInfo instead of addWithInfo',
-    { widths: [555] },
     withInfo('doc string about my component')(() => <span>info 555px width</span>),
+    { percy: { widths: [555] } },
   );
 
 storiesOf('@names that need sanitizing', module)

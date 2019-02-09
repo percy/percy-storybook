@@ -24,18 +24,30 @@ storiesOf('Button', module)
   }));
 
 storiesOf('addWithPercyOptions', module)
-  .addWithPercyOptions('multiple widths', { widths: [222, 333] }, () => ({
-    components: { MyButton },
-    template: '<my-button @click="action">I have snapshots in multiple widths</my-button>',
-    methods: { action: action('clicked') },
-  }))
-  .addWithPercyOptions('single width', { widths: [444] }, () => ({
-    components: { MyButton },
-    template: '<my-button @click="action">I have snapshots in a single width</my-button>',
-    methods: { action: action('clicked') },
-  }))
-  .addWithPercyOptions('skipped', { skip: true }, () => ({
-    components: { MyButton },
-    template: '<my-button @click="action">I will not render</my-button>',
-    methods: { action: action('clicked') },
-  }));
+  .add(
+    'multiple widths',
+    () => ({
+      components: { MyButton },
+      template: '<my-button @click="action">I have snapshots in multiple widths</my-button>',
+      methods: { action: action('clicked') },
+    }),
+    { percy: { widths: [222, 333] } },
+  )
+  .add(
+    'single width',
+    () => ({
+      components: { MyButton },
+      template: '<my-button @click="action">I have snapshots in a single width</my-button>',
+      methods: { action: action('clicked') },
+    }),
+    { percy: { widths: [444] } },
+  )
+  .add(
+    'skipped',
+    () => ({
+      components: { MyButton },
+      template: '<my-button @click="action">I will not render</my-button>',
+      methods: { action: action('clicked') },
+    }),
+    { percy: { skip: true } },
+  );

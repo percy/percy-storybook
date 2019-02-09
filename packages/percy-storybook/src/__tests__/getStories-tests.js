@@ -16,15 +16,14 @@ it('raises an error when no stories loaded', async () => {
     await getStories({ iframePath: __dirname + '/iframe-without-stories.html' });
   } catch (e) {
     const message =
-      'Evaluation failed: Error: Stories not found on window within 10 seconds. ' +
-      "Check your call to serializeStories in your Storybook's config.js.";
+      'Evaluation failed: Error: Storybook object not found on window. Open your storybook and check the console for errors.';
     expect(e.message.startsWith(message)).toEqual(true);
   }
 
   expect.assertions(1);
 });
 
-it('returns the value window[storiesKey] is set to', async () => {
+it('returns the stories from the window', async () => {
   const stories = await getStories({ iframePath: __dirname + '/iframe.html' });
-  expect(stories).toEqual('mock window __storybook_stories__ value');
+  expect(stories).toEqual('mock window stories value');
 });
