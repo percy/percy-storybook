@@ -44,8 +44,7 @@ elif [ "$SUITE" = "storybook-for-ember" ]; then
   # take snapshots of the storybook-for-ember integration tests's stories.
   if [[ "$PERCY_ENABLE" != "0" && -n "$PERCY_TOKEN" ]] ; then
     cd integration-tests/storybook-for-ember
-    npm i
-    npm run storybook:percy
+    yarn storybook:percy
   elif [[ "$PERCY_ENABLE" != "0" && "$TRAVIS" != true ]] ; then
     # This is local, when invoking npm run test:integration storybook-for-ember w/o PERCY_TOKEN
     error "No PERCY_TOKEN given"
