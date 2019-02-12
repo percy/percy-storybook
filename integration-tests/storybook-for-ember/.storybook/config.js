@@ -1,17 +1,8 @@
-import { configure, addDecorator } from '@storybook/ember';
-import { withOptions } from '@storybook/addon-options';
+import { configure } from '@storybook/ember';
 
-addDecorator(
-  withOptions({
-    hierarchySeparator: /\/|\./,
-    hierarchyRootSeparator: /\|/,
-  }),
-);
-
+// automatically import all files ending in *.stories.js
+const req = require.context('../stories', true, /.stories.js$/);
 function loadStories() {
-  require('../stories/index.stories');
-
-  const req = require.context('../stories', true, /\.stories\.js$/);
   req.keys().forEach(filename => req(filename));
 }
 
