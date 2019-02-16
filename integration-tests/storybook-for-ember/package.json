@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "build": "ember build",
-    "build-storybook": "npm run build && cp -r public/* dist && build-storybook -s dist",
+    "build-storybook": "yarn run build && cp -r public/* dist && build-storybook -s dist",
     "dev": "ember serve",
     "snapshot:debug": "percy-storybook --debug",
-    "storybook": "npm run build-storybook && start-storybook -p 9009 -s dist, public",
+    "storybook": "yarn run build-storybook && start-storybook -p 9009 -s dist, public",
     "storybook:percy-debug": "percy-storybook --debug",
-    "storybook:percy": "npm run build-storybook && percy-storybook --widths=320,1280",
+    "storybook:percy": "yarn run build-storybook && percy-storybook --widths=320,1280",
     "storybook:percy-no-build": "percy-storybook --widths=320,1280 --rtl_regex=Direction"
   },
   "devDependencies": {
