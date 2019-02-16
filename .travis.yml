@@ -9,18 +9,25 @@ matrix:
   include:
     - node_js: "8"
       env: LINT=true
+      if: branch = master OR type = pull_request
     - node_js: "10"
       env: UNIT_TEST=true COVERAGE=false
+      if: branch = master OR type = pull_request
     - node_js: "8"
       env: UNIT_TEST=true COVERAGE=true
+      if: branch = master OR type = pull_request
     - node_js: "8"
       env: INTEGRATION_TEST=storybook-for-react PERCY_TOKEN="$STORYBOOK_FOR_REACT_PERCY_TOKEN"
+      if: branch = master OR type = pull_request
     - node_js: "8"
       env: INTEGRATION_TEST=storybook-for-vue PERCY_TOKEN="$STORYBOOK_FOR_VUE_PERCY_TOKEN"
+      if: branch = master OR type = pull_request
     - node_js: "8"
       env: INTEGRATION_TEST=storybook-for-angular PERCY_TOKEN="$STORYBOOK_FOR_ANGULAR_PERCY_TOKEN"
+      if: branch = master OR type = pull_request
     - node_js: "8"
       env: INTEGRATION_TEST=storybook-for-ember PERCY_TOKEN="$STORYBOOK_FOR_EMBER_PERCY_TOKEN"
+      if: branch = master OR type = pull_request
 before_install:
   - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.3.2
   - export PATH="$HOME/.yarn/bin:$PATH"
