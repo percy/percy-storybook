@@ -6,8 +6,8 @@
     "storybook": "start-storybook -p 9001 -c storybook -s ./storybook/public",
     "storybook:build": "build-storybook -c storybook -s ./storybook/public",
     "storybook:percy-debug": "percy-storybook --debug",
-    "storybook:percy": "build-storybook -c storybook -s ./storybook/public && percy-storybook --widths=320,1280 --rtl_regex=Direction",
-    "storybook:percy-no-build": "percy-storybook --widths=320,1280 --rtl_regex=Direction"
+    "storybook:percy": "build-storybook -c storybook -s ./storybook/public && percy-storybook --rtl_regex=Direction",
+    "storybook:percy-no-build": "percy-storybook --rtl_regex=Direction"
   },
   "dependencies": {
     "faker": "^4.1.0",
