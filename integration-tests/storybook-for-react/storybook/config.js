@@ -1,4 +1,4 @@
-import { configure, setAddon } from '@storybook/react';
+import { configure, setAddon, addParameters } from '@storybook/react';
 import { setOptions } from '@storybook/addon-options';
 import infoAddon, { setDefaults } from '@storybook/addon-info';
 
@@ -18,6 +18,9 @@ function loadStories() {
   require('../stories/index.js');
   // You can require as many stories as you need.
 }
+
+// Global Percy parameters applied to all stories
+addParameters({ percy: { widths: [320, 800] } });
 
 setDefaults({
   inline: true,
