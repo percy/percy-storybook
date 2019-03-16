@@ -18,9 +18,15 @@
     "bin",
     "lib"
   ],
+  "scripts": {
+    "build": "babel src --out-dir lib --copy-files --ignore '**/__tests__/**'",
+    "prebuild": "rimraf ./packages/*/lib",
+    "prepublish": "yarn build --silent"
+  },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
+    "babel-jest": "^24.5.0",
     "babel-preset-es2015": "^6.24.1",
     "babel-register": "^6.26.0",
     "mock-fs": "^4.5.0"
