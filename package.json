@@ -1,7 +1,9 @@
 {
   "private": true,
   "scripts": {
+    "build": "yarn workspace @percy-io/percy-storybook build",
     "lint": "eslint . --cache --ignore-pattern '!.*'",
+    "postinstall": "yarn build --silent",
     "test": "jest",
     "test:integration": "./scripts/run-integration-tests.sh",
     "test:watch": "jest --watch --notify"
