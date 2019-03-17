@@ -21,7 +21,6 @@ test_script:
   - yarn --version
   # run tests
   - yarn lint
-  - yarn build
   - yarn test
 
 build:

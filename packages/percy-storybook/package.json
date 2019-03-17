@@ -20,6 +20,7 @@
   ],
   "scripts": {
     "build": "babel src --out-dir lib --copy-files --ignore '**/__tests__/**'",
+    "postinstall": "yarn build --silent",
     "prebuild": "rimraf ./packages/*/lib",
     "prepublish": "yarn build --silent"
   },
