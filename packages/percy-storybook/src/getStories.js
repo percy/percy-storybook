@@ -56,6 +56,7 @@ export default async function getStories(options = {}) {
     // 3: Add console.log statements inside fetchStoriesFromWindow above.
     stories = await page.evaluate(fetchStoriesFromWindow);
   } finally {
+    await page.close();
     await browser.close();
   }
 
