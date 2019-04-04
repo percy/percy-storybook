@@ -1,6 +1,6 @@
 {
   "name": "@percy/percy-storybook",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/percy/percy-storybook.git"
