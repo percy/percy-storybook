@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@percy-io/in-percy": "^0.1.11",
-    "@percy-io/percy-storybook": "^2.1.0",
+    "@percy/percy-storybook": "^2.1.0",
     "@storybook/addons": "5.0.0",
     "@storybook/addon-actions": "5.0.0",
     "@storybook/addon-info": "5.0.0",
