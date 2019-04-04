@@ -31,7 +31,7 @@ The percy-storybook client follows these steps:
 ## Development
 When making changes to percy-storybook, it can be helpful to use the React integration test as a playground:
 
-- First run `yarn link` inside ./packages/percy-storybook, and `yarn link "@percy-io/percy-storybook"` inside ./integration-tests/storybook-for-react.
+- First run `yarn link` inside ./packages/percy-storybook, and `yarn link "@percy/percy-storybook"` inside ./integration-tests/storybook-for-react.
 - Make the changes you need to percy-storybook.
 - Run `yarn build` from this repo's root folder to transpile your percy-storybook code.
 - Run `yarn storybook:percy` from within integration-tests/storybook-for-react to ensure your changes work correctly.
