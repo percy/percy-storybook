@@ -77,10 +77,10 @@ export async function run(argv) {
   const { storyHtml, assets } = getStaticAssets(options);
   // debug('assets %o', assets);
 
-  const stories = await getStories(options);
-  debug('stories %o', stories);
+  const rawStories = await getStories(options);
+  debug('rawStories %s', JSON.stringify(rawStories));
 
-  const selectedStories = selectStories(stories, rtlRegex);
+  const selectedStories = selectStories(rawStories, rtlRegex);
   debug('selectedStories %o', selectedStories);
 
   if (selectedStories.length === 0) {
