@@ -86,10 +86,10 @@ export async function run(argv) {
   if (selectedStories.length === 0) {
     if (options.outputFormat == 'text') {
       // eslint-disable-next-line no-console
-      console.log('No stories were found.');
+      console.log('percy-storybook found no stories in the static storybook.');
     } else if (options.outputFormat == 'json') {
       // eslint-disable-next-line no-console
-      console.log(`{'exitReason':'No stories were found.'}`);
+      console.log(`{'exitReason':'percy-storybook found no stories in the static storybook.'}`);
     }
     return;
   }
