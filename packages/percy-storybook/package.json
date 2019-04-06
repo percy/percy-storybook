@@ -42,6 +42,5 @@
     "globals": {
       "window": true
     }
-  },
-  "typings": "lib/percy-storybook.d.ts"
+  }
 }
