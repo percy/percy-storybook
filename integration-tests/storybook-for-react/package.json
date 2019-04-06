@@ -20,12 +20,12 @@
   "devDependencies": {
     "@percy-io/in-percy": "^0.1.11",
     "@percy/percy-storybook": "^3.0.0",
-    "@storybook/addon-actions": "5.0.0",
-    "@storybook/addon-info": "5.0.0",
-    "@storybook/addon-knobs": "5.0.0",
-    "@storybook/addon-links": "5.0.0",
-    "@storybook/addon-options": "5.0.0",
-    "@storybook/addons": "5.0.0",
-    "@storybook/react": "5.0.0"
+    "@storybook/addon-actions": "v5.1.0-alpha.22",
+    "@storybook/addon-info": "v5.1.0-alpha.22",
+    "@storybook/addon-knobs": "v5.1.0-alpha.22",
+    "@storybook/addon-links": "v5.1.0-alpha.22",
+    "@storybook/addon-options": "v5.1.0-alpha.22",
+    "@storybook/addons": "v5.1.0-alpha.22",
+    "@storybook/react": "v5.1.0-alpha.22"
   }
 }

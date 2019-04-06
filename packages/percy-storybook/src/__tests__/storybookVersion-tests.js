@@ -1,35 +1,32 @@
 import storybookVersion from '../storybookVersion';
 
-let existingStorybookVersion;
-let existingKadiraStorybookVersion;
+let existingReactStorybookVersion;
+let existingAngularStorybookVersion;
 
 beforeEach(() => {
-  existingStorybookVersion = process.env['npm_package_dependencies_@storybook/react'];
-  existingKadiraStorybookVersion = process.env['npm_package_dependencies_@kadira/storybook'];
+  existingReactStorybookVersion = process.env['npm_package_dependencies_@storybook/react'];
+  existingAngularStorybookVersion = process.env['npm_package_dependencies_@storybook/angular'];
 });
 
 afterEach(() => {
-  process.env['npm_package_dependencies_@storybook/react'] = existingStorybookVersion;
-  process.env['npm_package_dependencies_@kadira/storybook'] = existingKadiraStorybookVersion;
+  process.env['npm_package_dependencies_@storybook/react'] = existingReactStorybookVersion;
+  process.env['npm_package_dependencies_@storybook/angular'] = existingAngularStorybookVersion;
 });
 
 it('returns unknown when storybook is not found', () => {
   delete process.env['npm_package_dependencies_@storybook/react'];
-  delete process.env['npm_package_dependencies_@kadira/storybook'];
-
+  delete process.env['npm_package_dependencies_@storybook/angular'];
   expect(storybookVersion()).toEqual('unknown');
 });
 
-it('returns the expected storybook 2.x version', () => {
-  delete process.env['npm_package_dependencies_@storybook/react'];
-  process.env['npm_package_dependencies_@kadira/storybook'] = '2.15.1';
-
-  expect(storybookVersion()).toEqual('2.15.1');
+it('returns the expected storybook 5.x version when using react storybook', () => {
+  delete process.env['npm_package_dependencies_@storybook/angular'];
+  process.env['npm_package_dependencies_@storybook/react'] = '5.0.0';
+  expect(storybookVersion()).toEqual('5.0.0');
 });
 
-it('returns the expected storybook 3.x version', () => {
-  delete process.env['npm_package_dependencies_@kadira/storybook'];
-  process.env['npm_package_dependencies_@storybook/react'] = '3.0.0';
-
-  expect(storybookVersion()).toEqual('3.0.0');
+it('returns the expected storybook 5.x version when using angular storybook', () => {
+  delete process.env['npm_package_dependencies_@storybook/react'];
+  process.env['npm_package_dependencies_@storybook/angular'] = '5.0.0';
+  expect(storybookVersion()).toEqual('5.0.0');
 });
