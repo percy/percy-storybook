@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.1.2",
-    "@percy/percy-storybook": "^3.0.0",
+    "@percy/storybook": "^3.0.0",
     "@storybook/addon-a11y": "v5.1.0-alpha.22",
     "@storybook/addon-actions": "v5.1.0-alpha.22",
     "@storybook/addon-backgrounds": "v5.1.0-alpha.22",

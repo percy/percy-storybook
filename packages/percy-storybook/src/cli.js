@@ -97,7 +97,7 @@ export async function run(argv) {
   const client = new ApiClient(
     process.env.PERCY_TOKEN,
     process.env.PERCY_API,
-    `percy-storybook/${VERSION}`,
+    `@percy/storybook/${VERSION}`,
     `storybook/${storybookVersion()} ${frameworkVersion()}`,
   );
 
