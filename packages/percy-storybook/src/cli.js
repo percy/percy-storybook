@@ -10,7 +10,7 @@ import getRtlRegex from './getRtlRegex';
 import selectStories from './selectStories';
 import uploadStorybook from './uploadStorybook';
 import storybookVersion from './storybookVersion';
-import reactVersion from './reactVersion';
+import frameworkVersion from './frameworkVersion';
 
 import ApiClient from '@percy/react-percy-api-client';
 import createDebug from 'debug';
@@ -98,7 +98,7 @@ export async function run(argv) {
     process.env.PERCY_TOKEN,
     process.env.PERCY_API,
     `percy-storybook/${VERSION}`,
-    `storybook/${storybookVersion()} react/${reactVersion()}`,
+    `storybook/${storybookVersion()} ${frameworkVersion()}`,
   );
 
   return uploadStorybook(
