@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "storybook-for-react-integration-tests",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "scripts": {
     "storybook": "start-storybook -p 9001 -c storybook -s ./storybook/public",
     "storybook:build": "build-storybook -c storybook -s ./storybook/public",
@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@percy-io/in-percy": "^0.1.11",
-    "@percy/storybook": "^3.0.0",
+    "@percy/storybook": "^3.0.1",
     "@storybook/addon-actions": "v5.1.0-alpha.22",
     "@storybook/addon-info": "v5.1.0-alpha.22",
     "@storybook/addon-knobs": "v5.1.0-alpha.22",
