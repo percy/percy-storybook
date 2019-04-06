@@ -1,4 +1,4 @@
-# percy-storybook
+# @percy/storybook
 [![Package Status](https://img.shields.io/npm/v/@percy/storybook.svg)](https://www.npmjs.com/package/@percy/storybook)
 [![Build Status](https://travis-ci.org/percy/percy-storybook.svg?branch=master)](https://travis-ci.org/percy/percy-storybook)
 
