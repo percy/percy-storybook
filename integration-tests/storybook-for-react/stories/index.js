@@ -2,6 +2,7 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { withInfo } from '@storybook/addon-info';
 import { action } from '@storybook/addon-actions';
+import { withKnobs, number } from '@storybook/addon-knobs';
 import { Button } from '@storybook/react/demo';
 import faker from 'faker';
 
@@ -144,3 +145,10 @@ storiesOf('@names that need sanitizing', module)
   ))
   .add('name with "double" quotes', () => <span>Has a name with double quotes</span>)
   .add("name with 'single' quotes", () => <span>Has a name with single quotes</span>);
+
+storiesOf('Story with knobs', module)
+  .addDecorator(withKnobs)
+  .add('A story with knobs', () => {
+    const numKnobs = number('Knobs', 5);
+    return <span>This story has {numKnobs} knobs to test the knobs addon</span>;
+  });
