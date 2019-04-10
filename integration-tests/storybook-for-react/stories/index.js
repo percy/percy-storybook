@@ -131,12 +131,24 @@ storiesOf('addWithPercyOptions', module)
     { percy: { rtl: false } },
   );
 
+const someString = 'this is my 1st inserted string';
 storiesOf('With info addon', module)
   .add('some story', withInfo('doc string about my component')(() => <span>info story</span>))
   .add(
     'with withInfo instead of addWithInfo',
-    withInfo('doc string about my component')(() => <span>info 555px width</span>),
+    withInfo(`doc string about my component: ${someString}`)(() => <span>info 555px width</span>),
     { percy: { widths: [555] } },
+  );
+
+const someOtherString = 'this is my 2nd inserted string';
+storiesOf('withInfo added as decorator', module)
+  .addDecorator(withInfo)
+  .add(
+    'A story with info',
+    () => {
+      return <span>This story has info to test the info addon</span>;
+    },
+    { info: { text: `my inserted string: ${someOtherString}` } },
   );
 
 storiesOf('@names that need sanitizing', module)
