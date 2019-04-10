@@ -146,9 +146,31 @@ storiesOf('withInfo added as decorator', module)
   .add(
     'A story with info',
     () => {
-      return <span>This story has info to test the info addon</span>;
+      return (
+        <span>
+          This story has a jsx component in the info to test story sanitation in page.evaluate
+        </span>
+      );
     },
-    { info: { text: `my inserted string: ${someOtherString}` } },
+    {
+      info: {
+        text: (
+          <>
+            <p
+              style={{
+                marginBottom: '0',
+                width: '100%',
+                textAlign: 'center',
+                padding: '100px 10px',
+                backgroundColor: '#29c2b5',
+              }}
+            >
+              my inserted string: {someOtherString}
+            </p>
+          </>
+        ),
+      },
+    },
   );
 
 storiesOf('@names that need sanitizing', module)

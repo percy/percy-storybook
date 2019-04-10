@@ -1,6 +1,6 @@
 const os = require('os');
 const puppeteer = require('puppeteer');
-import { storybookClientAPIKey, storyStoreKey, dataKey } from './constants';
+import { storybookClientAPIKey } from './constants';
 
 // The function below needs to be in a template string to prevent babel from transforming it.
 // If babel transformed it, puppeteer wouldn't be able to evaluate it properly.
@@ -9,15 +9,18 @@ import { storybookClientAPIKey, storyStoreKey, dataKey } from './constants';
 const fetchStoriesFromWindow = `(async () => {
   return await new Promise((resolve, reject) => {
     const storybookClientAPIKey = '${storybookClientAPIKey}';
-    const storyStoreKey = '${storyStoreKey}';
-    const dataKey = '${dataKey}';
     // Check if the window has stories every 100ms for up to 10 seconds.
     // This allows 10 seconds for any async pre-tasks (like fetch) to complete.
     // Usually stories will be found on the first loop.
     var checkStories = function(timesCalled) {
       if (window[storybookClientAPIKey]) {
-        // Found the stories, return them.
-        resolve(window[storybookClientAPIKey].raw());
+        // Found the stories, sanitize to name, kind, and options, and then return them.
+        var reducedStories = window[storybookClientAPIKey].raw().map(story => { return {
+          name: story.name,
+          kind: story.kind,
+          parameters: { percy: story.parameters ? story.parameters.percy : undefined },
+        }});
+        resolve(reducedStories);
       } else if (timesCalled < 100) {
         // Stories not found yet, try again 100ms from now
         setTimeout(() => {
@@ -34,7 +37,7 @@ const fetchStoriesFromWindow = `(async () => {
   });
 })()`;
 
-export default async function getStoryStory(options = {}) {
+export default async function getStories(options = {}) {
   let launchArgs = [];
 
   // Some CI platforms including Travis requires Chrome to be launched without the sandbox

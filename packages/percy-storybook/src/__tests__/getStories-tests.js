@@ -25,5 +25,7 @@ it('raises an error when no stories loaded', async () => {
 
 it('returns the stories from the window', async () => {
   const stories = await getStories({ iframePath: __dirname + '/iframe.html' });
-  expect(stories).toEqual('mock window stories value');
+  expect(stories).toEqual([
+    { kind: "this is the story's kind", name: "this is the story's name", parameters: {} },
+  ]);
 });
