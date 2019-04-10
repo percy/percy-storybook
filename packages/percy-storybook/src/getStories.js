@@ -16,8 +16,13 @@ const fetchStoriesFromWindow = `(async () => {
     // Usually stories will be found on the first loop.
     var checkStories = function(timesCalled) {
       if (window[storybookClientAPIKey]) {
-        // Found the stories, return them.
-        resolve(window[storybookClientAPIKey].raw());
+        // Found the stories, sanitize to name, kind, and options, and then return them.
+        var reducedStories = window[storybookClientAPIKey].raw().map(story => { return {
+          name: story.name,
+          kind: story.kind,
+          parameters: { percy: story.parameters ? story.parameters.percy : undefined },
+        }});
+        resolve(reducedStories);
       } else if (timesCalled < 100) {
         // Stories not found yet, try again 100ms from now
         setTimeout(() => {
@@ -34,7 +39,7 @@ const fetchStoriesFromWindow = `(async () => {
   });
 })()`;
 
-export default async function getStoryStory(options = {}) {
+export default async function getStories(options = {}) {
   let launchArgs = [];
 
   // Some CI platforms including Travis requires Chrome to be launched without the sandbox
