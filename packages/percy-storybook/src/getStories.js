@@ -1,6 +1,6 @@
 const os = require('os');
 const puppeteer = require('puppeteer');
-import { storybookClientAPIKey, storyStoreKey, dataKey } from './constants';
+import { storybookClientAPIKey } from './constants';
 
 // The function below needs to be in a template string to prevent babel from transforming it.
 // If babel transformed it, puppeteer wouldn't be able to evaluate it properly.
@@ -9,8 +9,6 @@ import { storybookClientAPIKey, storyStoreKey, dataKey } from './constants';
 const fetchStoriesFromWindow = `(async () => {
   return await new Promise((resolve, reject) => {
     const storybookClientAPIKey = '${storybookClientAPIKey}';
-    const storyStoreKey = '${storyStoreKey}';
-    const dataKey = '${dataKey}';
     // Check if the window has stories every 100ms for up to 10 seconds.
     // This allows 10 seconds for any async pre-tasks (like fetch) to complete.
     // Usually stories will be found on the first loop.
