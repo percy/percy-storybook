@@ -1872,13 +1872,6 @@
     memoizerific "^1.11.3"
     qs "^6.6.0"
 
-"@storybook/client-logger@5.1.0-alpha.25":
-  version "5.1.0-alpha.25"
-  resolved "https://registry.yarnpkg.com/@storybook/client-logger/-/client-logger-5.1.0-alpha.25.tgz#56ac6b7c8c252bb9b14aad3da88548b6faf01a72"
-  integrity sha512-g1UxVD9oO951ckhRwWWvXekthRNNqy2slyTz5V+yr1nizI9IbQqmAWczTssPlL/I+efhIFpOuAYaHgMLCnCBHw==
-  dependencies:
-    core-js "^2.6.5"
-
 "@storybook/client-logger@5.1.0-alpha.26":
   version "5.1.0-alpha.26"
   resolved "https://registry.yarnpkg.com/@storybook/client-logger/-/client-logger-5.1.0-alpha.26.tgz#be5d100941e9453eb8f0aac864f3bb4dfe5afe73"
@@ -2052,13 +2045,13 @@
     qs "^6.6.0"
 
 "@storybook/theming@5.1.0-alpha.26":
-  version "5.1.0-alpha.25"
-  resolved "https://registry.yarnpkg.com/@storybook/theming/-/theming-5.1.0-alpha.25.tgz#37f371f0cefa766ca076f8cb372e0c2580770ac9"
-  integrity sha512-7ugrzUN30gkeIkFFBz0gRiPQmI3Ya3YzZjK+RcM0G16k7uReTi/Y3LFuKPF7xxp7018iHH8sMMpJEWyxD5gFaQ==
+  version "5.1.0-alpha.26"
+  resolved "https://registry.yarnpkg.com/@storybook/theming/-/theming-5.1.0-alpha.26.tgz#125612cb593ffc2e8eb4014b42e1e25cb67f9c70"
+  integrity sha512-zMLfbo8ik2HAoVrn3qv/CxhEbcGt+i044PcLWPXLIvhP2CHS2xy+GwV1NKySVS9L/Z3FrjEjvtD4p9oSH9pKjw==
   dependencies:
     "@emotion/core" "^10.0.9"
     "@emotion/styled" "^10.0.7"
-    "@storybook/client-logger" "5.1.0-alpha.25"
+    "@storybook/client-logger" "5.1.0-alpha.26"
     common-tags "^1.8.0"
     core-js "^2.6.5"
     deep-object-diff "^1.1.0"
@@ -18779,10 +18772,10 @@ typescript@~2.6.2:
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.6.2.tgz#3c5b6fd7f6de0914269027f03c0946758f7673a4"
   integrity sha1-PFtv1/beCRQmkCfwPAlGdY92c6Q=
 
-typescript@~2.8.3:
-  version "2.8.4"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.8.4.tgz#0b1db68e6bdfb0b767fa2ab642136a35b059b199"
-  integrity sha512-IIU5cN1mR5J3z9jjdESJbnxikTrEz3lzAw/D0Tf45jHpBp55nY31UkUvmVHoffCfKHTqJs3fCLPDxknQTTFegQ==
+typescript@~3.4.3:
+  version "3.4.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.4.3.tgz#0eb320e4ace9b10eadf5bc6103286b0f8b7c224f"
+  integrity sha512-FFgHdPt4T/duxx6Ndf7hwgMZZjZpB+U0nMNGVCYPq0rEzWKjEDobm4J6yb3CS7naZ0yURFqdw9Gwc7UOh/P9oQ==
 
 ua-parser-js@^0.7.18:
   version "0.7.19"
