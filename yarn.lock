@@ -1872,13 +1872,6 @@
     memoizerific "^1.11.3"
     qs "^6.6.0"
 
-"@storybook/client-logger@5.1.0-alpha.25":
-  version "5.1.0-alpha.25"
-  resolved "https://registry.yarnpkg.com/@storybook/client-logger/-/client-logger-5.1.0-alpha.25.tgz#56ac6b7c8c252bb9b14aad3da88548b6faf01a72"
-  integrity sha512-g1UxVD9oO951ckhRwWWvXekthRNNqy2slyTz5V+yr1nizI9IbQqmAWczTssPlL/I+efhIFpOuAYaHgMLCnCBHw==
-  dependencies:
-    core-js "^2.6.5"
-
 "@storybook/client-logger@5.1.0-alpha.26":
   version "5.1.0-alpha.26"
   resolved "https://registry.yarnpkg.com/@storybook/client-logger/-/client-logger-5.1.0-alpha.26.tgz#be5d100941e9453eb8f0aac864f3bb4dfe5afe73"
@@ -2052,13 +2045,13 @@
     qs "^6.6.0"
 
 "@storybook/theming@5.1.0-alpha.26":
-  version "5.1.0-alpha.25"
-  resolved "https://registry.yarnpkg.com/@storybook/theming/-/theming-5.1.0-alpha.25.tgz#37f371f0cefa766ca076f8cb372e0c2580770ac9"
-  integrity sha512-7ugrzUN30gkeIkFFBz0gRiPQmI3Ya3YzZjK+RcM0G16k7uReTi/Y3LFuKPF7xxp7018iHH8sMMpJEWyxD5gFaQ==
+  version "5.1.0-alpha.26"
+  resolved "https://registry.yarnpkg.com/@storybook/theming/-/theming-5.1.0-alpha.26.tgz#125612cb593ffc2e8eb4014b42e1e25cb67f9c70"
+  integrity sha512-zMLfbo8ik2HAoVrn3qv/CxhEbcGt+i044PcLWPXLIvhP2CHS2xy+GwV1NKySVS9L/Z3FrjEjvtD4p9oSH9pKjw==
   dependencies:
     "@emotion/core" "^10.0.9"
     "@emotion/styled" "^10.0.7"
-    "@storybook/client-logger" "5.1.0-alpha.25"
+    "@storybook/client-logger" "5.1.0-alpha.26"
     common-tags "^1.8.0"
     core-js "^2.6.5"
     deep-object-diff "^1.1.0"
@@ -2981,6 +2974,11 @@ are-we-there-yet@~1.1.2:
   dependencies:
     delegates "^1.0.0"
     readable-stream "^2.0.6"
+
+arg@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/arg/-/arg-4.1.0.tgz#583c518199419e0037abb74062c37f8519e575f0"
+  integrity sha512-ZWc51jO3qegGkVh8Hwpv636EkbesNV5ZNQPCtRa+0qytRYPEs9IYT9qITY9buezqUH5uqyzlWLcufrzU2rffdg==
 
 argparse@^1.0.7:
   version "1.0.10"
@@ -17524,7 +17522,7 @@ source-map-support@^0.4.1, source-map-support@^0.4.15, source-map-support@~0.4.0
   dependencies:
     source-map "^0.5.6"
 
-source-map-support@^0.5.0, source-map-support@^0.5.3, source-map-support@^0.5.5, source-map-support@^0.5.6, source-map-support@~0.5.6, source-map-support@~0.5.9:
+source-map-support@^0.5.0, source-map-support@^0.5.5, source-map-support@^0.5.6, source-map-support@~0.5.6, source-map-support@~0.5.9:
   version "0.5.10"
   resolved "https://registry.yarnpkg.com/source-map-support/-/source-map-support-0.5.10.tgz#2214080bc9d51832511ee2bab96e3c2f9353120c"
   integrity sha512-YfQ3tQFTK/yzlGJuX8pTwa4tifQj4QS2Mj7UegOu8jAz59MqIiMGPXxQhVQiIMNzayuUSF/jEuVnfFF5JqybmQ==
@@ -18643,19 +18641,16 @@ ts-loader@^5.3.3:
     micromatch "^3.1.4"
     semver "^5.0.1"
 
-ts-node@~6.0.2:
-  version "6.0.5"
-  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-6.0.5.tgz#977c1c931da7a2b09ae2930101f0104a5c2271e9"
-  integrity sha512-iNhWu2hli9/1p9PGLJ/4OZS+NR0IVEVk63KCrH3qa7jJZxXa+oPheBj5JyM8tuQM9RkBpw1PrNUEUPJR9wTGDw==
+ts-node@~8.0.3:
+  version "8.0.3"
+  resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-8.0.3.tgz#aa60b836a24dafd8bf21b54766841a232fdbc641"
+  integrity sha512-2qayBA4vdtVRuDo11DEFSsD/SFsBXQBRZZhbRGSIkmYmVkWjULn/GGMdG10KVqkaGndljfaTD8dKjWgcejO8YA==
   dependencies:
-    arrify "^1.0.0"
-    chalk "^2.3.0"
+    arg "^4.1.0"
     diff "^3.1.0"
     make-error "^1.1.1"
-    minimist "^1.2.0"
-    mkdirp "^0.5.1"
-    source-map-support "^0.5.3"
-    yn "^2.0.0"
+    source-map-support "^0.5.6"
+    yn "^3.0.0"
 
 tsconfig-paths-webpack-plugin@^3.2.0:
   version "3.2.0"
@@ -20130,10 +20125,10 @@ yeast@0.1.2:
   resolved "https://registry.yarnpkg.com/yeast/-/yeast-0.1.2.tgz#008e06d8094320c372dbc2f8ed76a0ca6c8ac419"
   integrity sha1-AI4G2AlDIMNy28L47XagymyKxBk=
 
-yn@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/yn/-/yn-2.0.0.tgz#e5adabc8acf408f6385fc76495684c88e6af689a"
-  integrity sha1-5a2ryKz0CPY4X8dklWhMiOavaJo=
+yn@^3.0.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/yn/-/yn-3.1.0.tgz#fcbe2db63610361afcc5eb9e0ac91e976d046114"
+  integrity sha512-kKfnnYkbTfrAdd0xICNFw7Atm8nKpLcLv9AZGEt+kczL/WQVai4e2V6ZN8U/O+iI6WrNuJjNNOyu4zfhl9D3Hg==
 
 yup@^0.26.10:
   version "0.26.10"
