@@ -35,7 +35,7 @@
     "@angular/compiler-cli": "^5.1.0",
     "@angular/language-service": "^5.1.0",
     "@percy/storybook": "^3.0.2",
-    "@storybook/angular": "v5.1.0-alpha.22",
+    "@storybook/angular": "v5.1.0-alpha.26",
     "@types/jasmine": "~2.8.3",
     "@types/jasminewd2": "~2.0.2",
     "@types/node": "~10.0.4",
