@@ -1872,13 +1872,6 @@
     memoizerific "^1.11.3"
     qs "^6.6.0"
 
-"@storybook/client-logger@5.1.0-alpha.25":
-  version "5.1.0-alpha.25"
-  resolved "https://registry.yarnpkg.com/@storybook/client-logger/-/client-logger-5.1.0-alpha.25.tgz#56ac6b7c8c252bb9b14aad3da88548b6faf01a72"
-  integrity sha512-g1UxVD9oO951ckhRwWWvXekthRNNqy2slyTz5V+yr1nizI9IbQqmAWczTssPlL/I+efhIFpOuAYaHgMLCnCBHw==
-  dependencies:
-    core-js "^2.6.5"
-
 "@storybook/client-logger@5.1.0-alpha.26":
   version "5.1.0-alpha.26"
   resolved "https://registry.yarnpkg.com/@storybook/client-logger/-/client-logger-5.1.0-alpha.26.tgz#be5d100941e9453eb8f0aac864f3bb4dfe5afe73"
@@ -2052,13 +2045,13 @@
     qs "^6.6.0"
 
 "@storybook/theming@5.1.0-alpha.26":
-  version "5.1.0-alpha.25"
-  resolved "https://registry.yarnpkg.com/@storybook/theming/-/theming-5.1.0-alpha.25.tgz#37f371f0cefa766ca076f8cb372e0c2580770ac9"
-  integrity sha512-7ugrzUN30gkeIkFFBz0gRiPQmI3Ya3YzZjK+RcM0G16k7uReTi/Y3LFuKPF7xxp7018iHH8sMMpJEWyxD5gFaQ==
+  version "5.1.0-alpha.26"
+  resolved "https://registry.yarnpkg.com/@storybook/theming/-/theming-5.1.0-alpha.26.tgz#125612cb593ffc2e8eb4014b42e1e25cb67f9c70"
+  integrity sha512-zMLfbo8ik2HAoVrn3qv/CxhEbcGt+i044PcLWPXLIvhP2CHS2xy+GwV1NKySVS9L/Z3FrjEjvtD4p9oSH9pKjw==
   dependencies:
     "@emotion/core" "^10.0.9"
     "@emotion/styled" "^10.0.7"
-    "@storybook/client-logger" "5.1.0-alpha.25"
+    "@storybook/client-logger" "5.1.0-alpha.26"
     common-tags "^1.8.0"
     core-js "^2.6.5"
     deep-object-diff "^1.1.0"
@@ -11714,9 +11707,9 @@ jquery-deferred@^0.3.0:
   integrity sha1-WW7KHKr/VPYbEQlisjyv6nTDU1U=
 
 jquery@^3.3.1:
-  version "3.3.1"
-  resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.3.1.tgz#958ce29e81c9790f31be7792df5d4d95fc57fbca"
-  integrity sha512-Ubldcmxp5np52/ENotGxlLe6aGMvmF4R8S6tZjsP6Knsaxd/xp3Zrh50cG93lR6nPXyUFwzN3ZSOQI0wRJNdGg==
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.4.0.tgz#8de513fa0fa4b2c7d2e48a530e26f0596936efdf"
+  integrity sha512-ggRCXln9zEqv6OqAGXFEcshF5dSBvCkzj6Gm2gzuR5fWawaX8t7cxKVkkygKODrDAzKdoYw3l/e3pm3vlT4IbQ==
 
 js-base64@^2.1.8, js-base64@^2.1.9:
   version "2.5.1"
