@@ -24,7 +24,7 @@ function assertRtl(rtl) {
     return;
   }
   if (typeof rtl !== 'boolean') {
-    throw new InvalidOptionError(`Given rtl option ${rtl} is invalid`);
+    throw new InvalidOptionError(`Given rtl option '${rtl}' is invalid`);
   }
 }
 
@@ -33,7 +33,7 @@ function assertSkip(skip) {
     return;
   }
   if (typeof skip !== 'boolean') {
-    throw new InvalidOptionError(`Given skip option ${skip} is invalid`);
+    throw new InvalidOptionError(`Given skip option '${skip}' is invalid`);
   }
 }
 
