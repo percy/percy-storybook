@@ -59,7 +59,7 @@ export default function selectStories(rawStories, rtlRegex) {
       assertWidths(options.widths);
       assertRtl(options.rtl);
       assertSkip(options.skip);
-      assertMinimumHeight(options.minimum_height);
+      assertMinimumHeight(options.minHeight);
     }
     if (!options.skip) {
       const name = `${story.kind}: ${story.name}`;

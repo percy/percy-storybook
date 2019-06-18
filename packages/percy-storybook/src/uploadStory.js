@@ -12,7 +12,7 @@ export default async function uploadStory(
 
     if (story.options) {
       widths = story.options.widths || widths;
-      minimumHeight = story.options.minimum_height || minimumHeight;
+      minimumHeight = story.options.minHeight || minimumHeight;
     }
 
     const snapshotOptions = {
