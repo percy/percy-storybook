@@ -1,6 +1,6 @@
 {
   "name": "ember-example",
-  "version": "6.0.2",
+  "version": "6.0.3",
   "private": true,
   "scripts": {
     "build": "ember build",
@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.1.2",
-    "@percy/storybook": "^3.0.2",
+    "@percy/storybook": "^3.1.0",
     "@storybook/addon-a11y": "v5.1.0-alpha.26",
     "@storybook/addon-actions": "v5.1.0-alpha.26",
     "@storybook/addon-backgrounds": "v5.1.0-alpha.26",

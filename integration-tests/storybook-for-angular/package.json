@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "storybook-for-angular-integration-tests",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "license": "MIT",
   "scripts": {
     "ng": "ng",
@@ -34,7 +34,7 @@
     "@angular/cli": "1.6.4",
     "@angular/compiler-cli": "^5.1.0",
     "@angular/language-service": "^5.1.0",
-    "@percy/storybook": "^3.0.2",
+    "@percy/storybook": "^3.1.0",
     "@storybook/angular": "v5.1.0-alpha.26",
     "@types/jasmine": "~2.8.3",
     "@types/jasminewd2": "~2.0.2",
