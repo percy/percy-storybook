@@ -24,7 +24,7 @@ function assertRtl(rtl) {
     return;
   }
   if (typeof rtl !== 'boolean') {
-    throw new InvalidOptionError("Given rtl option '" + rtl + "' is invalid");
+    throw new InvalidOptionError(`Given rtl option ${rtl} is invalid`);
   }
 }
 
@@ -33,7 +33,16 @@ function assertSkip(skip) {
     return;
   }
   if (typeof skip !== 'boolean') {
-    throw new InvalidOptionError("Given skip option '" + skip + "' is invalid");
+    throw new InvalidOptionError(`Given skip option ${skip} is invalid`);
+  }
+}
+
+function assertMinimumHeight(minHeight) {
+  if (typeof minHeight === 'undefined') {
+    return;
+  }
+  if (typeof minHeight !== 'number') {
+    throw new InvalidOptionError(`Given minHeight option ${minHeight} is invalid`);
   }
 }
 
@@ -50,6 +59,7 @@ export default function selectStories(rawStories, rtlRegex) {
       assertWidths(options.widths);
       assertRtl(options.rtl);
       assertSkip(options.skip);
+      assertMinimumHeight(options.minimum_height);
     }
     if (!options.skip) {
       const name = `${story.kind}: ${story.name}`;
