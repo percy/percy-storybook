@@ -112,6 +112,13 @@ storiesOf('addWithPercyOptions', module)
     percy: { skip: true },
   })
   .add(
+    'with minimum height',
+    () => <span style={{ height: '20px' }}>Renders with a large height</span>,
+    {
+      percy: { minHeight: 1500 },
+    },
+  )
+  .add(
     'with RTL of true for a single story',
     () => (
       <div className={direction}>
