@@ -19,7 +19,7 @@
     "@storybook/addon-actions": "v5.1.0-alpha.26",
     "@storybook/addon-backgrounds": "v5.1.0-alpha.26",
     "@storybook/addon-centered": "v5.1.0-alpha.26",
-    "@storybook/addon-knobs": "v5.1.0-alpha.26",
+    "@storybook/addon-knobs": "v5.1.9",
     "@storybook/addon-links": "v5.1.0-alpha.26",
     "@storybook/addon-notes": "v5.1.0-alpha.26",
     "@storybook/addon-options": "v5.1.0-alpha.26",
