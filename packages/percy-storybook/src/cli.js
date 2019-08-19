@@ -30,7 +30,9 @@ export async function run(argv) {
     .epilogue(args.docs)
     .default('build_dir', 'storybook-static')
     .default('output_format', 'text')
-    .default('minimum_height', '800').argv;
+    .default('minimum_height', '800')
+    .default('fail_on_empty', false)
+    .argv;
 
   if (argv.help) {
     yargs.showHelp();
@@ -51,6 +53,7 @@ export async function run(argv) {
     debug: argv.debug || debug.enabled,
     buildDir: argv.build_dir,
     outputFormat: getOutputFormat(argv.output_format),
+    failOnEmpty: !!argv.fail_on_empty,
   };
 
   // Enable debug logging based on options.
@@ -84,12 +87,16 @@ export async function run(argv) {
   debug('selectedStories %o', selectedStories);
 
   if (selectedStories.length === 0) {
+    const message = 'percy-storybook found no stories in the static storybook.';
+    if (options.failOnEmpty) {
+      throw new Error(message);
+    }
     if (options.outputFormat == 'text') {
       // eslint-disable-next-line no-console
-      console.log('percy-storybook found no stories in the static storybook.');
+      console.log(message);
     } else if (options.outputFormat == 'json') {
       // eslint-disable-next-line no-console
-      console.log(`{'exitReason':'percy-storybook found no stories in the static storybook.'}`);
+      console.log(JSON.stringify({ exitReason: message }));
     }
     return;
   }
