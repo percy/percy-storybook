@@ -31,7 +31,7 @@ export async function run(argv) {
     .default('build_dir', 'storybook-static')
     .default('output_format', 'text')
     .default('minimum_height', '800')
-    .default('fail_on_empty', false).argv;
+    .default('fail_on_empty', 'false').argv;
 
   if (argv.help) {
     yargs.showHelp();
@@ -52,7 +52,7 @@ export async function run(argv) {
     debug: argv.debug || debug.enabled,
     buildDir: argv.build_dir,
     outputFormat: getOutputFormat(argv.output_format),
-    failOnEmpty: !!argv.fail_on_empty,
+    failOnEmpty: argv.fail_on_empty === 'true',
   };
 
   // Enable debug logging based on options.
