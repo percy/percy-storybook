@@ -1,6 +1,10 @@
 export const docs = 'Documentation: https://percy.io/percy-storybook';
 
 export const options = {
+  fail_on_empty: {
+    description: 'Fail when no stories are found',
+    requiresArg: true,
+  },
   widths: {
     alias: 'w',
     description: 'Comma seperated lists of widths',
