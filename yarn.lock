@@ -16151,9 +16151,9 @@ react-lifecycles-compat@^3.0.2, react-lifecycles-compat@^3.0.4:
   integrity sha512-fBASbA6LnOU9dOU2eW7aQ8xmYBSXUIWr+UmF9b1efZBazGNO+rcXT/icdKnYm2pTwcRylVUYwW7H1PHfLekVzA==
 
 react-match-media@^2.2.0:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/react-match-media/-/react-match-media-2.2.0.tgz#6ceaceffc84120e7e531fe92c86d1ab71df1ccec"
-  integrity sha512-Fqup66+fH7MS/HwovDqLKE5RaOz7hE+GXfV2HdKEuhTdtJhsFGjhuQDLIuXNy4lji+HEBpjI60uGQwlU6eWXSA==
+  version "2.2.2"
+  resolved "https://registry.yarnpkg.com/react-match-media/-/react-match-media-2.2.2.tgz#beeae712e8cc3b710215547ce328abf22ca27ec1"
+  integrity sha512-m18We7w3j2aAq7B63ChI2IUdmDQfc7MzmrNO1FyEX2RsuJfrGcEelb8XYcjXwhXcyCilrVlpdXik7rgKNTRNRA==
 
 react-popper-tooltip@^2.8.0:
   version "2.8.0"
