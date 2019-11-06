@@ -21,7 +21,7 @@
     "@percy/storybook": "^3.2.0",
     "@storybook/addon-actions": "v5.1.0-alpha.26",
     "@storybook/addon-info": "v5.1.0-alpha.26",
-    "@storybook/addon-knobs": "v5.1.0-alpha.26",
+    "@storybook/addon-knobs": "v5.2.5",
     "@storybook/addon-links": "v5.1.0-alpha.26",
     "@storybook/addon-options": "v5.1.0-alpha.26",
     "@storybook/addons": "v5.1.0-alpha.26",
