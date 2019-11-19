@@ -41,6 +41,7 @@
     "@types/node": "~10.0.4",
     "babel-core": "^6.26.0",
     "codelyzer": "^4.5.0",
+    "core-js": "2",
     "jasmine-core": "~3.5.0",
     "jasmine-spec-reporter": "~4.2.1",
     "karma": "~2.0.0",
