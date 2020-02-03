@@ -15,11 +15,12 @@ const fetchStoriesFromWindow = `(async () => {
     var checkStories = function(timesCalled) {
       if (window[storybookClientAPIKey]) {
         // Found the stories, sanitize to name, kind, and options, and then return them.
-        var reducedStories = window[storybookClientAPIKey].raw().map(story => { return {
+        var reducedStories = window[storybookClientAPIKey].raw().map(story => ({
+          id: story.id,
           name: story.name,
           kind: story.kind,
           parameters: { percy: story.parameters ? story.parameters.percy : undefined },
-        }});
+        }));
         resolve(reducedStories);
       } else if (timesCalled < 100) {
         // Stories not found yet, try again 100ms from now
