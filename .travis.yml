@@ -7,25 +7,25 @@ cache:
     - .eslintcache
 matrix:
   include:
-    - node_js: "8"
+    - node_js: "10"
       env: LINT=true
       if: branch = master OR type = pull_request
-    - node_js: "10"
+    - node_js: "12"
       env: UNIT_TEST=true COVERAGE=false
       if: branch = master OR type = pull_request
-    - node_js: "8"
+    - node_js: "10"
       env: UNIT_TEST=true COVERAGE=true
       if: branch = master OR type = pull_request
-    - node_js: "8"
+    - node_js: "10"
       env: INTEGRATION_TEST=storybook-for-react PERCY_TOKEN="$STORYBOOK_FOR_REACT_PERCY_TOKEN"
       if: branch = master OR type = pull_request
-    - node_js: "8"
+    - node_js: "10"
       env: INTEGRATION_TEST=storybook-for-vue PERCY_TOKEN="$STORYBOOK_FOR_VUE_PERCY_TOKEN"
       if: branch = master OR type = pull_request
-    - node_js: "8"
+    - node_js: "10"
       env: INTEGRATION_TEST=storybook-for-angular PERCY_TOKEN="$STORYBOOK_FOR_ANGULAR_PERCY_TOKEN"
       if: branch = master OR type = pull_request
-    - node_js: "8"
+    - node_js: "10"
       env: INTEGRATION_TEST=storybook-for-ember PERCY_TOKEN="$STORYBOOK_FOR_EMBER_PERCY_TOKEN"
       if: branch = master OR type = pull_request
 before_install:
