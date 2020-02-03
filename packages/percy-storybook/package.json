@@ -7,8 +7,7 @@
   },
   "license": "MIT",
   "engines": {
-    "node": ">=4.0",
-    "npm": ">=3.0"
+    "node": ">=10.0.0"
   },
   "bin": {
     "percy-storybook": "./bin/percy-storybook.js"
