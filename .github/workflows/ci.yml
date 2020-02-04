@@ -11,8 +11,6 @@ jobs:
         uses: actions/checkout@master
       - name: Install
         run: yarn
-      - name: Lint
-        run: yarn lint
       - name: Unit
         run: yarn test:unit
       - name: React
