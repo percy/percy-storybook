@@ -140,7 +140,10 @@ storiesOf('addWithPercyOptions', module)
 
 const someString = 'this is my 1st inserted string';
 storiesOf('With info addon', module)
-  .add('some story', withInfo('doc string about my component')(() => <span>info story</span>))
+  .add(
+    'some story',
+    withInfo('doc string about my component')(() => <span>info story</span>),
+  )
   .add(
     'with withInfo instead of addWithInfo',
     withInfo(`doc string about my component: ${someString}`)(() => <span>info 555px width</span>),
