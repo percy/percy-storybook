@@ -1,0 +1,43 @@
+name: Windows Tests
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+      - name: Install
+        run: yarn
+      # TODO: Cannot run on windows due to carriage returns
+      # - name: Lint
+      #   run: yarn lint
+      - name: Unit
+        run: yarn test:unit
+      - name: React
+        uses: percy/storybook-action@v0.1.2
+        with:
+          working-directory: "integration-tests/storybook-for-react"
+          custom-command: "yarn storybook:percy"
+        env:
+          PERCY_TOKEN: ${{ secrets.REACT_PERCY_TOKEN }}
+      - name: Vue
+        uses: percy/storybook-action@v0.1.2
+        with:
+          working-directory: "integration-tests/storybook-for-vue"
+          custom-command: "yarn storybook:percy"
+        env:
+          PERCY_TOKEN: ${{ secrets.VUE_PERCY_TOKEN }}
+      - name: Angular
+        uses: percy/storybook-action@v0.1.2
+        with:
+          working-directory: "integration-tests/storybook-for-angular"
+          custom-command: "yarn storybook:percy"
+        env:
+          PERCY_TOKEN: ${{ secrets.ANGULAR_PERCY_TOKEN }}
+      - name: Ember
+        uses: percy/storybook-action@v0.1.2
+        with:
+          working-directory: "integration-tests/storybook-for-ember"
+          custom-command: "yarn storybook:percy"
+        env:
+          PERCY_TOKEN: ${{ secrets.EMBER_PERCY_TOKEN }}
