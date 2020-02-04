@@ -26,6 +26,6 @@
     "@storybook/addon-links": "v5.1.0-alpha.26",
     "@storybook/addon-options": "v5.1.0-alpha.26",
     "@storybook/addons": "v5.1.0-alpha.26",
-    "@storybook/react": "v5.1.0-alpha.26"
+    "@storybook/react": "v5.3.10"
   }
 }
