@@ -24,7 +24,7 @@
     "@storybook/addon-notes": "v5.1.0-alpha.26",
     "@storybook/addon-options": "v5.1.0-alpha.26",
     "@storybook/addon-storysource": "v5.1.0-alpha.26",
-    "@storybook/addon-viewport": "v5.1.0-alpha.26",
+    "@storybook/addon-viewport": "v5.3.11",
     "@storybook/addons": "v5.1.0-alpha.26",
     "@storybook/ember": "v5.1.0-alpha.26",
     "babel-loader": "^8",
