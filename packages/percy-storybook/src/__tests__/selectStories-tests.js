@@ -40,7 +40,10 @@ describe('selectStories', () => {
   });
 
   it('adds rtl stories when requested', () => {
-    const stories = [{ name: 'a', kind: 'ImagePost' }, { name: 'b', kind: 'ImagePost' }];
+    const stories = [
+      { name: 'a', kind: 'ImagePost' },
+      { name: 'b', kind: 'ImagePost' },
+    ];
 
     const expectedSelectedStories = [
       {

@@ -8,7 +8,7 @@
     "prebuild": "rimraf ./packages/*/lib",
     "prelerna:publish": "yarn build --silent",
     "storybook": "lerna run --scope=storybook-for-react-integration-tests storybook --stream",
-    "test": "jest",
+    "test:unit": "jest",
     "test:integration": "./scripts/run-integration-tests.sh",
     "test:watch": "jest --watch --notify"
   },
