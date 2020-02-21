@@ -1,4 +1,5 @@
 import ExtendableError from 'es6-error';
+import storybookVersion from './storybookVersion';
 
 export class InvalidOptionError extends ExtendableError {}
 
@@ -50,6 +51,24 @@ function storyMatchesRtlRegexAndIsNotExcluded(rtlRegex, storyName, options) {
   return rtlRegex && rtlRegex.test(storyName) && options.rtl !== false;
 }
 
+function useStoryId() {
+  if (typeof useStoryId.cached === 'boolean') {
+    return useStoryId.cached;
+  }
+
+  // ignore alpha, beta, and rc versions
+  const version = storybookVersion().split('-')[0];
+  const [major, minor] = version
+    .replace('v', '')
+    .split('.')
+    .map(Number);
+
+  // use story ID in storybook >= 5.3.x
+  const result = major >= 5 && minor >= 3;
+  useStoryId.cached = result;
+  return result;
+}
+
 export default function selectStories(rawStories, rtlRegex) {
   let selectedStories = [];
   Object.values(rawStories).forEach(story => {
@@ -63,7 +82,7 @@ export default function selectStories(rawStories, rtlRegex) {
     }
     if (!options.skip) {
       const name = `${story.kind}: ${story.name}`;
-      const encodedParams = story.id
+      const encodedParams = useStoryId()
         ? `id=${story.id}`
         : `selectedKind=${encodeURIComponent(story.kind)}` +
           `&selectedStory=${encodeURIComponent(story.name)}`;
