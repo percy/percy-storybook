@@ -19,10 +19,8 @@
   ],
   "scripts": {
     "build": "babel src -d lib --ignore 'src/__tests__'",
-    "lint": "eslint . --cache --ignore-pattern '!.*'",
     "prebuild": "rimraf ./lib",
-    "test:unit": "jest",
-    "test:watch": "jest --watch --notify"
+    "test:unit": "jest"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -69,5 +67,12 @@
     "globals": {
       "window": true
     }
+  },
+  "jest": {
+    "testMatch": ["**/tests/unit/**-tests.js"],
+    "testEnvironment": "node",
+    "testPathIgnorePatterns": [
+      "/node_modules/"
+    ]
   }
 }
