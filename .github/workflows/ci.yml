@@ -11,8 +11,15 @@ jobs:
         uses: actions/checkout@master
       - name: Install
         run: yarn
-      - name: Unit
-        run: yarn test:unit
+      - name: Build
+        run: yarn build
+      - name: Link
+        run: yarn link
+      # - name: Unit
+      #   run: yarn test:unit
+      - name: Install & Link Percy
+        run: node install-and-link.js
+        working-directory: "integration-tests/"
       - name: React
         uses: percy/storybook-action@v0.1.3
         with:
@@ -20,7 +27,6 @@ jobs:
           custom-command: "yarn storybook:percy"
         env:
           PERCY_TOKEN: ${{ secrets.REACT_PERCY_TOKEN }}
-          ACTIONS_STEP_DEBUG: true
       - name: Vue
         uses: percy/storybook-action@v0.1.3
         with:
