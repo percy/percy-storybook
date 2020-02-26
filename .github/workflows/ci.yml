@@ -34,13 +34,13 @@ jobs:
           custom-command: "yarn storybook:percy"
         env:
           PERCY_TOKEN: ${{ secrets.VUE_PERCY_TOKEN }}
-      - name: Angular
-        uses: percy/storybook-action@v0.1.3
-        with:
-          working-directory: "integration-tests/storybook-for-angular"
-          custom-command: "yarn storybook:percy"
-        env:
-          PERCY_TOKEN: ${{ secrets.ANGULAR_PERCY_TOKEN }}
+      # - name: Angular
+      #   uses: percy/storybook-action@v0.1.3
+      #   with:
+      #     working-directory: "integration-tests/storybook-for-angular"
+      #     custom-command: "yarn storybook:percy"
+      #   env:
+      #     PERCY_TOKEN: ${{ secrets.ANGULAR_PERCY_TOKEN }}
       - name: Ember
         uses: percy/storybook-action@v0.1.3
         with:
