@@ -21,6 +21,7 @@
     "lint": "eslint --ext .js src/",
     "build": "babel src -d lib --ignore 'src/__tests__'",
     "prebuild": "rimraf ./lib",
+    "prepublishOnly": "yarn build",
     "test:unit": "jest"
   },
   "devDependencies": {
