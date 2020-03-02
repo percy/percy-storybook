@@ -20,7 +20,6 @@ import yargs from 'yargs';
 const debug = createDebug('percy-storybook');
 const VERSION = require('../package.json').version;
 
-// eslint-disable-next-line import/prefer-default-export
 export async function run(argv) {
   argv = yargs(argv)
     .usage(args.usage)
@@ -52,7 +51,7 @@ export async function run(argv) {
     debug: argv.debug || debug.enabled,
     buildDir: argv.build_dir,
     outputFormat: getOutputFormat(argv.output_format),
-    failOnEmpty: argv.fail_on_empty === 'true',
+    failOnEmpty: argv.fail_on_empty === 'true'
   };
 
   // Enable debug logging based on options.
@@ -104,16 +103,8 @@ export async function run(argv) {
     process.env.PERCY_TOKEN,
     process.env.PERCY_API,
     `@percy/storybook/${VERSION}`,
-    `storybook/${storybookVersion()} ${frameworkVersion()}`,
+    `storybook/${storybookVersion()} ${frameworkVersion()}`
   );
 
-  return uploadStorybook(
-    client,
-    selectedStories,
-    widths,
-    minimumHeight,
-    storyHtml,
-    assets,
-    options.outputFormat,
-  );
+  return uploadStorybook(client, selectedStories, widths, minimumHeight, storyHtml, assets, options.outputFormat);
 }

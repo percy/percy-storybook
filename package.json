@@ -18,6 +18,7 @@
     "lib"
   ],
   "scripts": {
+    "lint": "eslint --ext .js src/",
     "build": "babel src -d lib --ignore 'src/__tests__'",
     "prebuild": "rimraf ./lib",
     "test:unit": "jest"
@@ -35,7 +36,7 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-register": "^6.26.0",
     "chalk": "^2.4.2",
-    "eslint": "^5.16.0",
+    "eslint": "^6.8.0",
     "eslint-config-prettier": "^4.1.0",
     "eslint-plugin-import": "^2.7.0",
     "eslint-plugin-jasmine": "*",
@@ -69,7 +70,9 @@
     }
   },
   "jest": {
-    "testMatch": ["**/tests/unit/**-tests.js"],
+    "testMatch": [
+      "**/tests/unit/**-tests.js"
+    ],
     "testEnvironment": "node",
     "testPathIgnorePatterns": [
       "/node_modules/"
