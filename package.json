@@ -1,18 +1,31 @@
 {
-  "private": true,
+  "name": "@percy/storybook",
+  "version": "3.3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/percy/percy-storybook.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "bin": {
+    "percy-storybook": "./bin/percy-storybook.js"
+  },
+  "main": "lib/index.js",
+  "files": [
+    "bin",
+    "lib"
+  ],
   "scripts": {
-    "build": "vitruvius build --src src --dest lib --ignore-packages \"**/integration-tests/**\"",
-    "lerna:publish": "lerna publish",
-    "lint": "eslint . --cache --ignore-pattern '!.*'",
-    "postinstall": "yarn build --silent",
-    "prebuild": "rimraf ./packages/*/lib",
-    "prelerna:publish": "yarn build --silent",
-    "storybook": "lerna run --scope=storybook-for-react-integration-tests storybook --stream",
-    "test:unit": "jest",
-    "test:integration": "./scripts/run-integration-tests.sh",
-    "test:watch": "jest --watch --notify"
+    "lint": "eslint --ext .js src/",
+    "build": "babel src -d lib --ignore 'src/__tests__'",
+    "prebuild": "rimraf ./lib",
+    "prepublishOnly": "yarn build",
+    "test:unit": "jest"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
     "babel-eslint": "^10.0.0",
     "babel-jest": "^24.8.0",
@@ -21,9 +34,10 @@
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-env": "^1.6.0",
-    "babel-preset-react": "^6.24.1",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-register": "^6.26.0",
     "chalk": "^2.4.2",
-    "eslint": "^5.16.0",
+    "eslint": "^6.8.0",
     "eslint-config-prettier": "^4.1.0",
     "eslint-plugin-import": "^2.7.0",
     "eslint-plugin-jasmine": "*",
@@ -33,37 +47,36 @@
     "fs-extra": "^7.0.0",
     "husky": "^3.0.9",
     "jest": "^23.0.0",
-    "lerna": "^2.0.0",
     "lint-staged": "^9.4.2",
-    "mock-fs": "^4.8.0",
+    "mock-fs": "^4.5.0",
     "prettier": "^1.17.0",
-    "rimraf": "^3.0.0",
-    "vitruvius": "^3.0.0"
+    "rimraf": "^3.0.0"
+  },
+  "dependencies": {
+    "@percy/react-percy-api-client": "^0.4.6",
+    "babel-runtime": "^6.26.0",
+    "debug": "^3.1.0",
+    "es6-error": "^4.0.2",
+    "es6-promise-pool": "^2.4.4",
+    "puppeteer": "^1.4.0",
+    "walk": "^2.3.9",
+    "yargs": "^7.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "eslintConfig": {
+    "globals": {
+      "window": true
+    }
   },
   "jest": {
-    "roots": [
-      "<rootDir>/integration-tests/",
-      "<rootDir>/packages/"
+    "testMatch": [
+      "**/tests/unit/**-tests.js"
     ],
     "testEnvironment": "node",
     "testPathIgnorePatterns": [
       "/node_modules/"
     ]
-  },
-  "lint-staged": {
-    "*.js": [
-      "eslint --fix --color --ignore-pattern '!.*'",
-      "git add",
-      "jest --bail --findRelatedTests --color"
-    ]
-  },
-  "workspaces": [
-    "integration-tests/*",
-    "packages/*"
-  ],
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
   }
 }

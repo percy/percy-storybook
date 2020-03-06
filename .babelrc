@@ -8,8 +8,7 @@
           "Firefox >= 45"
         ]
       }
-    }],
-    "react"
+    }]
   ],
   "plugins": [
     "transform-class-properties",

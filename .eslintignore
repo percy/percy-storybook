@@ -1,6 +1,0 @@
-integration-tests/*/node_modules/**
-integration-tests/*/storybook-static/**
-node_modules/**
-packages/*/bin/**
-packages/*/lib/**
-packages/*/node_modules/**

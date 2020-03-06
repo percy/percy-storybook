@@ -1,0 +1,57 @@
+{
+  "name": "ember-example",
+  "version": "6.1.0",
+  "private": true,
+  "scripts": {
+    "build": "ember build",
+    "build-storybook": "yarn run build && cp -r public/* dist && build-storybook -s dist",
+    "dev": "ember serve",
+    "snapshot:debug": "percy-storybook --debug",
+    "storybook": "yarn run build-storybook && start-storybook -p 9009 -s dist, public",
+    "storybook:percy-debug": "percy-storybook --debug",
+    "storybook:percy": "yarn run build-storybook && percy-storybook --widths=320,1280",
+    "storybook:percy-no-build": "percy-storybook --widths=320,1280 --rtl_regex=Direction"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.1.2",
+    "@storybook/addon-a11y": "v5.3.14",
+    "@storybook/addon-actions": "v5.3.14",
+    "@storybook/addon-backgrounds": "v5.3.14",
+    "@storybook/addon-centered": "v5.3.14",
+    "@storybook/addon-knobs": "v5.3.14",
+    "@storybook/addon-links": "v5.3.14",
+    "@storybook/addon-notes": "v5.3.14",
+    "@storybook/addon-options": "v5.3.14",
+    "@storybook/addon-storysource": "v5.3.14",
+    "@storybook/addon-viewport": "v5.3.14",
+    "@storybook/addons": "v5.3.14",
+    "@storybook/ember": "v5.3.14",
+    "babel-loader": "^8",
+    "broccoli-asset-rev": "^3.0.0",
+    "cross-env": "^7.0.0",
+    "ember-ajax": "^5.0.0",
+    "ember-cli": "^3.7.1",
+    "ember-cli-app-version": "^3.0.0",
+    "ember-cli-babel": "^7.1.2",
+    "ember-cli-htmlbars": "^3.0.1",
+    "ember-cli-htmlbars-inline-precompile": "^2.1.0",
+    "ember-cli-inject-live-reload": "^2.0.1",
+    "ember-cli-shims": "^1.2.0",
+    "ember-cli-sri": "^2.1.0",
+    "ember-cli-uglify": "^2.0.0",
+    "ember-load-initializers": "^1.1.0",
+    "ember-resolver": "^5.0.1",
+    "ember-source": "~3.5.0",
+    "loader.js": "^4.2.3",
+    "terser": "4.0.0",
+    "webpack": "^4.17.1",
+    "webpack-cli": "^3.1.2"
+  },
+  "engines": {
+    "node": "^4.5 || 6.* || >= 7.*"
+  },
+  "dependencies": {
+    "ember-template-compiler": "^1.9.0-alpha",
+    "handlebars": "^4.0.0"
+  }
+}
