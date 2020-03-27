@@ -48,7 +48,7 @@ export default async function getStories(options = {}) {
     launchArgs.push('--no-sandbox');
   }
 
-  const browser = await puppeteer.launch({ headless: true, args: launchArgs });
+  const browser = await getBrowser(launchArgs, options.puppeteerLaunchRetries)
   const page = await browser.newPage();
 
   await page.goto('file://' + options.iframePath);
@@ -72,4 +72,17 @@ export default async function getStories(options = {}) {
   }
 
   return stories;
+}
+
+async function getBrowser(launchArgs, retries) {
+  try {
+    return await puppeteer.launch({ headless: true, args: launchArgs });
+  } catch (error) {
+    if (retries <= 0) {
+      throw error;
+    }
+
+    await sleep(1000);
+    return getBrowser(launchArgs, retries - 1);
+  }
 }
