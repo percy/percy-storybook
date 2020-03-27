@@ -39,7 +39,7 @@ export const options = {
   puppeteer_launch_retries: {
     description: 'Number of times to attempt to launch puppeteer',
     requiresArg: true,
-  }
+  },
 };
 
 export const usage = 'Usage: $0 --widths=320,1280 --debug';

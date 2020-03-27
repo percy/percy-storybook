@@ -48,7 +48,7 @@ export default async function getStories(options = {}) {
     launchArgs.push('--no-sandbox');
   }
 
-  const browser = await getBrowser(launchArgs, options.puppeteerLaunchRetries)
+  const browser = await getBrowser(launchArgs, options.puppeteerLaunchRetries);
   const page = await browser.newPage();
 
   await page.goto('file://' + options.iframePath);
@@ -85,4 +85,8 @@ async function getBrowser(launchArgs, retries) {
     await sleep(1000);
     return getBrowser(launchArgs, retries - 1);
   }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
