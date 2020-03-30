@@ -38,7 +38,7 @@ const fetchStoriesFromWindow = `(async () => {
   });
 })()`;
 
-export default async function getStories(options = {}) {
+export default async function getStories(options = {}, launchPuppeteer = opts => puppeteer.launch(opts)) {
   let launchArgs = [];
 
   // Some CI platforms including Travis requires Chrome to be launched without the sandbox
@@ -48,7 +48,7 @@ export default async function getStories(options = {}) {
     launchArgs.push('--no-sandbox');
   }
 
-  const browser = await getBrowser(launchArgs, options.puppeteerLaunchRetries);
+  const browser = await getBrowser(launchPuppeteer, launchArgs, options.puppeteerLaunchRetries);
   const page = await browser.newPage();
 
   await page.goto('file://' + options.iframePath);
@@ -74,16 +74,16 @@ export default async function getStories(options = {}) {
   return stories;
 }
 
-async function getBrowser(launchArgs, retries) {
+async function getBrowser(launchPuppeteer, launchArgs, retries) {
   try {
-    return await puppeteer.launch({ headless: true, args: launchArgs });
+    return await launchPuppeteer({ headless: true, args: launchArgs });
   } catch (error) {
     if (retries <= 0) {
       throw error;
     }
 
     await sleep(1000);
-    return getBrowser(launchArgs, retries - 1);
+    return getBrowser(launchPuppeteer, launchArgs, retries - 1);
   }
 }
 

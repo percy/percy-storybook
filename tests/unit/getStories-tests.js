@@ -1,3 +1,4 @@
+import puppeteer from 'puppeteer';
 import getStories from '../../src/getStories';
 
 let originalTimeout = 0;
@@ -28,4 +29,20 @@ it('returns the stories from the window', async () => {
   expect(stories).toEqual([
     { kind: "this is the story's kind", name: "this is the story's name", parameters: {} }
   ]);
+});
+
+it('retries if starting puppeteer fails', async () => {
+  let alreadyFailed = false;
+  const launchPuppeteer = opts => {
+    if (!alreadyFailed) {
+      alreadyFailed = true;
+      throw new Error('failing on purpose');
+    }
+
+    return puppeteer.launch(opts);
+  };
+
+  const options = { iframePath: __dirname + '/iframe.html', puppeteerLaunchRetries: 2 };
+  await expect(getStories(options, launchPuppeteer)).resolves.toBeTruthy();
+  expect(alreadyFailed).toBe(true);
 });
