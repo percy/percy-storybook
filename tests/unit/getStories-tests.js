@@ -46,3 +46,13 @@ it('retries if starting puppeteer fails', async () => {
   await expect(getStories(options, launchPuppeteer)).resolves.toBeTruthy();
   expect(alreadyFailed).toBe(true);
 });
+
+it('it fails after puppeteer fails to start too many times', async () => {
+  const error = new Error('failing on purpose');
+  const launchPuppeteer = () => {
+    throw error;
+  };
+
+  const options = { iframePath: __dirname + '/iframe.html', puppeteerLaunchRetries: 2 };
+  await expect(getStories(options, launchPuppeteer)).rejects.toBe(error);
+});
