@@ -46,7 +46,7 @@
     "eslint-plugin-react": "^7.1.0",
     "fs-extra": "^7.0.0",
     "husky": "^3.0.9",
-    "jest": "^23.0.0",
+    "jest": "^25.2.4",
     "lint-staged": "^9.4.2",
     "mock-fs": "^4.5.0",
     "prettier": "^1.17.0",
