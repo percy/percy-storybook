@@ -36,6 +36,10 @@ export const options = {
     description: 'Runs stories with matching names a second time with direction param of rtl',
     requiresArg: true,
   },
+  puppeteer_launch_args: {
+    description: 'Args to pass to `puppeteer.launch` invocation',
+    requiresArg: true,
+  }
 };
 
 export const usage = 'Usage: $0 --widths=320,1280 --debug';
