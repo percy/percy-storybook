@@ -43,7 +43,7 @@
     "eslint-plugin-jasmine": "*",
     "eslint-plugin-jest": "^23.8.2",
     "eslint-plugin-prettier": "^3.0.0",
-    "eslint-plugin-react": "^7.1.0",
+    "eslint-plugin-react": "^7.19.0",
     "fs-extra": "^7.0.0",
     "husky": "^3.0.9",
     "jest": "^23.0.0",
