@@ -64,7 +64,7 @@ export default function selectStories(rawStories, rtlRegex) {
     if (!options.skip) {
       const name = `${story.kind}: ${story.name}`;
       const encodedParams = story.id
-        ? `id=${story.id}`
+        ? `id=${encodeURIComponent(story.id)}`
         : `selectedKind=${encodeURIComponent(story.kind)}` +
           `&selectedStory=${encodeURIComponent(story.name)}`;
 
