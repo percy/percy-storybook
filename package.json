@@ -60,7 +60,7 @@
     "es6-promise-pool": "^2.4.4",
     "puppeteer": "^1.4.0",
     "walk": "^2.3.9",
-    "yargs": "^7.0.2"
+    "yargs": "^15.4.1"
   },
   "publishConfig": {
     "access": "public"
