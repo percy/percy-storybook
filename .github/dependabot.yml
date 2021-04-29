@@ -1,0 +1,22 @@
+version: 2
+updates:
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: monthly
+    time: "03:00"
+    timezone: US/Central
+  ignore:
+  - dependency-name: puppeteer
+    versions:
+    - 8.0.0
+  - dependency-name: eslint-config-prettier
+    versions:
+    - 7.2.0
+    - 8.1.0
+  - dependency-name: yargs
+    versions:
+    - 16.2.0
+  - dependency-name: fs-extra
+    versions:
+    - 9.1.0
