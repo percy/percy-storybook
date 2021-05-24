@@ -1,11 +1,10 @@
-parser: babel-eslint
+parser: '@babel/eslint-parser'
 extends: standard
 plugins:
-  - babel
+  - '@babel/eslint-plugin'
 rules:
   prefer-const: off
   no-unused-expressions: off
-  babel/no-unused-expressions: warn
   promise/param-names: off
   semi: [error, always]
   generator-star-spacing:

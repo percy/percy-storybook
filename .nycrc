@@ -1,5 +1,5 @@
 {
-  "exclude": ["dist", "test"],
+  "include": ["src"],
   "check-coverage": true,
   "branches": 100,
   "lines": 100,
