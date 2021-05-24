@@ -22,7 +22,10 @@
   },
   "oclif": {
     "bin": "percy",
-    "commands": "./dist/commands"
+    "commands": "./dist/commands",
+    "hooks": {
+      "init": "./dist/hooks/init"
+    }
   },
   "dependencies": {
     "@percy/cli-command": "^1.0.0-beta.51",
