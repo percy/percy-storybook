@@ -11,6 +11,8 @@ export class Storybook extends Command {
     required: true
   }];
 
+  static flags = Command.flags;
+
   static examples = [
     '$ percy storybook ./build',
     '$ percy storybook http://localhost:9000/'
@@ -26,7 +28,7 @@ export class Storybook extends Command {
 
   // Serves a static directory and resolves when listening.
   async storybook() {
-    let urlOrDir = this.args['url-or-build-dir'];
+    let urlOrDir = this.args.url_or_build_dir;
     if (/^https?:\/\//.test(urlOrDir)) return urlOrDir;
 
     if (!existsSync(urlOrDir)) {
@@ -40,7 +42,7 @@ export class Storybook extends Command {
 
     return new Promise(resolve => {
       this.server = http.createServer((req, res) => {
-        serve(req, res, { public: urlOrDir });
+        serve(req, res, { public: urlOrDir, cleanUrls: false });
       }).listen(() => {
         let { port } = this.server.address();
         resolve(`http://localhost:${port}`);

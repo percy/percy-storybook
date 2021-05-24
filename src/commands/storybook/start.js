@@ -36,12 +36,14 @@ export class StorybookStart extends Command {
   // Starts Storybook in a child process and returns its url
   async storybook() {
     let { host, port } = this.flags;
-    let args = ['--ci', `--host=${host}`, `--port=${port}`];
+    let args = [`--host=${host}`, `--port=${port}`];
 
     let spawn = require('cross-spawn');
     args = args.concat(this.parse(StorybookStart).argv);
+    this.log.info(`Running "start-storybook ${args.join(' ')}"`);
     this.process = spawn('start-storybook', args, { stdio: 'inherit' });
 
+    /* istanbul ignore next: this is a storybook feature we don't need to test */
     let proto = args.includes('--https') ? 'https' : 'http';
     return `${proto}://${host}:${port}/`;
   }
