@@ -32,7 +32,7 @@ describe('percy storybook', () => {
 
   afterAll(async () => {
     await server.close();
-    await new Promise(r => sbproc.on('close', r).kill(9));
+    sbproc.kill(9);
   });
 
   beforeEach(() => {
