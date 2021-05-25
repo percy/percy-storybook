@@ -163,7 +163,7 @@ the real DOM and relevant assets of each story.
 Because the old SDK did not take DOM snapshots, JavaScript had to be enabled in our rendering
 environment for Storybook to properly load. This is in contrast to all of our other SDKs, where
 JavaScript is disabled by default to prevent flakey diffs caused by animations or other JavaScript
-running on the page. With the new SDK and real DOM snapshtos, JS is disabled by default. If you
+running on the page. With the new SDK and real DOM snapshots, JS is disabled by default. If you
 upgrade and experience diffs due to the lack of JavaScript, it can be re-enabled using the matching
 Percy config file or per-snapshot option, [`enableJavaScript`](https://docs.percy.io/docs/cli-configuration#snapshot).
 
