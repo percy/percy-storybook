@@ -41,10 +41,14 @@ export class StorybookStart extends Command {
     let spawn = require('cross-spawn');
     args = args.concat(this.parse(StorybookStart).argv);
     this.log.info(`Running "start-storybook ${args.join(' ')}"`);
-    this.process = spawn('start-storybook', args, { stdio: 'inherit' });
 
-    /* istanbul ignore next: this is a storybook feature we don't need to test */
-    let proto = args.includes('--https') ? 'https' : 'http';
-    return `${proto}://${host}:${port}/`;
+    return new Promise((resolve, reject) => {
+      this.process = spawn('start-storybook', args, { stdio: 'inherit' });
+      this.process.on('error', reject);
+      if (!this.process.pid) return;
+
+      /* istanbul ignore next: this is a storybook flag we don't need to test */
+      resolve(`${args.includes('--https') ? 'https' : 'http'}://${host}:${port}/`);
+    });
   }
 }
