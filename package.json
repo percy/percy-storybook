@@ -18,7 +18,7 @@
     "postbuild": "oclif-dev manifest",
     "readme": "oclif-dev readme",
     "pretest": "build-storybook --config-dir=test/.storybook --output-dir=test/.storybook-build --loglevel error",
-    "test": "cross-env NODE_ENV=test jasmine --config=test/helpers/jasmine.json",
+    "test": "cross-env NODE_ENV=test jasmine --config=test/jasmine.json",
     "test:coverage": "nyc yarn test"
   },
   "oclif": {

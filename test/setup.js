@@ -1,6 +1,7 @@
-const { SpecReporter } = require('jasmine-spec-reporter');
+import { SpecReporter } from 'jasmine-spec-reporter';
 
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 1200000;
+// in some tests, storybook takes a little while to start
+jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
 
 jasmine.getEnv().clearReporters();
 jasmine.getEnv().addReporter(

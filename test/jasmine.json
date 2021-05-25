@@ -4,6 +4,6 @@
   "random": false,
   "helpers": [
     "../node_modules/@babel/register/lib/index.js",
-    "helpers/**/*.js"
+    "setup.js"
   ]
 }
