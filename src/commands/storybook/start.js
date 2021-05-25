@@ -39,7 +39,7 @@ export class Start extends Command {
     let args = [`--host=${host}`, `--port=${port}`];
 
     let spawn = require('cross-spawn');
-    args = args.concat(this.parse(StorybookStart).argv);
+    args = args.concat(this.parse(Start).argv);
     this.log.info(`Running "start-storybook ${args.join(' ')}"`);
 
     return new Promise((resolve, reject) => {

@@ -3,7 +3,7 @@ import EventEmitter from 'events';
 import mockRequire from 'mock-require';
 import logger from '@percy/logger/test/helpers';
 import mockAPI from '@percy/client/test/helpers';
-import { StorybookStart } from '../src/commands/storybook/start';
+import { Start } from '../src/commands/storybook/start';
 
 describe('percy storybook:start', () => {
   const args = [
@@ -25,7 +25,7 @@ describe('percy storybook:start', () => {
   });
 
   it('starts storybook and snapshots stories', async () => {
-    await StorybookStart.run([...args]);
+    await Start.run([...args]);
 
     expect(logger.stderr).toEqual([
       '[percy] Waiting on a response from Storybook...'
@@ -48,7 +48,7 @@ describe('percy storybook:start', () => {
     setTimeout(() => fakeProc.emit('error', new Error('FAKE ENOENT')), 100);
     mockRequire('cross-spawn', () => fakeProc);
 
-    await expectAsync(StorybookStart.run([...args]))
+    await expectAsync(Start.run([...args]))
       .toBeRejectedWithError('EEXIT: 1');
 
     expect(logger.stdout).toEqual([
