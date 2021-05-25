@@ -8,9 +8,13 @@
   },
   "main": "dist/index.js",
   "files": [
-    "./dist",
-    "./oclif.manifest.json"
+    "bin",
+    "dist",
+    "oclif.manifest.json"
   ],
+  "bin": {
+    "percy-storybook": "bin/percy-storybook"
+  },
   "scripts": {
     "build": "babel src --out-dir dist",
     "clean": "git clean -Xdf --exclude !node_modules",

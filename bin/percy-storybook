@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+
+let log = require('@percy/logger')('percy-storybook-script');
+log.warn('The `percy-storybook` command has been deprecated. Use @percy/cli instead.');
+log.info('See migration instructions here: https://docs.percy.io/docs/migrating-to-percy-cli');
+
+process.exit(1);
