@@ -1,5 +1,5 @@
 import path from 'path';
-import { spawn } from 'child_process';
+import spawn from 'cross-spawn';
 import mockAPI from '@percy/client/test/helpers';
 import { sha256hash } from '@percy/client/dist/utils';
 import request from '@percy/client/dist/request';
