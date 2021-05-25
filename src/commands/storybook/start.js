@@ -2,7 +2,7 @@ import { flags } from '@percy/cli-command';
 import logger from '@percy/logger';
 import Command from '../../command';
 
-export class StorybookStart extends Command {
+export class Start extends Command {
   static description = 'Run start-storybook to snapshot stories';
   static strict = false;
 
