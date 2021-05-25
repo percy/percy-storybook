@@ -37,7 +37,7 @@ export default class StorybookCommand extends Command {
     }),
     'dry-run': flags.boolean({
       char: 'd',
-      description: 'prints a list of stories to snapshot without snapshotting'
+      description: 'logs snapshots without creating a build'
     })
   };
 
@@ -102,11 +102,18 @@ export default class StorybookCommand extends Command {
     let previewUrl = url.replace(/\/?$/, '/iframe.html');
     let stories = await this.getStories(previewUrl);
 
-    let { include, exclude } = this.percy.config.storybook || {};
-    include = include?.map(i => new RegExp(i));
-    exclude = exclude?.map(e => new RegExp(e));
+    let conf = this.percy.config.storybook || {};
+    conf.include = conf.include?.map(i => new RegExp(i));
+    conf.exclude = conf.exclude?.map(e => new RegExp(e));
 
-    let storyPage = (id, name, { skip, args, queryParams, ...options }) => {
+    let storyPage = (id, name, options) => {
+      let { skip, include, exclude, args, queryParams, ...opts } = options;
+
+      // percy config overrides story parameters
+      include = conf.include?.length ? conf.include : include;
+      exclude = conf.exclude?.length ? conf.exclude : exclude;
+
+      // if included, don't skip; if excluded always exclude
       if (include?.length ? !include.some(i => i.test(name)) : skip) return;
       if (exclude?.some(e => e.test(name))) return;
 
@@ -114,7 +121,7 @@ export default class StorybookCommand extends Command {
       if (args) queryParams.args = buildArgsParam({}, args);
       let url = `${previewUrl}?${qs.stringify(queryParams)}`;
 
-      return { ...options, name, url };
+      return { ...opts, name, url };
     };
 
     return stories.reduce((all, { id, snapshots = [], ...options }) => all.concat(
