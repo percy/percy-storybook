@@ -28,7 +28,7 @@ describe('percy storybook', () => {
       retries: 30,
       interval: 1000
     });
-  }, 60000); // give storybook a minute to start
+  });
 
   afterAll(async () => {
     await server.close();
