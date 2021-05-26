@@ -94,7 +94,7 @@ specific options are supported here as well.
 - **queryParams** - Query parameters to use when snapshotting.
 - **include** - Same as the config option. Useful global or component-level parameter.
 - **exclude** - Same as the config option. Useful global or component-level parameter.
-- **snapshots** - An array of addtional snapshots to take of this story.
+- **snapshots** - An array of additional snapshots to take of this story.
   - **prefix** - A prefix added to this additional snapshot's name.
   - **suffix** - A suffix added to this additional snapshot's name.
   - **name** - Snapshot name. Replaces the inherited name.
@@ -169,7 +169,7 @@ Percy config file or per-snapshot option, [`enableJavaScript`](https://docs.perc
 
 #### Command line arguments
 
-Since existing flags are no longer available, here are each of their alternatives:
+Previous flags are no longer available, here are each of their alternatives:
 
 - The previous `--build_dir` flag is now a command argument:\
   `$ percy-storybook --build_dir ./build` becomes `$ percy storybook ./build`
