@@ -150,35 +150,27 @@ $ npm install --save-dev @percy/cli @percy/storybook@latest
 
 ### Breaking changes
 
-#### Performance
+There are a lot of breaking changes. So to upgrade, make sure you read through them. For one,
+previous flags are no longer available. Here are each of their alternatives:
 
-The old SDK did not take DOM snapshots or perform asset discovery, as all other modern Percy SDKs
-do. This sometimes resulted in flakey snapshots or snapshots with missing assets. However, DOM
-snapshots and asset discovery add an overhead cost of performance. Where the old SDK was very quick
-to simply upload the local build directory, the new SDK can be a little slower while it is capturing
-the real DOM and relevant assets of each story.
+- The previous `--build_dir` flag is now a command argument and there is no default build directory. If
+  you relied on the default, it must now be explicitly provided.
 
-#### Unexpected diffs
+  ``` sh
+  # before
+  $ percy-storybook
+  # after
+  $ percy storybook ./storybook-static
 
-Because the old SDK did not take DOM snapshots, JavaScript had to be enabled in our rendering
-environment for Storybook to properly load. This is in contrast to all of our other SDKs, where
-JavaScript is disabled by default to prevent flakey diffs caused by animations or other JavaScript
-running on the page. With the new SDK and real DOM snapshots, JS is disabled by default. If you
-upgrade and experience diffs due to the lack of JavaScript, it can be re-enabled using the matching
-Percy config file or per-snapshot option, [`enableJavaScript`](https://docs.percy.io/docs/cli-configuration#snapshot).
-
-#### Command line arguments
-
-Previous flags are no longer available, here are each of their alternatives:
-
-- The previous `--build_dir` flag is now a command argument:\
-  `$ percy-storybook --build_dir ./build` becomes `$ percy storybook ./build`
-
-- There is no default build directory. If you relied on the default, it must now be explicitly provided:\
-  `$ percy-storybook` becomes `$ percy storybook ./storybook-static`
+  # before
+  $ percy-storybook --build_dir ./build
+  # after
+  $ percy storybook ./build
+  ```
 
 - The `--widths` and `--minimum_height` flags are no longer accepted. These options can be set using
-  the respective `widths` and `min-height` Percy config file options or `percy` Storybook parameters.
+  the respective `widths` and `min-height` [Percy config file
+  options](https://docs.percy.io/docs/cli-configuration#snapshot) or `percy` Storybook parameters.
 
 - The `--debug` flag is now `--verbose`, inherited from the CLI.
 
@@ -208,3 +200,20 @@ Previous flags are no longer available, here are each of their alternatives:
     };
     ```
   </details>
+
+#### Performance
+
+The old SDK did not take DOM snapshots or perform asset discovery, as all other modern Percy SDKs
+do. This sometimes resulted in flakey snapshots or snapshots with missing assets. However, DOM
+snapshots and asset discovery add an overhead cost of performance. Where the old SDK was very quick
+to simply upload the local build directory, the new SDK can be a little slower while it is capturing
+the real DOM and relevant assets of each story.
+
+#### Unexpected diffs
+
+Because the old SDK did not take DOM snapshots, JavaScript had to be enabled in our rendering
+environment for Storybook to properly load. This is in contrast to all of our other SDKs, where
+JavaScript is disabled by default to prevent flakey diffs caused by animations or other JavaScript
+running on the page. With the new SDK and real DOM snapshots, JS is disabled by default. If you
+upgrade and experience diffs due to the lack of JavaScript, it can be re-enabled using the matching
+Percy config file or per-snapshot option, [`enableJavaScript`](https://docs.percy.io/docs/cli-configuration#snapshot).
