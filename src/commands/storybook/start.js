@@ -36,7 +36,7 @@ export class Start extends Command {
   // Starts Storybook in a child process and returns its url
   async storybook() {
     let { host, port } = this.flags;
-    let args = [`--host=${host}`, `--port=${port}`];
+    let args = ['--ci', `--host=${host}`, `--port=${port}`];
 
     let spawn = require('cross-spawn');
     args = args.concat(this.parse(Start).argv);

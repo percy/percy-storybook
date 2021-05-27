@@ -8,8 +8,7 @@ import { Start } from '../src/commands/storybook/start';
 describe('percy storybook:start', () => {
   const args = [
     `--config-dir=${path.join(__dirname, '.storybook')}`,
-    '--loglevel', 'error',
-    '--ci'
+    '--loglevel', 'error'
   ];
 
   beforeEach(() => {
@@ -31,7 +30,7 @@ describe('percy storybook:start', () => {
       '[percy] Waiting on a response from Storybook...'
     ]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      `[percy] Running "start-storybook --host=localhost --port=9000 ${args.join(' ')}"`,
+      `[percy] Running "start-storybook --ci --host=localhost --port=9000 ${args.join(' ')}"`,
       '[percy] Percy has started!',
       '[percy] Created build #1: https://percy.io/test/test/123',
       '[percy] Found 3 snapshots',
@@ -52,7 +51,7 @@ describe('percy storybook:start', () => {
       .toBeRejectedWithError('EEXIT: 1');
 
     expect(logger.stdout).toEqual([
-      `[percy] Running "start-storybook --host=localhost --port=9000 ${args.join(' ')}"`
+      `[percy] Running "start-storybook --ci --host=localhost --port=9000 ${args.join(' ')}"`
     ]);
     expect(logger.stderr).toEqual([
       '[percy] Error: FAKE ENOENT'
