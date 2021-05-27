@@ -143,7 +143,7 @@ export default class StorybookCommand extends Command {
 
       // ensure the url is reachable while saving the response for when js is enabled
       let logTimeout = setTimeout(this.log.warn, 3000, 'Waiting on a response from Storybook...');
-      let previewDOM = await request(previewUrl, { retries: 30, interval: 1000 });
+      let previewDOM = await request(previewUrl, { retries: 30, interval: 1000, retryNotFound: true });
       this.preview = { content: previewDOM, sha: sha256hash(previewDOM) };
       clearTimeout(logTimeout);
 

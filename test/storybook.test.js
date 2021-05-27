@@ -26,7 +26,8 @@ describe('percy storybook', () => {
     // wait for storybook to become available
     await request('http://localhost:9000', {
       retries: 30,
-      interval: 1000
+      interval: 1000,
+      retryNotFound: true
     });
   });
 
