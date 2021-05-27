@@ -131,7 +131,7 @@ describe('percy storybook', () => {
 
   it('errors when unable to reach storybook', async () => {
     server.reply('/iframe.html', () => new Promise(resolve => {
-      setTimeout(resolve, 3000, [404, 'text/plain', 'not found']);
+      setTimeout(resolve, 3000, [418, 'text/plain', 'no coffee']);
     }));
 
     await expectAsync(Storybook.run(['http://localhost:8000']))
@@ -140,7 +140,7 @@ describe('percy storybook', () => {
     expect(logger.stdout).toEqual([]);
     expect(logger.stderr).toEqual([
       '[percy] Waiting on a response from Storybook...',
-      '[percy] Error: 404 Not Found'
+      '[percy] Error: 418 I\'m a Teapot'
     ]);
   });
 
