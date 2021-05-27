@@ -1,0 +1,31 @@
+name: Test
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  test:
+    name: Test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [12]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+      - uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}/node-${{ matrix.node }}/${{ hashFiles('**/yarn.lock') }}
+          restore-keys: ${{ runner.os }}/node-${{ matrix.node }}/
+      - run: yarn
+        env:
+          PERCY_POSTINSTALL_BROWSER: true
+      - run: yarn build
+      - run: yarn test
+        env:
+          DUMP_FAILED_TEST_LOGS: true

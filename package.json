@@ -1,82 +1,69 @@
 {
   "name": "@percy/storybook",
-  "version": "3.3.1",
+  "version": "4.0.0-beta.0",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/percy/percy-storybook.git"
   },
-  "license": "MIT",
-  "engines": {
-    "node": ">=10.0.0"
-  },
-  "bin": {
-    "percy-storybook": "./bin/percy-storybook.js"
-  },
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "files": [
     "bin",
-    "lib"
+    "dist",
+    "oclif.manifest.json"
   ],
+  "bin": {
+    "percy-storybook": "bin/percy-storybook"
+  },
   "scripts": {
-    "lint": "eslint --ext .js src/",
-    "build": "babel src -d lib --ignore 'src/__tests__'",
-    "prebuild": "rimraf ./lib",
-    "prepublishOnly": "yarn build",
-    "test:unit": "jest"
+    "build": "babel src --out-dir dist",
+    "clean": "git clean -Xdf --exclude !node_modules",
+    "lint": "eslint --ignore-path .gitignore .",
+    "postbuild": "oclif-dev manifest",
+    "readme": "oclif-dev readme",
+    "pretest": "build-storybook --config-dir=test/.storybook --output-dir=test/.storybook-build --loglevel error",
+    "test": "cross-env NODE_ENV=test jasmine --config=test/jasmine.json",
+    "test:coverage": "nyc yarn test"
   },
-  "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-core": "^6.26.0",
-    "babel-eslint": "^10.0.0",
-    "babel-jest": "^26.6.3",
-    "babel-plugin-transform-class-properties": "^6.24.1",
-    "babel-plugin-transform-export-extensions": "^6.22.0",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-preset-env": "^1.6.0",
-    "babel-preset-es2015": "^6.24.1",
-    "babel-register": "^6.26.0",
-    "chalk": "^4.1.0",
-    "eslint": "^7.21.0",
-    "eslint-config-prettier": "^6.15.0",
-    "eslint-plugin-import": "^2.22.1",
-    "eslint-plugin-jasmine": "*",
-    "eslint-plugin-jest": "^24.1.3",
-    "eslint-plugin-prettier": "^3.3.1",
-    "eslint-plugin-react": "^7.23.2",
-    "fs-extra": "^7.0.0",
-    "husky": "^4.3.6",
-    "jest": "^23.0.0",
-    "lint-staged": "^10.5.4",
-    "mock-fs": "^4.13.0",
-    "prettier": "^2.2.1",
-    "rimraf": "^3.0.0"
-  },
-  "dependencies": {
-    "@percy/react-percy-api-client": "^0.4.6",
-    "babel-runtime": "^6.26.0",
-    "debug": "^4.3.1",
-    "es6-error": "^4.0.2",
-    "es6-promise-pool": "^2.4.4",
-    "puppeteer": "^1.4.0",
-    "walk": "^2.3.9",
-    "yargs": "^7.0.2"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "eslintConfig": {
-    "globals": {
-      "window": true
+  "oclif": {
+    "bin": "percy",
+    "commands": "./dist/commands",
+    "hooks": {
+      "init": "./dist/hooks/init"
     }
   },
-  "jest": {
-    "testMatch": [
-      "**/tests/unit/**-tests.js"
-    ],
-    "testEnvironment": "node",
-    "testPathIgnorePatterns": [
-      "/node_modules/"
-    ]
+  "dependencies": {
+    "@percy/cli-command": "^1.0.0-beta.52",
+    "@percy/core": "^1.0.0-beta.52",
+    "@percy/logger": "^1.0.0-beta.52",
+    "cross-spawn": "^7.0.3",
+    "qs": "^6.10.1",
+    "serve-handler": "^6.1.3"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.14.3",
+    "@babel/core": "^7.14.3",
+    "@babel/eslint-parser": "^7.14.3",
+    "@babel/eslint-plugin": "^7.13.6",
+    "@babel/plugin-proposal-class-properties": "^7.13.0",
+    "@babel/preset-env": "^7.14.2",
+    "@babel/register": "^7.13.14",
+    "@oclif/dev-cli": "^1.26.0",
+    "@storybook/react": "^6.2.9",
+    "babel-eslint": "^10.0.3",
+    "babel-plugin-istanbul": "^6.0.0",
+    "cross-env": "^7.0.3",
+    "eslint": "^7.27.0",
+    "eslint-config-standard": "^16.0.3",
+    "eslint-plugin-import": "^2.23.3",
+    "eslint-plugin-node": "^11.0.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "jasmine": "^3.7.0",
+    "jasmine-spec-reporter": "^7.0.0",
+    "mock-require": "^3.0.3",
+    "nock": "^13.0.11",
+    "nyc": "^15.0.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
   }
 }

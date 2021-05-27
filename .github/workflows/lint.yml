@@ -1,0 +1,24 @@
+name: Lint
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 14
+      - uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}/node-14/${{ hashFiles('**/yarn.lock') }}
+          restore-keys: ${{ runner.os }}/node-14/
+      - run: yarn
+        env:
+          PERCY_POSTINSTALL_BROWSER: true
+      - run: yarn lint
