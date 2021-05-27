@@ -10,3 +10,14 @@ jasmine.getEnv().addReporter(
     summary: { displayPending: false }
   })
 );
+
+if (process.env.DUMP_FAILED_TEST_LOGS) {
+  // add a spec reporter to dump failed logs
+  jasmine.getEnv().addReporter({
+    specDone: ({ status }) => {
+      if (status === 'failed') {
+        require('@percy/logger/test/helpers').dump();
+      }
+    }
+  });
+}
