@@ -7,7 +7,7 @@
 ## Installation
 
 ``` session
-$ npm install --save-dev @percy/cli @percy/storybook
+$ npm install --save-dev @percy/cli @percy/storybook@next
 ```
 
 ## Usage
@@ -145,7 +145,7 @@ will now result in a deprecation message. The new command is now integrated into
 To use new versions of this SDK, you will have to also install the CLI with the SDK:
 
 ``` sh
-$ npm install --save-dev @percy/cli @percy/storybook@latest
+$ npm install --save-dev @percy/cli @percy/storybook@next
 ```
 
 ### Breaking changes
