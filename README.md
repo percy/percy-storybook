@@ -174,9 +174,14 @@ Most importantly, the command itself has changed and all previous arguments are 
   $ percy storybook ./build
   ```
 
-- The `--widths` and `--minimum_height` flags are no longer accepted. These options can be set using
-  the respective `widths` and `min-height` [Percy config file
-  options](https://docs.percy.io/docs/cli-configuration#snapshot) or `percy` Storybook parameters.
+- The `--widths` flag is no longer accepted. Widths can be set using the respective `widths`
+  [Percy config file `snapshot` option](https://docs.percy.io/docs/cli-configuration#snapshot) or 
+  `percy` Storybook parameter.
+
+- The `--minimum_height` flag is no longer accepted and therefore no longer defaults to
+  800px. The default minimum height shared by all SDKs is 1024px. The minimum height can be 
+  set using the respective `min-height` [Percy config file `snapshot`
+  option](https://docs.percy.io/docs/cli-configuration#snapshot) or `percy` Storybook parameter.
 
 - The `--debug` flag is now `--verbose`, inherited from the CLI.
 
