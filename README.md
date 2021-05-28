@@ -138,8 +138,8 @@ specific options are supported here as well.
 ## Upgrading
 
 Prior versions of the Storybook SDK were drastically different than the current version. The
-command, it's args, and how the SDK works internally have changed completely. Using the old command
-will now result in a deprecation message. The new command is now integrated into
+command, it's arguments, and how the SDK works internally have changed completely. Using the old
+command with new versions will now result in an error message. The new command is now integrated into
 [`@percy/cli`](https://github.com/percy/cli) as a plugin.
 
 To use new versions of this SDK, you will have to also install the CLI with the SDK:
@@ -148,10 +148,16 @@ To use new versions of this SDK, you will have to also install the CLI with the 
 $ npm install --save-dev @percy/cli @percy/storybook@next
 ```
 
+Since both the command and arguments have changed, you'll need to replace your existing usage with
+the [new usage described above](#usage). For some projects, this may require setting additional 
+[configuration options](#configuration). See the list of breaking changes below for details.
+
 ### Breaking changes
 
-There are a lot of breaking changes. So to upgrade, make sure you read through them. For one,
-previous flags are no longer available. Here are each of their alternatives:
+Most importantly, the command itself has changed and all previous arguments are no longer accepted.
+  
+- The `percy-storybook` command has been replaced with a [`percy` CLI](https://github.com/percy/cli) 
+  subcommand, `percy storybook`.
 
 - The previous `--build_dir` flag is now a command argument and there is no default build directory. If
   you relied on the default, it must now be explicitly provided.
