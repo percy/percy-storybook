@@ -77,8 +77,8 @@ storybook:
   exclude: []
 ```
 
-- **include** - Regex patterns matching story names to only include for snapshotting.
-- **exclude** - Regex patterns matching story names to always exclude from snapshotting.
+- **include** - An array of regex patterns matching story names to only include for snapshotting.
+- **exclude** - An array of regex patterns matching story names to always exclude from snapshotting.
 
 ### Storybook parameters
 
