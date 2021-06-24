@@ -95,7 +95,7 @@ export default class StorybookCommand extends Command {
 
   // Resolves to an array of story pages to snapshot
   async getStoryPages(url) {
-    let previewUrl = new URL('/iframe.html', url);
+    let previewUrl = new URL('/iframe.html', url).href;
     let stories = await this.getStories(previewUrl);
 
     let conf = this.percy.config.storybook || {};
