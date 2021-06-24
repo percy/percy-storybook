@@ -54,13 +54,11 @@ describe('percy storybook', () => {
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Percy has started!',
-      '[percy] Created build #1: https://percy.io/test/test/123',
-      '[percy] Found 3 snapshots',
+      '[percy] Processing 3 snapshots...',
       '[percy] Snapshot taken: Snapshot: First',
       '[percy] Snapshot taken: Snapshot: Second',
       '[percy] Snapshot taken: Skip: But Not Me',
-      '[percy] Finalized build #1: https://percy.io/test/test/123',
-      '[percy] Done!'
+      '[percy] Finalized build #1: https://percy.io/test/test/123'
     ]));
   });
 
@@ -70,13 +68,11 @@ describe('percy storybook', () => {
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Percy has started!',
-      '[percy] Created build #1: https://percy.io/test/test/123',
-      '[percy] Found 3 snapshots',
+      '[percy] Processing 3 snapshots...',
       '[percy] Snapshot taken: Snapshot: First',
       '[percy] Snapshot taken: Snapshot: Second',
       '[percy] Snapshot taken: Skip: But Not Me',
-      '[percy] Finalized build #1: https://percy.io/test/test/123',
-      '[percy] Done!'
+      '[percy] Finalized build #1: https://percy.io/test/test/123'
     ]));
   });
 
@@ -185,7 +181,7 @@ describe('percy storybook', () => {
 
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy] Found 1 snapshot',
+      '[percy] Processing 1 snapshot...',
       '[percy] Snapshot taken: Skip: But Not Me'
     ]));
   });
@@ -195,7 +191,7 @@ describe('percy storybook', () => {
 
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy] Found 2 snapshots',
+      '[percy] Processing 2 snapshots...',
       '[percy] Snapshot taken: Skip: Skipped',
       '[percy] Snapshot taken: Skip: But Not Me'
     ]));
@@ -210,6 +206,16 @@ describe('percy storybook', () => {
       '[percy] Snapshot found: Snapshot: First',
       '[percy] Snapshot found: Snapshot: Second',
       '[percy] Snapshot found: Skip: But Not Me'
+    ]));
+
+    // coverage for `snapshot(s)` log
+    logger.reset();
+    await Storybook.run(['http://localhost:9000', '--dry-run', '--include=First']);
+
+    expect(logger.stderr).toEqual([]);
+    expect(logger.stdout).toEqual(jasmine.arrayContaining([
+      '[percy] Found 1 snapshot',
+      '[percy] Snapshot found: Snapshot: First'
     ]));
   });
 
