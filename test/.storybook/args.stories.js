@@ -15,7 +15,7 @@ export default {
     percy: {
       name: 'Args',
       skip: true,
-      snapshots: [{
+      additionalSnapshots: [{
         prefix: 'Custom ',
         args: {
           text: 'Snapshot custom args',
