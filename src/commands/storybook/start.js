@@ -1,4 +1,5 @@
 import { flags } from '@percy/cli-command';
+import request from '@percy/client/dist/request';
 import logger from '@percy/logger';
 import Command from '../../command';
 
@@ -28,8 +29,8 @@ export class Start extends Command {
   log = logger('cli:storybook:start');
 
   // Called on error, interupt, or after running
-  async finally() {
-    await super.finally();
+  async finally(error) {
+    await super.finally(error);
     this.process?.kill();
   }
 
@@ -48,7 +49,17 @@ export class Start extends Command {
       if (!this.process.pid) return;
 
       /* istanbul ignore next: this is a storybook flag we don't need to test */
-      resolve(`${args.includes('--https') ? 'https' : 'http'}://${host}:${port}/`);
+      let proto = args.includes('--https') ? 'https' : 'http';
+      let url = `${proto}://${host}:${port}`;
+
+      // wait for the preview iframe to be ready
+      request(`${url}/iframe.html`, {
+        retries: 60,
+        interval: 1000,
+        retryNotFound: true
+      }).then(() => {
+        resolve(url);
+      });
     });
   }
 }
