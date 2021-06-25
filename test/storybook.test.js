@@ -54,13 +54,11 @@ describe('percy storybook', () => {
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Percy has started!',
-      '[percy] Created build #1: https://percy.io/test/test/123',
-      '[percy] Found 3 snapshots',
+      '[percy] Processing 3 snapshots...',
       '[percy] Snapshot taken: Snapshot: First',
       '[percy] Snapshot taken: Snapshot: Second',
       '[percy] Snapshot taken: Skip: But Not Me',
-      '[percy] Finalized build #1: https://percy.io/test/test/123',
-      '[percy] Done!'
+      '[percy] Finalized build #1: https://percy.io/test/test/123'
     ]));
   });
 
@@ -70,13 +68,11 @@ describe('percy storybook', () => {
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Percy has started!',
-      '[percy] Created build #1: https://percy.io/test/test/123',
-      '[percy] Found 3 snapshots',
+      '[percy] Processing 3 snapshots...',
       '[percy] Snapshot taken: Snapshot: First',
       '[percy] Snapshot taken: Snapshot: Second',
       '[percy] Snapshot taken: Skip: But Not Me',
-      '[percy] Finalized build #1: https://percy.io/test/test/123',
-      '[percy] Done!'
+      '[percy] Finalized build #1: https://percy.io/test/test/123'
     ]));
   });
 
@@ -185,7 +181,7 @@ describe('percy storybook', () => {
 
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy] Found 1 snapshot',
+      '[percy] Processing 1 snapshot...',
       '[percy] Snapshot taken: Skip: But Not Me'
     ]));
   });
@@ -195,7 +191,7 @@ describe('percy storybook', () => {
 
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy] Found 2 snapshots',
+      '[percy] Processing 2 snapshots...',
       '[percy] Snapshot taken: Skip: Skipped',
       '[percy] Snapshot taken: Skip: But Not Me'
     ]));
@@ -210,6 +206,16 @@ describe('percy storybook', () => {
       '[percy] Snapshot found: Snapshot: First',
       '[percy] Snapshot found: Snapshot: Second',
       '[percy] Snapshot found: Skip: But Not Me'
+    ]));
+
+    // coverage for `snapshot(s)` log
+    logger.reset();
+    await Storybook.run(['http://localhost:9000', '--dry-run', '--include=First']);
+
+    expect(logger.stderr).toEqual([]);
+    expect(logger.stdout).toEqual(jasmine.arrayContaining([
+      '[percy] Found 1 snapshot',
+      '[percy] Snapshot found: Snapshot: First'
     ]));
   });
 
@@ -234,6 +240,20 @@ describe('percy storybook', () => {
       '[percy:cli:storybook] -> url: http://localhost:9000/iframe.html?id=args--args&args=' +
         encodeURIComponent('text:Snapshot+purple+args;style.font:1rem+sans-serif;') +
         encodeURIComponent('style.fontWeight:bold;style.color:purple')
+    ]));
+  });
+
+  it('logs a warning when using the deprecated `snapshots` option', async () => {
+    await Storybook.run(['http://localhost:9000', '--dry-run', '--include=Deprecated']);
+
+    expect(logger.stderr).toEqual([
+      '[percy] Warning: The `snapshots` option will be ' +
+        'removed in 4.0.0. Use `additionalSnapshots` instead.'
+    ]);
+    expect(logger.stdout).toEqual(jasmine.arrayContaining([
+      '[percy] Found 2 snapshots',
+      '[percy] Snapshot found: Deprecated: Snapshots',
+      '[percy] Snapshot found: Deprecated: Snapshots option'
     ]));
   });
 });

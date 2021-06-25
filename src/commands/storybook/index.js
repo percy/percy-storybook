@@ -21,8 +21,8 @@ export class Storybook extends Command {
   log = logger('cli:storybook');
 
   // Called on error, interupt, or after running
-  async finally() {
-    await super.finally();
+  async finally(error) {
+    await super.finally(error);
     this.server?.close();
   }
 

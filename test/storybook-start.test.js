@@ -26,19 +26,15 @@ describe('percy storybook:start', () => {
   it('starts storybook and snapshots stories', async () => {
     await Start.run([...args]);
 
-    expect(logger.stderr).toEqual([
-      '[percy] Waiting on a response from Storybook...'
-    ]);
+    expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       `[percy] Running "start-storybook --ci --host=localhost --port=9000 ${args.join(' ')}"`,
       '[percy] Percy has started!',
-      '[percy] Created build #1: https://percy.io/test/test/123',
-      '[percy] Found 3 snapshots',
+      '[percy] Processing 3 snapshots...',
       '[percy] Snapshot taken: Snapshot: First',
       '[percy] Snapshot taken: Snapshot: Second',
       '[percy] Snapshot taken: Skip: But Not Me',
-      '[percy] Finalized build #1: https://percy.io/test/test/123',
-      '[percy] Done!'
+      '[percy] Finalized build #1: https://percy.io/test/test/123'
     ]));
   });
 

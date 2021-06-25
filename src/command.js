@@ -59,47 +59,43 @@ export default class StorybookCommand extends Command {
     if (!l) return this.error('No snapshots found');
 
     let dry = this.flags['dry-run'];
-    if (!dry) await this.start();
+    if (dry) this.log.info(`Found ${l} snapshot${l === 1 ? '' : 's'}`);
+    else await this.start();
 
-    this.log.info(`Found ${l} snapshot${l === 1 ? '' : 's'}`);
-
-    await Promise.all(pages.map(page => {
-      if (!dry) return this.snapshot(page);
-      this.log.info(`Snapshot found: ${page.name}`);
-      this.log.debug(`-> url: ${page.url}`);
-      return Promise.resolve();
-    }));
+    for (let page of pages) {
+      if (dry) {
+        this.log.info(`Snapshot found: ${page.name}`);
+        this.log.debug(`-> url: ${page.url}`);
+      } else {
+        this.percy.snapshot(page);
+      }
+    }
   }
 
   // Called to start Percy
   async start() {
     // patch client to override root resources when JS is enabled
-    this.percy.client.sendSnapshot = options => {
+    this.percy.client.sendSnapshot = (buildId, options) => {
       if (options.enableJavaScript && this.preview) {
         Object.assign(options.resources.find(r => r.root), this.preview);
       }
 
       let { sendSnapshot } = this.percy.client.constructor.prototype;
-      return sendSnapshot.call(this.percy.client, options);
+      return sendSnapshot.call(this.percy.client, buildId, options);
     };
 
     await this.percy.start();
   }
 
-  // Called to snapshot a page
-  async snapshot(page) {
-    await this.percy.capture(page);
-  }
-
   // Called on error, interupt, or after running
-  async finally() {
-    await this.percy?.stop();
-    await this.percy?.discoverer.close();
+  async finally(error) {
+    await this.percy?.stop(!!error);
+    await this.percy?.browser.close();
   }
 
   // Resolves to an array of story pages to snapshot
   async getStoryPages(url) {
-    let previewUrl = url.replace(/\/?$/, '/iframe.html');
+    let previewUrl = new URL('/iframe.html', url).href;
     let stories = await this.getStories(previewUrl);
 
     let conf = this.percy.config.storybook || {};
@@ -117,20 +113,40 @@ export default class StorybookCommand extends Command {
       if (include?.length ? !include.some(i => i.test(name)) : skip) return;
       if (exclude?.some(e => e.test(name))) return;
 
+      // add query params to the url
       (queryParams ||= {}).id = id;
       if (args) queryParams.args = buildArgsParam({}, args);
       let url = `${previewUrl}?${qs.stringify(queryParams)}`;
 
+      // remove options that might cause issues
+      delete opts.domSnapshot;
+      delete opts.execute;
+
+      if (opts.snapshots) {
+        this.log.deprecated('The `snapshots` option will be ' + (
+          'removed in 4.0.0. Use `additionalSnapshots` instead.'));
+        delete opts.snapshots;
+      }
+
       return { ...opts, name, url };
     };
 
-    return stories.reduce((all, { id, snapshots = [], ...options }) => all.concat(
-      storyPage(id, options.name, options),
-      snapshots.map(({ name, prefix, suffix, ...opts }) => {
-        name ||= `${prefix || ''}${options.name}${suffix || ''}`;
-        return storyPage(id, name, merge({}, options, opts));
-      })
-    ), []).filter(Boolean);
+    return stories.reduce((all, params) => {
+      let { id, additionalSnapshots = [], ...options } = params;
+
+      // deprecation will log later
+      if (options.snapshots) {
+        additionalSnapshots = options.snapshots;
+      }
+
+      return all.concat(
+        storyPage(id, params.name, options),
+        additionalSnapshots.map(({ name, prefix, suffix, ...opts }) => {
+          name ||= `${prefix || ''}${params.name}${suffix || ''}`;
+          return storyPage(id, name, merge({}, options, opts));
+        })
+      );
+    }, []).filter(Boolean);
   }
 
   // Resolves to an array of Storybook stories
@@ -147,9 +163,9 @@ export default class StorybookCommand extends Command {
       this.preview = { content: previewDOM, sha: sha256hash(previewDOM) };
       clearTimeout(logTimeout);
 
-      // borrow a discoverer page to discover stories
-      await this.percy.discoverer.launch();
-      page = await this.percy.discoverer.page({ meta });
+      // borrow a browser page to discover stories
+      await this.percy.browser.launch();
+      page = await this.percy.browser.page({ meta });
       await page.goto(previewUrl);
 
       /* istanbul ignore next: no instrumenting injected code */
