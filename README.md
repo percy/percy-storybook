@@ -94,7 +94,7 @@ specific options are supported here as well.
 - **queryParams** - Query parameters to use when snapshotting.
 - **include** - Same as the config option. Useful global or component-level parameter.
 - **exclude** - Same as the config option. Useful global or component-level parameter.
-- **snapshots** - An array of additional snapshots to take of this story.
+- **additionalSnapshots** - An array of additional snapshots to take of this story.
   - **prefix** - A prefix added to this additional snapshot's name.
   - **suffix** - A suffix added to this additional snapshot's name.
   - **name** - Snapshot name. Replaces the inherited name.
@@ -110,7 +110,7 @@ specific options are supported here as well.
   MyStory.parameters = {
     percy: {
       name: 'My snapshot',
-      snapshots: [
+      additionalSnapshots: [
         { prefix: '[Dark mode] ', args: { colorScheme: 'dark' } },
         { suffix: ' with a search', queryParams: { search: 'foobar' } }
       ]
@@ -202,7 +202,7 @@ Most importantly, the command itself has changed and all previous arguments are 
     export const parameters = {
       percy: {
         // tell percy to take an additional RTL snapshot for matching stories
-        snapshots: [{
+        additionalSnapshots: [{
           suffix: ' [RTL]',
           queryParams: { direction: 'rtl' },
           include: ['^FormElement: .*']
