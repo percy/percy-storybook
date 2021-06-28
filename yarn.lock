@@ -1659,10 +1659,10 @@
   dependencies:
     dotenv "^10.0.0"
 
-"@percy/logger@^1.0.0-beta.55":
-  version "1.0.0-beta.55"
-  resolved "https://registry.yarnpkg.com/@percy/logger/-/logger-1.0.0-beta.55.tgz#d9e1ce43800aae5ce6f21e8e4c6b63ffb61dea4b"
-  integrity sha512-AKaleHpJf8Og0uDuX8XXLzzCj3+S/XGtWqN5G1lyW19WbANFIui9GcAmYWDqIoQh+wVdDq9b1PLGUBTkX4g3HQ==
+"@percy/logger@^1.0.0-beta.55", "@percy/logger@^1.0.0-beta.56":
+  version "1.0.0-beta.56"
+  resolved "https://registry.yarnpkg.com/@percy/logger/-/logger-1.0.0-beta.56.tgz#2f028b14f17a610b80457b2da67ceb50f9ee2940"
+  integrity sha512-1GEAJgZBWP/d/d7cecHVHFXE+29l2Rkaxc8PHtDqnW9vz6KWtzsmZF2HmM0hhq2qcXH3hVPz+NKn+fGWfAZ9nA==
 
 "@pmmmwh/react-refresh-webpack-plugin@^0.4.3":
   version "0.4.3"
