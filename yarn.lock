@@ -1466,19 +1466,7 @@
     mkdirp "^1.0.4"
     rimraf "^3.0.2"
 
-"@oclif/command@^1.5.20", "@oclif/command@^1.6.0":
-  version "1.6.1"
-  resolved "https://registry.yarnpkg.com/@oclif/command/-/command-1.6.1.tgz#774e860f283f32a728377da1c2a90beb8aadf9f5"
-  integrity sha512-pvmMmfGn+zm4e4RwVw63mg9sIaqKqmVsFbImQoUrCO/43UmWzoSHWNXKdgEGigOezWrkZfFucaeZcSbp149OWg==
-  dependencies:
-    "@oclif/config" "^1.15.1"
-    "@oclif/errors" "^1.2.2"
-    "@oclif/parser" "^3.8.3"
-    "@oclif/plugin-help" "^3"
-    debug "^4.1.1"
-    semver "^5.6.0"
-
-"@oclif/command@^1.8.0":
+"@oclif/command@^1.5.20", "@oclif/command@^1.6.0", "@oclif/command@^1.8.0":
   version "1.8.0"
   resolved "https://registry.yarnpkg.com/@oclif/command/-/command-1.8.0.tgz#c1a499b10d26e9d1a611190a81005589accbb339"
   integrity sha512-5vwpq6kbvwkQwKqAoOU3L72GZ3Ta8RRrewKj9OJRolx28KLJJ8Dg9Rf7obRwt5jQA9bkYd8gqzMTrI7H3xLfaw==
@@ -1490,17 +1478,7 @@
     debug "^4.1.1"
     semver "^7.3.2"
 
-"@oclif/config@^1.15.1":
-  version "1.15.1"
-  resolved "https://registry.yarnpkg.com/@oclif/config/-/config-1.15.1.tgz#39950c70811ab82d75bb3cdb33679ed0a4c21c57"
-  integrity sha512-GdyHpEZuWlfU8GSaZoiywtfVBsPcfYn1KuSLT1JTfvZGpPG6vShcGr24YZ3HG2jXUFlIuAqDcYlTzOrqOdTPNQ==
-  dependencies:
-    "@oclif/errors" "^1.0.0"
-    "@oclif/parser" "^3.8.0"
-    debug "^4.1.1"
-    tslib "^1.9.3"
-
-"@oclif/config@^1.17.0":
+"@oclif/config@^1.15.1", "@oclif/config@^1.17.0":
   version "1.17.0"
   resolved "https://registry.yarnpkg.com/@oclif/config/-/config-1.17.0.tgz#ba8639118633102a7e481760c50054623d09fcab"
   integrity sha512-Lmfuf6ubjQ4ifC/9bz1fSCHc6F6E653oyaRXxg+lgT4+bYf9bk+nqrUpAbrXyABkCqgIBiFr3J4zR/kiFdE1PA==
@@ -1531,7 +1509,7 @@
     qqjs "^0.3.10"
     tslib "^2.0.3"
 
-"@oclif/errors@^1.0.0", "@oclif/errors@^1.2.1", "@oclif/errors@^1.2.2":
+"@oclif/errors@^1.2.1", "@oclif/errors@^1.2.2":
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/@oclif/errors/-/errors-1.2.2.tgz#9d8f269b15f13d70aa93316fed7bebc24688edc2"
   integrity sha512-Eq8BFuJUQcbAPVofDxwdE0bL14inIiwt5EaKRVY9ZDIG11jwdXZqiQEECJx0VfnLyUZdYfRd/znDI/MytdJoKg==
@@ -1568,22 +1546,7 @@
     chalk "^2.4.2"
     tslib "^1.9.3"
 
-"@oclif/plugin-help@^3":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@oclif/plugin-help/-/plugin-help-3.1.0.tgz#507ff8e9cabe734672b12d1ec0b79812d18c58a8"
-  integrity sha512-orSWpXGlJaX16eSjAtI8scA8QhrjQOaCSHodEx52t18JKbIVzG8jcngugyWAOB/V4jhPl0rdiVk9XFsaIIiG2g==
-  dependencies:
-    "@oclif/command" "^1.5.20"
-    "@oclif/config" "^1.15.1"
-    chalk "^2.4.1"
-    indent-string "^4.0.0"
-    lodash.template "^4.4.0"
-    string-width "^3.0.0"
-    strip-ansi "^5.0.0"
-    widest-line "^2.0.1"
-    wrap-ansi "^4.0.0"
-
-"@oclif/plugin-help@^3.2.0":
+"@oclif/plugin-help@^3", "@oclif/plugin-help@^3.2.0":
   version "3.2.1"
   resolved "https://registry.yarnpkg.com/@oclif/plugin-help/-/plugin-help-3.2.1.tgz#0265ef2a7a8a37b0ed64957fb4f1ddac4b457d61"
   integrity sha512-vq7rn16TrQmjX3Al/k1Z5iBZWZ3HE8fDXs52OmDJmmTqryPSNvURH9WCAsqr0PODYCSR17Hy1VTzS0x7vVVLEQ==
@@ -1604,16 +1567,16 @@
   resolved "https://registry.yarnpkg.com/@oclif/screen/-/screen-1.0.4.tgz#b740f68609dfae8aa71c3a6cab15d816407ba493"
   integrity sha512-60CHpq+eqnTxLZQ4PGHYNwUX572hgpMHGPtTWMjdTMsAvlm69lZV/4ly6O3sAYkomo4NggGcomrDpBe34rxUqw==
 
-"@percy/cli-command@^1.0.0-beta.55":
-  version "1.0.0-beta.55"
-  resolved "https://registry.yarnpkg.com/@percy/cli-command/-/cli-command-1.0.0-beta.55.tgz#0c9bd252acbf227d63b19f4e684e8a035bb0ae1b"
-  integrity sha512-P1PQW1kDANr5cGs08HGkd7XwJM839mZAqL6YUCqdYUd7OB4SGLQSGnPmaTB8fWzQxQB/eD+iCJ3fPicAvPvr7A==
+"@percy/cli-command@^1.0.0-beta.56":
+  version "1.0.0-beta.56"
+  resolved "https://registry.yarnpkg.com/@percy/cli-command/-/cli-command-1.0.0-beta.56.tgz#edd50963385250de4f0e6bd15e1d335b6f15cacd"
+  integrity sha512-Jv2P5a0woQ6fSFsqIjbGqWjLMD+mrx4gkXZGLGtINlXshy311SBnvh6R+lqu7vDLjMRLID6g+OcbmHykl9p/XA==
   dependencies:
     "@oclif/command" "^1.8.0"
     "@oclif/config" "^1.17.0"
     "@oclif/plugin-help" "^3.2.0"
-    "@percy/config" "^1.0.0-beta.55"
-    "@percy/logger" "^1.0.0-beta.55"
+    "@percy/config" "^1.0.0-beta.56"
+    "@percy/logger" "^1.0.0-beta.56"
 
 "@percy/client@^1.0.0-beta.55":
   version "1.0.0-beta.55"
@@ -1623,12 +1586,12 @@
     "@percy/env" "^1.0.0-beta.55"
     "@percy/logger" "^1.0.0-beta.55"
 
-"@percy/config@^1.0.0-beta.55":
-  version "1.0.0-beta.55"
-  resolved "https://registry.yarnpkg.com/@percy/config/-/config-1.0.0-beta.55.tgz#e3ffe870a092bd2b358f8988244165c335d22cf2"
-  integrity sha512-UNjuK8RRP6BopA4ZvxIsjWKNO1o/HU17336atp09Xw7w97FUtc6EvHKCBJJnOL7phsJHsmS7YimUyLCF+RxwVw==
+"@percy/config@^1.0.0-beta.55", "@percy/config@^1.0.0-beta.56":
+  version "1.0.0-beta.56"
+  resolved "https://registry.yarnpkg.com/@percy/config/-/config-1.0.0-beta.56.tgz#fccdf43501e1d8a9db538fe5b47c5b4ccacf642a"
+  integrity sha512-1FcbX0jolD9rnrHgjR+sPrS9nWZBUhgrpJseQ2UdPlI4Az+ny7Ub/Zx09Qclkac+2YPuD+dczyj/mku6KI7akw==
   dependencies:
-    "@percy/logger" "^1.0.0-beta.55"
+    "@percy/logger" "^1.0.0-beta.56"
     ajv "^8.0.5"
     cosmiconfig "^7.0.0"
     yaml "^1.10.0"
@@ -10534,13 +10497,6 @@ wide-align@^1.1.0:
   integrity sha512-QGkOQc8XL6Bt5PwnsExKBPuMKBxnGxWWW3fU55Xt4feHozMUhdUMaBCk290qpm/wG5u/RSKzwdAC4i51YigihA==
   dependencies:
     string-width "^1.0.2 || 2"
-
-widest-line@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/widest-line/-/widest-line-2.0.1.tgz#7438764730ec7ef4381ce4df82fb98a53142a3fc"
-  integrity sha512-Ba5m9/Fa4Xt9eb2ELXt77JxVDV8w7qQrH0zS/TWSJdLyAwQjWoOzpzj5lwVftDz6n/EOu3tNACS84v509qwnJA==
-  dependencies:
-    string-width "^2.1.1"
 
 widest-line@^3.1.0:
   version "3.1.0"
