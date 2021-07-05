@@ -1567,16 +1567,16 @@
   resolved "https://registry.yarnpkg.com/@oclif/screen/-/screen-1.0.4.tgz#b740f68609dfae8aa71c3a6cab15d816407ba493"
   integrity sha512-60CHpq+eqnTxLZQ4PGHYNwUX572hgpMHGPtTWMjdTMsAvlm69lZV/4ly6O3sAYkomo4NggGcomrDpBe34rxUqw==
 
-"@percy/cli-command@^1.0.0-beta.56":
-  version "1.0.0-beta.56"
-  resolved "https://registry.yarnpkg.com/@percy/cli-command/-/cli-command-1.0.0-beta.56.tgz#edd50963385250de4f0e6bd15e1d335b6f15cacd"
-  integrity sha512-Jv2P5a0woQ6fSFsqIjbGqWjLMD+mrx4gkXZGLGtINlXshy311SBnvh6R+lqu7vDLjMRLID6g+OcbmHykl9p/XA==
+"@percy/cli-command@^1.0.0-beta.58":
+  version "1.0.0-beta.58"
+  resolved "https://registry.yarnpkg.com/@percy/cli-command/-/cli-command-1.0.0-beta.58.tgz#0a65cd35f1a2675a34b16febd4c75a9f43c146a4"
+  integrity sha512-3tKWmkLBIO8YMORgCIRG4G9mE6CnhDgpQzyaApC3r7GQ8KwR5My7qRPTE0HsBUR1CbU9+gjIvEN98k5JbBHPUQ==
   dependencies:
     "@oclif/command" "^1.8.0"
     "@oclif/config" "^1.17.0"
     "@oclif/plugin-help" "^3.2.0"
-    "@percy/config" "^1.0.0-beta.56"
-    "@percy/logger" "^1.0.0-beta.56"
+    "@percy/config" "^1.0.0-beta.58"
+    "@percy/logger" "^1.0.0-beta.58"
 
 "@percy/client@^1.0.0-beta.55":
   version "1.0.0-beta.55"
@@ -1586,12 +1586,12 @@
     "@percy/env" "^1.0.0-beta.55"
     "@percy/logger" "^1.0.0-beta.55"
 
-"@percy/config@^1.0.0-beta.55", "@percy/config@^1.0.0-beta.56":
-  version "1.0.0-beta.56"
-  resolved "https://registry.yarnpkg.com/@percy/config/-/config-1.0.0-beta.56.tgz#fccdf43501e1d8a9db538fe5b47c5b4ccacf642a"
-  integrity sha512-1FcbX0jolD9rnrHgjR+sPrS9nWZBUhgrpJseQ2UdPlI4Az+ny7Ub/Zx09Qclkac+2YPuD+dczyj/mku6KI7akw==
+"@percy/config@^1.0.0-beta.55", "@percy/config@^1.0.0-beta.58":
+  version "1.0.0-beta.58"
+  resolved "https://registry.yarnpkg.com/@percy/config/-/config-1.0.0-beta.58.tgz#bdcf840cfe33e3dfee6fc811b766953662d4514f"
+  integrity sha512-biFhT0V+Fx3iaRy9gmUIhc3xNp9rIKCte0Mx8imcHa8ubZ20nIHQRVD7fh/cQx0o17M83rSSvtGz3xDTCSehIw==
   dependencies:
-    "@percy/logger" "^1.0.0-beta.56"
+    "@percy/logger" "^1.0.0-beta.58"
     ajv "^8.0.5"
     cosmiconfig "^7.0.0"
     yaml "^1.10.0"
@@ -1622,10 +1622,10 @@
   dependencies:
     dotenv "^10.0.0"
 
-"@percy/logger@^1.0.0-beta.55", "@percy/logger@^1.0.0-beta.56":
-  version "1.0.0-beta.56"
-  resolved "https://registry.yarnpkg.com/@percy/logger/-/logger-1.0.0-beta.56.tgz#2f028b14f17a610b80457b2da67ceb50f9ee2940"
-  integrity sha512-1GEAJgZBWP/d/d7cecHVHFXE+29l2Rkaxc8PHtDqnW9vz6KWtzsmZF2HmM0hhq2qcXH3hVPz+NKn+fGWfAZ9nA==
+"@percy/logger@^1.0.0-beta.55", "@percy/logger@^1.0.0-beta.56", "@percy/logger@^1.0.0-beta.58":
+  version "1.0.0-beta.58"
+  resolved "https://registry.yarnpkg.com/@percy/logger/-/logger-1.0.0-beta.58.tgz#78f79917a79f840090cdaed30ded6bbd01520ccc"
+  integrity sha512-MLsOR8BbI4x64s4p1K5UVwZB1hcf0cVhNETJ0PTCUJFMKncA+Gfi/qFKUhEPiQcWbc+iAqeyxD9kbp8KgfD44g==
 
 "@pmmmwh/react-refresh-webpack-plugin@^0.4.3":
   version "0.4.3"
