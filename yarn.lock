@@ -1573,16 +1573,16 @@
   resolved "https://registry.yarnpkg.com/@oclif/screen/-/screen-1.0.4.tgz#b740f68609dfae8aa71c3a6cab15d816407ba493"
   integrity sha512-60CHpq+eqnTxLZQ4PGHYNwUX572hgpMHGPtTWMjdTMsAvlm69lZV/4ly6O3sAYkomo4NggGcomrDpBe34rxUqw==
 
-"@percy/cli-command@^1.0.0-beta.58":
-  version "1.0.0-beta.58"
-  resolved "https://registry.yarnpkg.com/@percy/cli-command/-/cli-command-1.0.0-beta.58.tgz#0a65cd35f1a2675a34b16febd4c75a9f43c146a4"
-  integrity sha512-3tKWmkLBIO8YMORgCIRG4G9mE6CnhDgpQzyaApC3r7GQ8KwR5My7qRPTE0HsBUR1CbU9+gjIvEN98k5JbBHPUQ==
+"@percy/cli-command@^1.0.0-beta.60":
+  version "1.0.0-beta.60"
+  resolved "https://registry.yarnpkg.com/@percy/cli-command/-/cli-command-1.0.0-beta.60.tgz#78b572903f31666139adb8f4bbc7ddd474dcc63e"
+  integrity sha512-AKVX31wTg6ONXp2jl6QgLLhP9KawHT0p42UJ5z6Smx7akptGOiqRbkGJv+Kxvg0hW03VDbmMfCHtmp0C6aCiOQ==
   dependencies:
     "@oclif/command" "^1.8.0"
     "@oclif/config" "^1.17.0"
     "@oclif/plugin-help" "^3.2.0"
-    "@percy/config" "^1.0.0-beta.58"
-    "@percy/logger" "^1.0.0-beta.58"
+    "@percy/config" "1.0.0-beta.60"
+    "@percy/logger" "1.0.0-beta.60"
 
 "@percy/client@1.0.0-beta.60":
   version "1.0.0-beta.60"
@@ -1592,7 +1592,7 @@
     "@percy/env" "1.0.0-beta.60"
     "@percy/logger" "1.0.0-beta.60"
 
-"@percy/config@1.0.0-beta.60", "@percy/config@^1.0.0-beta.58":
+"@percy/config@1.0.0-beta.60":
   version "1.0.0-beta.60"
   resolved "https://registry.yarnpkg.com/@percy/config/-/config-1.0.0-beta.60.tgz#9902e68818b2ee8f09fbfe88a1de240f8823f898"
   integrity sha512-OejVln05USaffCZb/7o0IyOsXIA+cf+gRpgUIsAEB+cXBXR5oZLLVI9cIdE9fB+BVGl7l0qwAMDDsbkKSLzpcw==
