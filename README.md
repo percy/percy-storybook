@@ -49,7 +49,7 @@ Automatically run `start-storybook`:
 $ percy storybook:start --port=9009 --static-dir=./public
 ```
 
-#### CLI Options:
+#### CLI options:
 
 ``` sh
 -c, --config=config                              percy configuration file path
@@ -135,7 +135,7 @@ options](https://docs.percy.io/docs/cli-configuration#per-snapshot-configuration
   ```
 </details>
 
-## Percy Config File options
+## Percy config file options
 
 In addition to [common Percy config file options](https://docs.percy.io/docs/cli-configuration),
 this SDK also adds the following Storybook specific options:
