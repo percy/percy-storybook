@@ -66,25 +66,25 @@ $ percy storybook:start --port=9009 --static-dir=./public
 
 ## Configuration
 
-In addition to [common Percy config file options](https://docs.percy.io/docs/cli-configuration),
-this SDK also adds the following Storybook specific options:
-
-``` yaml
-# .percy.yml
-version: 2
-storybook:
-  include: []
-  exclude: []
+[Storybook parameters](https://storybook.js.org/docs/react/writing-stories/parameters) are a set of static,
+named metadata about a story, used to control the behavior of Storybook features and addons. The `percy`
+parameter can be provided to add per-snapshot configuration options to a story or set of stories.
+  
+``` javascript
+// individual stories
+MyStory.parameters = {
+  percy: { ... }
+};
 ```
-
-- **include** - An array of regex patterns matching story names to only include for snapshotting.
-- **exclude** - An array of regex patterns matching story names to always exclude from snapshotting.
-
-### Storybook parameters
-
-A `percy` parameter may be provided with story parameters to add [per-snapshot configuration
-options](https://docs.percy.io/docs/cli-configuration#per-snapshot-configuration). Some Storybook
-specific options are supported here as well.
+``` javascript
+// .storybook/preview.js
+export const parameters = {
+  percy: { ... }
+};
+```
+  
+The following `percy` Storybook parameters are accepted in addition to [common per-snapshot 
+options](https://docs.percy.io/docs/cli-configuration#per-snapshot-configuration):
 
 - **skip** - Boolean indicating whether or not to skip this story.
 - **name** - Snapshot name. (default: `${story.kind}: ${story.name}`)
@@ -134,6 +134,22 @@ specific options are supported here as well.
   [percy] -> url: [...]?id=component--my-story&search=foobar
   ```
 </details>
+
+## Percy Config File options
+
+In addition to [common Percy config file options](https://docs.percy.io/docs/cli-configuration),
+this SDK also adds the following Storybook specific options:
+
+``` yaml
+# .percy.yml
+version: 2
+storybook:
+  include: []
+  exclude: []
+```
+
+- **include** - An array of regex patterns matching story names to only include for snapshotting.
+- **exclude** - An array of regex patterns matching story names to always exclude from snapshotting.
 
 ## Upgrading
 
