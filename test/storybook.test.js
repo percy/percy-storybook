@@ -7,12 +7,12 @@ import logger from '@percy/logger/test/helpers';
 import createTestServer from '@percy/core/test/helpers/server';
 import { Storybook } from '../src/commands/storybook';
 
+require('../src/hooks/init').default();
+
 describe('percy storybook', () => {
   let server, sbproc;
 
   beforeAll(async () => {
-    require('../src/hooks/init').default();
-
     server = await createTestServer({
       default: () => [200, 'text/html', '<p>Not Storybook</p>']
     });

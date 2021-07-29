@@ -1,6 +1,9 @@
 import PercyConfig from '@percy/config';
-import { schema } from '../config';
+import * as CoreConfig from '@percy/core/dist/config';
+import * as StorybookConfig from '../config';
 
 export default function() {
-  PercyConfig.addSchema(schema);
+  PercyConfig.addSchema(CoreConfig.schemas);
+  PercyConfig.addSchema(StorybookConfig.schemas);
+  PercyConfig.addMigration(StorybookConfig.migrations);
 }
