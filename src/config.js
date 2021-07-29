@@ -37,6 +37,8 @@ export const configSchema = {
           ...snapshotSchema.properties.additionalSnapshots.items,
 
           properties: {
+            include: { $ref: '#/properties/include' },
+            exclude: { $ref: '#/properties/exclude' },
             args: { $ref: '#/properties/args' },
             queryParams: { $ref: '#/properties/queryParams' },
             waitForSelector: { $ref: '#/properties/waitForSelector' },

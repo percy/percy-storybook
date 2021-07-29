@@ -94,10 +94,9 @@ export default class StorybookCommand extends Command {
     let stories = await this.getStories(previewUrl);
     let validated = new Set();
 
-    let storyPage = (id, name, ...options) => {
-      // merge config params and pluck out storybook specific options
-      let { skip, include, exclude, args, queryParams, ...opts } = (
-        merge([this.percy.config.storybook, ...options]));
+    let storyPage = (id, name, options) => {
+      // pluck out storybook specific options
+      let { skip, args, queryParams, include, exclude, ...opts } = options;
 
       // add id, query params, and args to the url
       (queryParams ||= {}).id = id;
@@ -108,12 +107,13 @@ export default class StorybookCommand extends Command {
     };
 
     return stories.reduce((all, params) => {
-      if (this.shouldSkipStory(params)) return all;
+      if (this.shouldSkipStory(params.name, params)) return all;
 
       // migrate, validate, scrub, and merge config
       let { id, ...config } = PercyConfig.migrate(params, '/storybook');
       let errors = PercyConfig.validate(config, '/storybook');
-      let { additionalSnapshots = [], ...options } = config;
+      let { name, additionalSnapshots = [], ...options } = (
+        merge([this.percy.config.storybook, config]));
 
       if (errors) {
         if (!validated.size) {
@@ -131,17 +131,18 @@ export default class StorybookCommand extends Command {
       }
 
       return all.concat(
-        storyPage(id, options.name, options),
-        additionalSnapshots.map(({ name, prefix, suffix, ...opts }) => {
-          name ||= `${prefix || ''}${options.name}${suffix || ''}`;
-          return storyPage(id, name, options, opts);
-        })
+        storyPage(id, name, options),
+        additionalSnapshots.filter(s => !this.shouldSkipStory(name, s))
+          .map(({ name: n, prefix, suffix, ...opts }) => {
+            n ||= `${prefix || ''}${name}${suffix || ''}`;
+            return storyPage(id, n, merge([options, opts]));
+          })
       );
-    }, []).filter(Boolean);
+    }, []);
   }
 
   // Returns true or false if a story should be skipped or not
-  shouldSkipStory({ name, skip, include, exclude }) {
+  shouldSkipStory(name, { skip, include, exclude }) {
     let conf = this.percy.config.storybook;
 
     let test = regexp => {
