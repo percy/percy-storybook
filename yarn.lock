@@ -1568,7 +1568,7 @@
   resolved "https://registry.yarnpkg.com/@oclif/screen/-/screen-1.0.4.tgz#b740f68609dfae8aa71c3a6cab15d816407ba493"
   integrity sha512-60CHpq+eqnTxLZQ4PGHYNwUX572hgpMHGPtTWMjdTMsAvlm69lZV/4ly6O3sAYkomo4NggGcomrDpBe34rxUqw==
 
-"@percy/cli-command@^1.0.0-beta.60":
+"@percy/cli-command@^1.0.0-beta.62":
   version "1.0.0-beta.62"
   resolved "https://registry.yarnpkg.com/@percy/cli-command/-/cli-command-1.0.0-beta.62.tgz#f8424f9a8bb2babbd6901804f35c5af507e675c6"
   integrity sha512-RgIABCl445AxerEJiIKfCUXsxjqrLr3NoZeJhLPJH6tV1QvkPjAPUJ7lvGHdiIXapJxIdheT7C99C8or1dPVog==
@@ -1597,7 +1597,7 @@
     cosmiconfig "^7.0.0"
     yaml "^1.10.0"
 
-"@percy/core@^1.0.0-beta.60":
+"@percy/core@^1.0.0-beta.62":
   version "1.0.0-beta.62"
   resolved "https://registry.yarnpkg.com/@percy/core/-/core-1.0.0-beta.62.tgz#ea6ee438d6734ebea790306d66ae3dbe8a2113ea"
   integrity sha512-E/7AhApJL8ot7szNFN0vW1QTUREoHSDw2IJ3HQ2IdhD1WqdWJaQ4vk4rjWBDTOJud8qZDv+JtNxoZbuMdQ1HtQ==
@@ -1621,7 +1621,7 @@
   resolved "https://registry.yarnpkg.com/@percy/env/-/env-1.0.0-beta.62.tgz#f40ce472f5d5841803b34d46abbee5261d72245e"
   integrity sha512-8ZtMwbk99xSf8awT5UFz8fIC1u8uikmQY/DCwe8tHhXGlGrrYy5ld9iHPAqVgDVZXUJm1ELbUSE9wuK6Jf6vig==
 
-"@percy/logger@1.0.0-beta.62", "@percy/logger@^1.0.0-beta.58":
+"@percy/logger@1.0.0-beta.62", "@percy/logger@^1.0.0-beta.62":
   version "1.0.0-beta.62"
   resolved "https://registry.yarnpkg.com/@percy/logger/-/logger-1.0.0-beta.62.tgz#c923dce45235b70a71e5e7acdec4a52bf9984aa2"
   integrity sha512-ILdCq9S6Prok5hfoCxqthA7we/rAg7SttNZRTaFogewdPnpJ99KBAzVx9wQWGEbpIGjlQt2PHb+ymQ1yIXz56A==
