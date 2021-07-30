@@ -6,5 +6,8 @@ export const parameters = {
         'Skip'
       ]
     }
+  },
+  percy: {
+    exclude: [/^Options/]
   }
 };

@@ -7,12 +7,12 @@ import logger from '@percy/logger/test/helpers';
 import createTestServer from '@percy/core/test/helpers/server';
 import { Storybook } from '../src/commands/storybook';
 
+require('../src/hooks/init').default();
+
 describe('percy storybook', () => {
   let server, sbproc;
 
   beforeAll(async () => {
-    require('../src/hooks/init').default();
-
     server = await createTestServer({
       default: () => [200, 'text/html', '<p>Not Storybook</p>']
     });
@@ -177,7 +177,7 @@ describe('percy storybook', () => {
   });
 
   it('excludes stories from snapshots with --exclude', async () => {
-    await Storybook.run(['http://localhost:9000', '--exclude=Snapshot']);
+    await Storybook.run(['http://localhost:9000', '--exclude=Snapshot', '--exclude=Options']);
 
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
@@ -244,7 +244,7 @@ describe('percy storybook', () => {
   });
 
   it('logs a warning when using the deprecated `snapshots` option', async () => {
-    await Storybook.run(['http://localhost:9000', '--dry-run', '--include=Deprecated']);
+    await Storybook.run(['http://localhost:9000', '--dry-run', '--include=Options: Deprecated']);
 
     expect(logger.stderr).toEqual([
       '[percy] Warning: The `snapshots` option will be ' +
@@ -252,8 +252,22 @@ describe('percy storybook', () => {
     ]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Found 2 snapshots',
-      '[percy] Snapshot found: Deprecated: Snapshots',
-      '[percy] Snapshot found: Deprecated: Snapshots option'
+      '[percy] Snapshot found: Options: Deprecated',
+      '[percy] Snapshot found: Options: Deprecated (snapshots)'
+    ]));
+  });
+
+  it('logs a warning when using invalid percy options', async () => {
+    await Storybook.run(['http://localhost:9000', '--dry-run', '--include=Options: Invalid']);
+
+    expect(logger.stderr).toEqual([
+      '[percy] Invalid parameters:',
+      '[percy] - percy.invalid: unknown property'
+    ]);
+    expect(logger.stdout).toEqual(jasmine.arrayContaining([
+      '[percy] Found 2 snapshots',
+      '[percy] Snapshot found: Options: Invalid One',
+      '[percy] Snapshot found: Options: Invalid Two'
     ]));
   });
 });

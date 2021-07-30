@@ -88,12 +88,12 @@ options](https://docs.percy.io/docs/cli-configuration#per-snapshot-configuration
 
 - **skip** - Boolean indicating whether or not to skip this story.
 - **name** - Snapshot name. (default: `${story.kind}: ${story.name}`)
-- **waitForTimeout** - Wait for a timeout before taking the snapshot.
-- **waitForSelector** - Wait for a selector to exist before taking the snapshot.
 - **args** - [Story args](https://storybook.js.org/docs/react/writing-stories/args) to use when snapshotting.
 - **queryParams** - Query parameters to use when snapshotting.
-- **include** - Same as the config option. Useful global or component-level parameter.
-- **exclude** - Same as the config option. Useful global or component-level parameter.
+- **waitForTimeout** - Wait for a timeout before taking the snapshot.
+- **waitForSelector** - Wait for a selector to exist before taking the snapshot.
+- **include** - An array of regex patterns matching story names to only include for snapshotting.
+- **exclude** - An array of regex patterns matching story names to always exclude from snapshotting.
 - **additionalSnapshots** - An array of additional snapshots to take of this story.
   - **prefix** - A prefix added to this additional snapshot's name.
   - **suffix** - A suffix added to this additional snapshot's name.
@@ -144,12 +144,17 @@ this SDK also adds the following Storybook specific options:
 # .percy.yml
 version: 2
 storybook:
+  args: {}
+  queryParams: {}
+  waitForTimeout: 0
+  waitForSelector: ''
+  additionalSnapshots: []
   include: []
   exclude: []
 ```
 
-- **include** - An array of regex patterns matching story names to only include for snapshotting.
-- **exclude** - An array of regex patterns matching story names to always exclude from snapshotting.
+See the [configuration options above](#configuration) for details about each accepted config file
+option (**note**: the `skip` and `name` parameters are _not_ accepted as Percy config file options).
 
 ## Upgrading
 

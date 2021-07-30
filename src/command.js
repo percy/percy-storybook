@@ -2,20 +2,15 @@ import Command, { flags } from '@percy/cli-command';
 import request from '@percy/client/dist/request';
 import { sha256hash } from '@percy/client/dist/utils';
 import Percy from '@percy/core';
+import PercyConfig from '@percy/config';
+import { merge } from '@percy/config/dist/utils';
 import { buildArgsParam } from '@storybook/router/utils';
 import qs from 'qs';
 
 import pkg from '../package.json';
 
-// basic deep merge of nested objects
-function merge(target, ...sources) {
-  return sources.reduce((target, src) => {
-    return Object.entries(src).reduce((t, [k, v]) => {
-      if (v.toString() === '[object Object]') v = merge(t[k] || {}, v);
-      return Object.assign(t, { [k]: v });
-    }, target);
-  }, target);
-}
+// used to deserialize regular expression strings
+const RE_REGEXP = /^\/(.+)\/(\w+)?$/;
 
 export default class StorybookCommand extends Command {
   static flags = {
@@ -97,56 +92,82 @@ export default class StorybookCommand extends Command {
   async getStoryPages(url) {
     let previewUrl = new URL('/iframe.html', url).href;
     let stories = await this.getStories(previewUrl);
-
-    let conf = this.percy.config.storybook || {};
-    conf.include = conf.include?.map(i => new RegExp(i));
-    conf.exclude = conf.exclude?.map(e => new RegExp(e));
+    let validated = new Set();
 
     let storyPage = (id, name, options) => {
-      let { skip, include, exclude, args, queryParams, ...opts } = options;
+      // pluck out storybook specific options
+      let { skip, args, queryParams, include, exclude, ...opts } = options;
 
-      // percy config overrides story parameters
-      include = conf.include?.length ? conf.include : include;
-      exclude = conf.exclude?.length ? conf.exclude : exclude;
-
-      // if included, don't skip; if excluded always exclude
-      if (include?.length ? !include.some(i => i.test(name)) : skip) return;
-      if (exclude?.some(e => e.test(name))) return;
-
-      // add query params to the url
+      // add id, query params, and args to the url
       (queryParams ||= {}).id = id;
       if (args) queryParams.args = buildArgsParam({}, args);
       let url = `${previewUrl}?${qs.stringify(queryParams)}`;
-
-      // remove options that might cause issues
-      delete opts.domSnapshot;
-      delete opts.execute;
-
-      if (opts.snapshots) {
-        this.log.deprecated('The `snapshots` option will be ' + (
-          'removed in 4.0.0. Use `additionalSnapshots` instead.'));
-        delete opts.snapshots;
-      }
 
       return { ...opts, name, url };
     };
 
     return stories.reduce((all, params) => {
-      let { id, additionalSnapshots = [], ...options } = params;
+      if (this.shouldSkipStory(params.name, params)) return all;
 
-      // deprecation will log later
-      if (options.snapshots) {
-        additionalSnapshots = options.snapshots;
+      // migrate, validate, scrub, and merge config
+      let { id, ...config } = PercyConfig.migrate(params, '/storybook');
+      let errors = PercyConfig.validate(config, '/storybook');
+      let { name, additionalSnapshots = [], ...options } = (
+        merge([this.percy.config.storybook, config]));
+
+      if (errors) {
+        if (!validated.size) {
+          this.log.warn('Invalid parameters:');
+        }
+
+        for (let e of errors) {
+          let message = `- percy.${e.path}: ${e.message}`;
+          // ensure messages are only logged once for all stories
+          if (!validated.has(message)) {
+            this.log.warn(message);
+            validated.add(message);
+          }
+        }
       }
 
       return all.concat(
-        storyPage(id, params.name, options),
-        additionalSnapshots.map(({ name, prefix, suffix, ...opts }) => {
-          name ||= `${prefix || ''}${params.name}${suffix || ''}`;
-          return storyPage(id, name, merge({}, options, opts));
-        })
+        storyPage(id, name, options),
+        additionalSnapshots.filter(s => !this.shouldSkipStory(name, s))
+          .map(({ name: n, prefix, suffix, ...opts }) => {
+            n ||= `${prefix || ''}${name}${suffix || ''}`;
+            return storyPage(id, n, merge([options, opts]));
+          })
       );
-    }, []).filter(Boolean);
+    }, []);
+  }
+
+  // Returns true or false if a story should be skipped or not
+  shouldSkipStory(name, { skip, include, exclude }) {
+    let conf = this.percy.config.storybook;
+
+    let test = regexp => {
+      /* istanbul ignore else: sanity check */
+      if (typeof regexp === 'string') {
+        let [, parsed, flags] = RE_REGEXP.exec(regexp) || [];
+        regexp = new RegExp(parsed ?? regexp, flags);
+      }
+
+      return regexp?.test?.(name);
+    };
+
+    // percy include and exclude overrides storybook params
+    if (conf?.include || conf?.exclude) {
+      include = [].concat(conf?.include).filter(Boolean);
+      exclude = [].concat(conf?.exclude).filter(Boolean);
+    } else {
+      include = [].concat(include).filter(Boolean);
+      exclude = [].concat(exclude).filter(Boolean);
+    }
+
+    // if included, don't skip; if excluded always exclude
+    skip = !!((include?.length ? !include.some(test) : skip) || exclude?.some(test));
+    if (skip) this.log.debug(`Skipping story: ${name}`);
+    return skip;
   }
 
   // Resolves to an array of Storybook stories
@@ -170,6 +191,7 @@ export default class StorybookCommand extends Command {
 
       /* istanbul ignore next: no instrumenting injected code */
       return await page.eval((util, previewUrl) => {
+        let serializeRegExp = r => r && [].concat(r).map(r => r.toString());
         let storybook = window.__STORYBOOK_CLIENT_API__;
 
         if (!storybook) {
@@ -179,10 +201,12 @@ export default class StorybookCommand extends Command {
           );
         }
 
-        return storybook.raw().map(story => ({
-          name: `${story.kind}: ${story.name}`,
-          ...story.parameters?.percy,
-          id: story.id
+        return storybook.raw().map(({ id, kind, name, parameters }) => ({
+          name: `${kind}: ${name}`,
+          ...parameters?.percy,
+          include: serializeRegExp(parameters?.percy?.include),
+          exclude: serializeRegExp(parameters?.percy?.exclude),
+          id
         }));
       });
     } catch (error) {
