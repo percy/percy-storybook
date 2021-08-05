@@ -112,13 +112,14 @@ options](https://docs.percy.io/docs/cli-configuration#per-snapshot-configuration
       name: 'My snapshot',
       additionalSnapshots: [
         { prefix: '[Dark mode] ', args: { colorScheme: 'dark' } },
-        { suffix: ' with a search', queryParams: { search: 'foobar' } }
+        { suffix: ' with a search', queryParams: { search: 'foobar' } },
+        { suffix: ' [RTL]', queryParams: { globals: 'textDirection:rtl' } }
       ]
     }
   };
   ```
 
-  With this example, 3 snapshots will be taken of this story with args and query params appended
+  With this example, 4 snapshots will be taken of this story with args and query params appended
   to the URL of each snapshot:
 
   ``` sh
@@ -132,6 +133,8 @@ options](https://docs.percy.io/docs/cli-configuration#per-snapshot-configuration
   [percy] -> url: [...]?id=component--my-story&args=colorScheme:dark
   [percy] Snapshot found: My snapshot with a search
   [percy] -> url: [...]?id=component--my-story&search=foobar
+  [percy] Snapshot found: My snapshot [RTL]
+  [percy] -> url: [...]?id=component--my-story&globals=textDirection:rtl
   ```
 </details>
 
