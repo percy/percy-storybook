@@ -7,7 +7,7 @@
 ## Installation
 
 ``` session
-$ npm install --save-dev @percy/cli @percy/storybook@next
+$ npm install --save-dev @percy/cli @percy/storybook
 ```
 
 ## Usage
