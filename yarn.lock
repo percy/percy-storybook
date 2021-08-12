@@ -1573,68 +1573,63 @@
   resolved "https://registry.yarnpkg.com/@oclif/screen/-/screen-1.0.4.tgz#b740f68609dfae8aa71c3a6cab15d816407ba493"
   integrity sha512-60CHpq+eqnTxLZQ4PGHYNwUX572hgpMHGPtTWMjdTMsAvlm69lZV/4ly6O3sAYkomo4NggGcomrDpBe34rxUqw==
 
-"@percy/cli-command@^1.0.0-beta.62":
-  version "1.0.0-beta.62"
-  resolved "https://registry.yarnpkg.com/@percy/cli-command/-/cli-command-1.0.0-beta.62.tgz#f8424f9a8bb2babbd6901804f35c5af507e675c6"
-  integrity sha512-RgIABCl445AxerEJiIKfCUXsxjqrLr3NoZeJhLPJH6tV1QvkPjAPUJ7lvGHdiIXapJxIdheT7C99C8or1dPVog==
+"@percy/cli-command@^1.0.0-beta.64":
+  version "1.0.0-beta.64"
+  resolved "https://registry.yarnpkg.com/@percy/cli-command/-/cli-command-1.0.0-beta.64.tgz#87bcc14c2d7e83492a07a04c1fb6937e07084b80"
+  integrity sha512-twMakjYeUFnZaSMAUnnvDVWoKUEPAVw+g2RHdd1hKRorK/CH7N4bQIF659hOBZUUGAzvyjUgR9zGa8yx4OhcxA==
   dependencies:
     "@oclif/command" "^1.8.0"
     "@oclif/config" "^1.17.0"
     "@oclif/plugin-help" "^3.2.0"
-    "@percy/config" "1.0.0-beta.62"
-    "@percy/logger" "1.0.0-beta.62"
+    "@percy/config" "1.0.0-beta.64"
+    "@percy/logger" "1.0.0-beta.64"
 
-"@percy/client@1.0.0-beta.62":
-  version "1.0.0-beta.62"
-  resolved "https://registry.yarnpkg.com/@percy/client/-/client-1.0.0-beta.62.tgz#b2144efe691e0f007a1ebb8c5c685c9432277236"
-  integrity sha512-5RDgSr8ZWAuO9v6fqCH8W9FLwhr5NufedFEX6dbYBrM31g078DTBSIkk+tidr44SDFDQ4xKZFX99s47QYCNCqw==
+"@percy/client@1.0.0-beta.64":
+  version "1.0.0-beta.64"
+  resolved "https://registry.yarnpkg.com/@percy/client/-/client-1.0.0-beta.64.tgz#584b6b3df2659ed7b780921104defbcf34d59ae8"
+  integrity sha512-Q5VONIinp5VSxeSqiNQyh19ZMbDZvJZXH9RXCB2iB52gSbCR5vfH5IuLo479EI1US3bCfLlbJ7IRcwaHQXL5Nw==
   dependencies:
-    "@percy/env" "1.0.0-beta.62"
-    "@percy/logger" "1.0.0-beta.62"
+    "@percy/env" "1.0.0-beta.64"
+    "@percy/logger" "1.0.0-beta.64"
 
-"@percy/config@1.0.0-beta.62":
-  version "1.0.0-beta.62"
-  resolved "https://registry.yarnpkg.com/@percy/config/-/config-1.0.0-beta.62.tgz#aab40f18adcca33deafc6a945ad6abd602a5dbf4"
-  integrity sha512-MhtjzNvjGvCv4n9pjXtIf0yKcuEOK592biaEtGAchfNJRC+kFpxQBF6wihR6AWN27uKa+8EXOuq62gqhpOJvIw==
+"@percy/config@1.0.0-beta.64":
+  version "1.0.0-beta.64"
+  resolved "https://registry.yarnpkg.com/@percy/config/-/config-1.0.0-beta.64.tgz#0aa55baee43f377c0e9d0986ed74e6983a41f8c5"
+  integrity sha512-xSNPMEeEB0NkqEXpRZI1AR41mebDOZHTI++wMGxSdiEsRGG6ZU71gvOpXMGLnCA2kksSl9MilRZ7QofP8GSXsA==
   dependencies:
-    "@percy/logger" "1.0.0-beta.62"
+    "@percy/logger" "1.0.0-beta.64"
     ajv "^8.6.2"
     cosmiconfig "^7.0.0"
     yaml "^1.10.0"
 
-"@percy/core@^1.0.0-beta.62":
-  version "1.0.0-beta.62"
-  resolved "https://registry.yarnpkg.com/@percy/core/-/core-1.0.0-beta.62.tgz#ea6ee438d6734ebea790306d66ae3dbe8a2113ea"
-  integrity sha512-E/7AhApJL8ot7szNFN0vW1QTUREoHSDw2IJ3HQ2IdhD1WqdWJaQ4vk4rjWBDTOJud8qZDv+JtNxoZbuMdQ1HtQ==
+"@percy/core@^1.0.0-beta.64":
+  version "1.0.0-beta.64"
+  resolved "https://registry.yarnpkg.com/@percy/core/-/core-1.0.0-beta.64.tgz#ed9e3fe4e6b306fcd2d042432621b8044012a709"
+  integrity sha512-Ydry/wAv1gQ8FRHsnyv12jp1Q041xEiZ5DNKD+V/EXDHhRyQtRpPOyyMS0f8AKC0EvIsMLJNhcCe1BpU3+v92g==
   dependencies:
-    "@percy/client" "1.0.0-beta.62"
-    "@percy/config" "1.0.0-beta.62"
-    "@percy/dom" "1.0.0-beta.62"
-    "@percy/logger" "1.0.0-beta.62"
+    "@percy/client" "1.0.0-beta.64"
+    "@percy/config" "1.0.0-beta.64"
+    "@percy/dom" "1.0.0-beta.64"
+    "@percy/logger" "1.0.0-beta.64"
     cross-spawn "^7.0.3"
     extract-zip "^2.0.1"
     rimraf "^3.0.2"
     ws "^8.0.0"
 
-"@percy/dom@1.0.0-beta.62":
-  version "1.0.0-beta.62"
-  resolved "https://registry.yarnpkg.com/@percy/dom/-/dom-1.0.0-beta.62.tgz#e144b9e40cb9a17e3109858bb04497d0dd798fde"
-  integrity sha512-yAs517Og5LjwT5BSZKWmkM+1g1mXnh35XJCpQuAb7MFZxEkjuTFRW6/BVZOBMbd/qBwQIiLbDCdGEFjwStAcsQ==
+"@percy/dom@1.0.0-beta.64":
+  version "1.0.0-beta.64"
+  resolved "https://registry.yarnpkg.com/@percy/dom/-/dom-1.0.0-beta.64.tgz#c79ed58e11b803eaaaa2b5cbab3f67aec5724f59"
+  integrity sha512-/jVDNNHKTl11r1grdux6cegN3UDWWT/+03negfErJSNV0CtxbjNvUAbT6Jbt0LikeZB9UrQYTKxTERIcM730kg==
 
-"@percy/env@1.0.0-beta.62":
-  version "1.0.0-beta.62"
-  resolved "https://registry.yarnpkg.com/@percy/env/-/env-1.0.0-beta.62.tgz#f40ce472f5d5841803b34d46abbee5261d72245e"
-  integrity sha512-8ZtMwbk99xSf8awT5UFz8fIC1u8uikmQY/DCwe8tHhXGlGrrYy5ld9iHPAqVgDVZXUJm1ELbUSE9wuK6Jf6vig==
+"@percy/env@1.0.0-beta.64":
+  version "1.0.0-beta.64"
+  resolved "https://registry.yarnpkg.com/@percy/env/-/env-1.0.0-beta.64.tgz#82dab4462de6b0885a75cfd3589a19007a88171c"
+  integrity sha512-6Gk8vwwByNY1WXYva2D+n4th8CjI/DasiEVKkhnb8oHx2yl9k4NYD6kvN6H+42yC2PaSOM7r8p6TKEVFWe3wrg==
 
-"@percy/logger@1.0.0-beta.62":
-  version "1.0.0-beta.62"
-  resolved "https://registry.yarnpkg.com/@percy/logger/-/logger-1.0.0-beta.62.tgz#c923dce45235b70a71e5e7acdec4a52bf9984aa2"
-  integrity sha512-ILdCq9S6Prok5hfoCxqthA7we/rAg7SttNZRTaFogewdPnpJ99KBAzVx9wQWGEbpIGjlQt2PHb+ymQ1yIXz56A==
-
-"@percy/logger@^1.0.0-beta.63":
-  version "1.0.0-beta.63"
-  resolved "https://registry.yarnpkg.com/@percy/logger/-/logger-1.0.0-beta.63.tgz#81d4b2747859d9fdc1f2a6c06e50eddda1b9a2b1"
-  integrity sha512-iumIt1JjrZQiD9fPShbqaUtyqgRBA1crJzwhh6MPZz4s0XJLxcEzhawKzqhtOoiB8Wr5AxVygswLOkTfPcVuFg==
+"@percy/logger@1.0.0-beta.64", "@percy/logger@^1.0.0-beta.64":
+  version "1.0.0-beta.64"
+  resolved "https://registry.yarnpkg.com/@percy/logger/-/logger-1.0.0-beta.64.tgz#ab4f1506941193d13bcbc92cdaa77eb917228695"
+  integrity sha512-ux0Cl8hlPgpKM0T8wY9982Srkg94KUhBXkJNLrtJl77sHyw2DSReOmWmNqrdNKTPAdXCtMUgbmeAeDU6JvemSw==
 
 "@pmmmwh/react-refresh-webpack-plugin@^0.4.3":
   version "0.4.3"
