@@ -243,20 +243,6 @@ describe('percy storybook', () => {
     ]));
   });
 
-  it('logs a warning when using the deprecated `snapshots` option', async () => {
-    await Storybook.run(['http://localhost:9000', '--dry-run', '--include=Options: Deprecated']);
-
-    expect(logger.stderr).toEqual([
-      '[percy] Warning: The `snapshots` option will be ' +
-        'removed in 4.0.0. Use `additionalSnapshots` instead.'
-    ]);
-    expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy] Found 2 snapshots',
-      '[percy] Snapshot found: Options: Deprecated',
-      '[percy] Snapshot found: Options: Deprecated (snapshots)'
-    ]));
-  });
-
   it('logs a warning when using invalid percy options', async () => {
     await Storybook.run(['http://localhost:9000', '--dry-run', '--include=Options: Invalid']);
 

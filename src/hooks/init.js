@@ -5,5 +5,4 @@ import * as StorybookConfig from '../config';
 export default function() {
   PercyConfig.addSchema(CoreConfig.schemas);
   PercyConfig.addSchema(StorybookConfig.schemas);
-  PercyConfig.addMigration(StorybookConfig.migrations);
 }
