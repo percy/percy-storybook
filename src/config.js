@@ -66,19 +66,7 @@ export const storyParamsSchema = {
   }
 };
 
-export function storyParamsMigration(config, { map, log }) {
-  if (config.snapshots) {
-    log.deprecated('The `snapshots` option will be ' + (
-      'removed in 4.0.0. Use `additionalSnapshots` instead.'));
-    map('snapshots', 'additionalSnapshots');
-  }
-}
-
 export const schemas = [
   configSchema,
   storyParamsSchema
-];
-
-export const migrations = [
-  ['/storybook', storyParamsMigration]
 ];
