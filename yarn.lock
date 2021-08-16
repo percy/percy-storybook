@@ -1636,10 +1636,15 @@
   resolved "https://registry.yarnpkg.com/@percy/env/-/env-1.0.0-beta.64.tgz#82dab4462de6b0885a75cfd3589a19007a88171c"
   integrity sha512-6Gk8vwwByNY1WXYva2D+n4th8CjI/DasiEVKkhnb8oHx2yl9k4NYD6kvN6H+42yC2PaSOM7r8p6TKEVFWe3wrg==
 
-"@percy/logger@1.0.0-beta.64", "@percy/logger@^1.0.0-beta.64":
+"@percy/logger@1.0.0-beta.64":
   version "1.0.0-beta.64"
   resolved "https://registry.yarnpkg.com/@percy/logger/-/logger-1.0.0-beta.64.tgz#ab4f1506941193d13bcbc92cdaa77eb917228695"
   integrity sha512-ux0Cl8hlPgpKM0T8wY9982Srkg94KUhBXkJNLrtJl77sHyw2DSReOmWmNqrdNKTPAdXCtMUgbmeAeDU6JvemSw==
+
+"@percy/logger@^1.0.0-beta.65":
+  version "1.0.0-beta.65"
+  resolved "https://registry.yarnpkg.com/@percy/logger/-/logger-1.0.0-beta.65.tgz#30a34797c935003334124e970f62914b0d124968"
+  integrity sha512-BJV0pjNlvcj4Y3nuMUGdb5RhjMduK40fRJJ9Lh/2qNk3pmnkGb9rH+GY+/0WY7quupNKxQjjyXcIP7I46/azNg==
 
 "@pmmmwh/react-refresh-webpack-plugin@^0.4.3":
   version "0.4.3"
