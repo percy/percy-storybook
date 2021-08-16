@@ -166,7 +166,7 @@ command with new versions will now result in an error message. The new command i
 To use new versions of this SDK, you will have to also install the CLI with the SDK:
 
 ``` sh
-$ npm install --save-dev @percy/cli @percy/storybook@next
+$ npm install --save-dev @percy/cli @percy/storybook
 ```
 
 Since both the command and arguments have changed, you'll need to replace your existing usage with
