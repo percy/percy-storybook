@@ -36,7 +36,7 @@
     "@percy/cli-command": "^1.0.0-beta.64",
     "@percy/core": "^1.0.0-beta.64",
     "@percy/logger": "^1.0.0-beta.64",
-    "@storybook/router": "^6.3.6",
+    "@storybook/router": "^6.3.7",
     "cross-spawn": "^7.0.3",
     "qs": "^6.10.1",
     "serve-handler": "^6.1.3"
