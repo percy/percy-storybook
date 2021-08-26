@@ -94,7 +94,8 @@ export default class StorybookCommand extends Command {
     let stories = await this.getStories(previewUrl);
     let validated = new Set();
 
-    let storyPage = (id, name, options) => {
+    // istanbul note: default options cannot be tested with our current storybook fixture
+    let storyPage = (id, name, /* istanbul ignore next */ options = {}) => {
       // pluck out storybook specific options
       let { skip, args, queryParams, include, exclude, ...opts } = options;
 
