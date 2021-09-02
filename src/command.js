@@ -48,9 +48,12 @@ export default class StorybookCommand extends Command {
     });
 
     let url = await this.storybook();
-    let pages = await this.getStoryPages(url);
+    // borrow a browser page to discover stories
+    await this.percy.browser.launch();
+    let [version, pages] = await Promise.all([this.getStorybookVersion(url), this.getStoryPages(url)]);
     let l = pages.length;
 
+    this.percy.client.addEnvironmentInfo(`storybook/${version}`);
     if (!l) return this.error('No snapshots found');
 
     let dry = this.flags['dry-run'];
@@ -185,13 +188,17 @@ export default class StorybookCommand extends Command {
       this.preview = { content: previewDOM, sha: sha256hash(previewDOM) };
       clearTimeout(logTimeout);
 
-      // borrow a browser page to discover stories
-      await this.percy.browser.launch();
       page = await this.percy.browser.page({ meta });
       await page.goto(previewUrl);
 
       /* istanbul ignore next: no instrumenting injected code */
-      return await page.eval((util, previewUrl) => {
+      return await page.eval(async ({ waitFor }, previewUrl) => {
+        // ensure the page has loaded and the var we need is present
+        await waitFor(() => !!window.__STORYBOOK_CLIENT_API__, 5000)
+          .catch(() => Promise.reject(new Error(
+            'Storybook object not found on the window. ' +
+            'Open Storybook and check the console for errors.'
+          )));
         let serializeRegExp = r => r && [].concat(r).map(r => r.toString());
         let storybook = window.__STORYBOOK_CLIENT_API__;
 
@@ -220,5 +227,32 @@ export default class StorybookCommand extends Command {
     } finally {
       await page?.close();
     }
+  }
+
+  async getStorybookVersion(url) {
+    let version, page;
+
+    try {
+      page = await this.percy.browser.page();
+      this.log.debug(`Get Storybook version: ${url}/?path=/settings/about`);
+
+      await page.goto(`${url}/?path=/settings/about`);
+      /* istanbul ignore next: no instrumenting injected code */
+      version = await page.eval(async ({ waitFor }) => {
+        await waitFor(() => !!document.querySelector('header'), 5000)
+          .catch(() => Promise.reject(new Error('Failed to find a <header> element')));
+        let getPath = path => document.evaluate(path, document, null, 9, null).singleNodeValue;
+        let text = getPath("//header[starts-with(text(), 'Storybook ')]").innerText;
+
+        return text.match(/[-]{0,1}[\d]*[.]{0,1}[\d]+/g, '').join('');
+      });
+    } catch (error) {
+      this.log.debug(`Couldn't retrieve Storybook version: ${error.message}`);
+      version = 'unknown';
+    } finally {
+      await page?.close();
+    }
+
+    return version;
   }
 }

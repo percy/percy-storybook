@@ -176,6 +176,16 @@ describe('percy storybook', () => {
     ]);
   });
 
+  it('sends the version of storybook when creating snapshots', async () => {
+    await Storybook.run(['http://localhost:9000']);
+
+    expect(logger.stderr).toEqual([]);
+    expect(mockAPI.requests['/builds/123/snapshots'].map(req => req.headers['user-agent'])[0])
+      .toMatch(
+        /^Percy\/v1 @percy\/client\/\S+ @percy\/storybook\/\d+\.\d+\.\d+.*? \(storybook\/\d+\.\d+\.\d+.*?; node\/v[\d.]+.*\)$/
+      );
+  });
+
   it('excludes stories from snapshots with --exclude', async () => {
     await Storybook.run(['http://localhost:9000', '--exclude=Snapshot', '--exclude=Options']);
 
