@@ -11,11 +11,12 @@ import pkg from '../package.json';
 
 // used to deserialize regular expression strings
 const RE_REGEXP = /^\/(.+)\/(\w+)?$/;
-const WAIT_FOR_TIMEOUT = 5000;
+const EVAL_TIMEOUT = 5000;
 
 // remove stack traces from any eval error
 function normalizeEvalError(error) {
-  return error.replace(/^Error:\s(.*?)\n\s{4}at\s.*$/s, '$1');
+  if (typeof error !== 'string') return error;
+  return new Error(error.replace(/^Error:\s(.*?)\n\s{4}at\s.*$/s, '$1'));
 }
 
 export default class StorybookCommand extends Command {
@@ -216,22 +217,18 @@ export default class StorybookCommand extends Command {
           exclude: serializeRegExp(parameters?.percy?.exclude),
           id
         }));
-      }, WAIT_FOR_TIMEOUT);
+      }, EVAL_TIMEOUT);
     } catch (error) {
       // remove stack traces from any eval error
-      if (typeof error === 'string') {
-        throw new Error(normalizeEvalError(error));
-      } else {
-        throw error;
-      }
+      throw normalizeEvalError(error);
     } finally {
       await page?.close();
     }
   }
 
   async getStorybookVersion(url) {
-    let version, page;
     let aboutUrl = new URL('?path=/settings/about', url).href;
+    let version, page;
 
     try {
       page = await this.percy.browser.page();
@@ -246,13 +243,13 @@ export default class StorybookCommand extends Command {
         await waitFor(() => getPath(headerPath), waitForTimeout)
           .catch(() => Promise.reject(new Error('Failed to find a <header> element')));
 
-        return getPath(headerPath)
-          .innerText
+        return getPath(headerPath).innerText
           .match(/[-]{0,1}[\d]*[.]{0,1}[\d]+/g, '')
           .join('');
-      }, WAIT_FOR_TIMEOUT);
+      }, EVAL_TIMEOUT);
     } catch (error) {
-      this.log.debug(`Couldn't retrieve Storybook version: ${normalizeEvalError(error)}`);
+      this.log.debug('Unable to retrieve Storybook version');
+      this.log.debug(normalizeEvalError(error));
       version = 'unknown';
     } finally {
       await page?.close();
