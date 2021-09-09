@@ -11,6 +11,13 @@ import pkg from '../package.json';
 
 // used to deserialize regular expression strings
 const RE_REGEXP = /^\/(.+)\/(\w+)?$/;
+const EVAL_TIMEOUT = 5000;
+
+// remove stack traces from any eval error
+function normalizeEvalError(error) {
+  if (typeof error !== 'string') return error;
+  return new Error(error.replace(/^Error:\s(.*?)\n\s{4}at\s.*$/s, '$1'));
+}
 
 export default class StorybookCommand extends Command {
   static flags = {
@@ -48,9 +55,12 @@ export default class StorybookCommand extends Command {
     });
 
     let url = await this.storybook();
-    let pages = await this.getStoryPages(url);
+    // borrow a browser page to get the storybook version and discover stories
+    await this.percy.browser.launch();
+    let [version, pages] = await Promise.all([this.getStorybookVersion(url), this.getStoryPages(url)]);
     let l = pages.length;
 
+    this.percy.client.addEnvironmentInfo(`storybook/${version}`);
     if (!l) return this.error('No snapshots found');
 
     let dry = this.flags['dry-run'];
@@ -185,22 +195,20 @@ export default class StorybookCommand extends Command {
       this.preview = { content: previewDOM, sha: sha256hash(previewDOM) };
       clearTimeout(logTimeout);
 
-      // borrow a browser page to discover stories
-      await this.percy.browser.launch();
       page = await this.percy.browser.page({ meta });
       await page.goto(previewUrl);
 
       /* istanbul ignore next: no instrumenting injected code */
-      return await page.eval((util, previewUrl) => {
-        let serializeRegExp = r => r && [].concat(r).map(r => r.toString());
-        let storybook = window.__STORYBOOK_CLIENT_API__;
-
-        if (!storybook) {
-          throw new Error(
+      return await page.eval(async ({ waitFor }, waitForTimeout) => {
+        // ensure the page has loaded and the var we need is present
+        await waitFor(() => !!window.__STORYBOOK_CLIENT_API__, waitForTimeout)
+          .catch(() => Promise.reject(new Error(
             'Storybook object not found on the window. ' +
             'Open Storybook and check the console for errors.'
-          );
-        }
+          )));
+
+        let serializeRegExp = r => r && [].concat(r).map(r => r.toString());
+        let storybook = window.__STORYBOOK_CLIENT_API__;
 
         return storybook.raw().map(({ id, kind, name, parameters }) => ({
           name: `${kind}: ${name}`,
@@ -209,16 +217,44 @@ export default class StorybookCommand extends Command {
           exclude: serializeRegExp(parameters?.percy?.exclude),
           id
         }));
-      });
+      }, EVAL_TIMEOUT);
     } catch (error) {
       // remove stack traces from any eval error
-      if (typeof error === 'string') {
-        throw new Error(error.replace(/^Error:\s(.*?)\n\s{4}at\s.*$/s, '$1'));
-      } else {
-        throw error;
-      }
+      throw normalizeEvalError(error);
     } finally {
       await page?.close();
     }
+  }
+
+  async getStorybookVersion(url) {
+    let aboutUrl = new URL('?path=/settings/about', url).href;
+    let version, page;
+
+    try {
+      page = await this.percy.browser.page();
+      this.log.debug(`Get Storybook version: ${aboutUrl}`);
+
+      await page.goto(aboutUrl);
+      /* istanbul ignore next: no instrumenting injected code */
+      version = await page.eval(async ({ waitFor }, waitForTimeout) => {
+        let headerPath = "//header[starts-with(text(), 'Storybook ')]";
+        let getPath = path => document.evaluate(path, document, null, 9, null).singleNodeValue;
+
+        await waitFor(() => getPath(headerPath), waitForTimeout)
+          .catch(() => Promise.reject(new Error('Failed to find a <header> element')));
+
+        return getPath(headerPath).innerText
+          .match(/[-]{0,1}[\d]*[.]{0,1}[\d]+/g, '')
+          .join('');
+      }, EVAL_TIMEOUT);
+    } catch (error) {
+      this.log.debug('Unable to retrieve Storybook version');
+      this.log.debug(normalizeEvalError(error));
+      version = 'unknown';
+    } finally {
+      await page?.close();
+    }
+
+    return version;
   }
 }
