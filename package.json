@@ -59,7 +59,7 @@
     "eslint-plugin-import": "^2.24.2",
     "eslint-plugin-node": "^11.0.0",
     "eslint-plugin-promise": "^5.1.0",
-    "jasmine": "^3.9.0",
+    "jasmine": "^3.10.0",
     "jasmine-spec-reporter": "^7.0.0",
     "mock-require": "^3.0.3",
     "nock": "^13.1.3",
