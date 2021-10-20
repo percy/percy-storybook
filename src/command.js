@@ -2,22 +2,9 @@ import Command, { flags } from '@percy/cli-command';
 import request from '@percy/client/dist/request';
 import { sha256hash } from '@percy/client/dist/utils';
 import Percy from '@percy/core';
-import PercyConfig from '@percy/config';
-import { merge } from '@percy/config/dist/utils';
-import { buildArgsParam } from '@storybook/router/utils';
-import qs from 'qs';
 
 import pkg from '../package.json';
-
-// used to deserialize regular expression strings
-const RE_REGEXP = /^\/(.+)\/(\w+)?$/;
-const EVAL_TIMEOUT = 5000;
-
-// remove stack traces from any eval error
-function normalizeEvalError(error) {
-  if (typeof error !== 'string') return error;
-  return new Error(error.replace(/^Error:\s(.*?)\n\s{4}at\s.*$/s, '$1'));
-}
+import { mapStorySnapshots, getAuthHeaders } from './utils';
 
 export default class StorybookCommand extends Command {
   static flags = {
@@ -54,31 +41,19 @@ export default class StorybookCommand extends Command {
       server: false
     });
 
-    let url = await this.storybook();
-    // borrow a browser page to get the storybook version and discover stories
-    await this.percy.browser.launch();
-    let [version, pages] = await Promise.all([this.getStorybookVersion(url), this.getStoryPages(url)]);
-    let l = pages.length;
+    this.storybook = await this.startStorybook();
+
+    let [version, snapshots] = await Promise.all([
+      this.getStorybookVersion(),
+      this.getStorybookSnapshots()
+    ]);
+
+    if (!snapshots.length) {
+      return this.error('No snapshots found');
+    }
 
     this.percy.client.addEnvironmentInfo(`storybook/${version}`);
-    if (!l) return this.error('No snapshots found');
 
-    let dry = this.flags['dry-run'];
-    if (dry) this.log.info(`Found ${l} snapshot${l === 1 ? '' : 's'}`);
-    else await this.start();
-
-    for (let page of pages) {
-      if (dry) {
-        this.log.info(`Snapshot found: ${page.name}`);
-        this.log.debug(`-> url: ${page.url}`);
-      } else {
-        this.percy.snapshot(page);
-      }
-    }
-  }
-
-  // Called to start Percy
-  async start() {
     // patch client to override root resources when JS is enabled
     this.percy.client.sendSnapshot = (buildId, options) => {
       if (options.enableJavaScript && this.preview) {
@@ -90,171 +65,119 @@ export default class StorybookCommand extends Command {
     };
 
     await this.percy.start();
+    this.percy.snapshot(snapshots);
   }
 
   // Called on error, interupt, or after running
   async finally(error) {
     await this.percy?.stop(!!error);
     await this.percy?.browser.close();
+    await this.storybook?.close();
   }
 
-  // Resolves to an array of story pages to snapshot
-  async getStoryPages(url) {
-    let previewUrl = new URL('/iframe.html', url).href;
-    let stories = await this.getStories(previewUrl);
-    let validated = new Set();
+  // Set the url after ensuring it is reachable while saving the preview response
+  async setStorybookUrl(url, log) {
+    let previewUrl = new URL('iframe.html', url).href;
+    let previewDOM = await request(previewUrl, {
+      headers: getAuthHeaders(this.percy.config.discovery),
+      retryNotFound: true,
+      interval: 1000,
+      retries: 30
+    });
 
-    // istanbul note: default options cannot be tested with our current storybook fixture
-    let storyPage = (id, name, /* istanbul ignore next */ options = {}) => {
-      // pluck out storybook specific options
-      let { skip, args, queryParams, include, exclude, ...opts } = options;
-
-      // add id, query params, and args to the url
-      (queryParams ||= {}).id = id;
-      if (args) queryParams.args = buildArgsParam({}, args);
-      let url = `${previewUrl}?${qs.stringify(queryParams)}`;
-
-      return { ...opts, name, url };
+    this.url = url;
+    this.preview = {
+      content: previewDOM,
+      sha: sha256hash(previewDOM)
     };
-
-    return stories.reduce((all, params) => {
-      if (this.shouldSkipStory(params.name, params)) return all;
-
-      // migrate, validate, scrub, and merge config
-      let { id, ...config } = PercyConfig.migrate(params, '/storybook');
-      let errors = PercyConfig.validate(config, '/storybook');
-      let { name, additionalSnapshots = [], ...options } = (
-        merge([this.percy.config.storybook, config]));
-
-      if (errors) {
-        if (!validated.size) {
-          this.log.warn('Invalid parameters:');
-        }
-
-        for (let e of errors) {
-          let message = `- percy.${e.path}: ${e.message}`;
-          // ensure messages are only logged once for all stories
-          if (!validated.has(message)) {
-            this.log.warn(message);
-            validated.add(message);
-          }
-        }
-      }
-
-      return all.concat(
-        storyPage(id, name, options),
-        additionalSnapshots.filter(s => !this.shouldSkipStory(name, s))
-          .map(({ name: n, prefix, suffix, ...opts }) => {
-            n ||= `${prefix || ''}${name}${suffix || ''}`;
-            return storyPage(id, n, merge([options, opts]));
-          })
-      );
-    }, []);
   }
 
-  // Returns true or false if a story should be skipped or not
-  shouldSkipStory(name, { skip, include, exclude }) {
-    let conf = this.percy.config.storybook;
+  // Resolves to the discovered Storybook version
+  async getStorybookVersion() {
+    let aboutUrl = new URL('?path=/settings/about', this.url).href;
+    this.log.debug(`Get Storybook version: ${aboutUrl}`);
 
-    let test = regexp => {
-      /* istanbul ignore else: sanity check */
-      if (typeof regexp === 'string') {
-        let [, parsed, flags] = RE_REGEXP.exec(regexp) || [];
-        regexp = new RegExp(parsed ?? regexp, flags);
-      }
+    /* istanbul ignore next: no instrumenting injected code */
+    return this._eval(aboutUrl, async ({ waitFor }, timeout) => {
+      // Use an xpath selector to find the appropriate element containing the version number
+      let getPath = path => document.evaluate(path, document, null, 9, null).singleNodeValue;
+      let headerPath = "//header[starts-with(text(), 'Storybook ')]";
 
-      return regexp?.test?.(name);
-    };
+      await waitFor(() => getPath(headerPath), timeout)
+        .catch(() => Promise.reject(new Error(
+          'Failed to find a Storybook <header> element'
+        )));
 
-    // percy include and exclude overrides storybook params
-    if (conf?.include || conf?.exclude) {
-      include = [].concat(conf?.include).filter(Boolean);
-      exclude = [].concat(conf?.exclude).filter(Boolean);
-    } else {
-      include = [].concat(include).filter(Boolean);
-      exclude = [].concat(exclude).filter(Boolean);
-    }
-
-    // if included, don't skip; if excluded always exclude
-    skip = !!((include?.length ? !include.some(test) : skip) || exclude?.some(test));
-    if (skip) this.log.debug(`Skipping story: ${name}`);
-    return skip;
+      return getPath(headerPath).innerText
+        .match(/[-]{0,1}[\d]*[.]{0,1}[\d]+/g, '')
+        .join('');
+    }).catch(error => {
+      this.log.debug('Unable to retrieve Storybook version');
+      this.log.debug(error);
+      return 'unknown';
+    }).then(v => {
+      return v;
+    });
   }
 
   // Resolves to an array of Storybook stories
-  async getStories(previewUrl) {
-    let meta = { storybook: { url: previewUrl } };
-    let page;
+  async getStorybookSnapshots() {
+    let previewUrl = new URL('iframe.html', this.url).href;
+    this.log.debug(`Get Storybook stories: ${previewUrl}`);
 
-    try {
-      this.log.debug(`Get stories: ${previewUrl}`, meta);
+    /* istanbul ignore next: no instrumenting injected code */
+    return this._eval(previewUrl, async ({ waitFor }, timeout) => {
+      let serializeRegExp = r => r && [].concat(r).map(r => r.toString());
 
-      // ensure the url is reachable while saving the response for when js is enabled
-      let logTimeout = setTimeout(this.log.warn, 3000, 'Waiting on a response from Storybook...');
-      let previewDOM = await request(previewUrl, { retries: 30, interval: 1000, retryNotFound: true });
-      this.preview = { content: previewDOM, sha: sha256hash(previewDOM) };
-      clearTimeout(logTimeout);
-
-      page = await this.percy.browser.page({ meta });
-      await page.goto(previewUrl);
-
-      /* istanbul ignore next: no instrumenting injected code */
-      return await page.eval(async ({ waitFor }, waitForTimeout) => {
-        // ensure the page has loaded and the var we need is present
-        await waitFor(() => !!window.__STORYBOOK_CLIENT_API__, waitForTimeout)
-          .catch(() => Promise.reject(new Error(
-            'Storybook object not found on the window. ' +
+      await waitFor(() => !!window.__STORYBOOK_CLIENT_API__, timeout)
+        .catch(() => Promise.reject(new Error(
+          'Storybook object not found on the window. ' +
             'Open Storybook and check the console for errors.'
-          )));
+        )));
 
-        let serializeRegExp = r => r && [].concat(r).map(r => r.toString());
-        let storybook = window.__STORYBOOK_CLIENT_API__;
-
-        return storybook.raw().map(({ id, kind, name, parameters }) => ({
+      return window.__STORYBOOK_CLIENT_API__.raw()
+        .map(({ id, kind, name, parameters }) => ({
           name: `${kind}: ${name}`,
           ...parameters?.percy,
           include: serializeRegExp(parameters?.percy?.include),
           exclude: serializeRegExp(parameters?.percy?.exclude),
           id
         }));
-      }, EVAL_TIMEOUT);
-    } catch (error) {
-      // remove stack traces from any eval error
-      throw normalizeEvalError(error);
-    } finally {
-      await page?.close();
-    }
+    }).then(stories => {
+      return mapStorySnapshots(stories, {
+        config: this.percy.config.storybook,
+        url: this.url
+      });
+    });
   }
 
-  async getStorybookVersion(url) {
-    let aboutUrl = new URL('?path=/settings/about', url).href;
-    let version, page;
+  // Borrows a percy discovery browser page to navigate to a URL and evaluate a function, returning
+  // the results and normalizing any thrown errors.
+  async _eval(url, fn) {
+    let page;
 
     try {
-      page = await this.percy.browser.page();
-      this.log.debug(`Get Storybook version: ${aboutUrl}`);
+      // always ensure the browser is launched before borrowing a page
+      await (this._launchingBrowser ||= this.percy.browser.launch());
 
-      await page.goto(aboutUrl);
-      /* istanbul ignore next: no instrumenting injected code */
-      version = await page.eval(async ({ waitFor }, waitForTimeout) => {
-        let headerPath = "//header[starts-with(text(), 'Storybook ')]";
-        let getPath = path => document.evaluate(path, document, null, 9, null).singleNodeValue;
+      // provide discovery options that may impact how the page loads
+      page = await this.percy.browser.page({
+        networkIdleTimeout: this.percy.config.discovery.networkIdleTimeout,
+        requestHeaders: getAuthHeaders(this.percy.config.discovery),
+        userAgent: this.percy.config.discovery.userAgent
+      });
 
-        await waitFor(() => getPath(headerPath), waitForTimeout)
-          .catch(() => Promise.reject(new Error('Failed to find a <header> element')));
-
-        return getPath(headerPath).innerText
-          .match(/[-]{0,1}[\d]*[.]{0,1}[\d]+/g, '')
-          .join('');
-      }, EVAL_TIMEOUT);
+      // navigate to the URL and evaluate the provided function
+      await page.goto(url);
+      return await page.eval(fn, 5000);
     } catch (error) {
-      this.log.debug('Unable to retrieve Storybook version');
-      this.log.debug(normalizeEvalError(error));
-      version = 'unknown';
+      /* istanbul ignore next: purposefully not handling real errors */
+      if (typeof error !== 'string') throw error;
+      // make eval errors nicer by stripping the stack trace from the message
+      throw new Error(error.replace(/^Error:\s(.*?)\n\s{4}at\s.*$/s, '$1'));
     } finally {
+      // always clean up and close the page
       await page?.close();
     }
-
-    return version;
   }
 }
