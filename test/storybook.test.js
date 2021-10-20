@@ -1,5 +1,7 @@
+import fs from 'fs';
 import path from 'path';
 import spawn from 'cross-spawn';
+import PercyConfig from '@percy/config';
 import mockAPI from '@percy/client/test/helpers';
 import { sha256hash } from '@percy/client/dist/utils';
 import request from '@percy/client/dist/request';
@@ -10,6 +12,7 @@ import { Storybook } from '../src/commands/storybook';
 require('../src/hooks/init').default();
 
 describe('percy storybook', () => {
+  let configFile = path.join(__dirname, '.percy.yml');
   let server, sbproc;
 
   beforeAll(async () => {
@@ -43,9 +46,11 @@ describe('percy storybook', () => {
   });
 
   afterEach(() => {
+    try { fs.unlinkSync(configFile); } catch {}
     delete process.env.PERCY_TOKEN;
     delete process.env.PERCY_ENABLE;
     process.removeAllListeners();
+    PercyConfig.cache.clear();
   });
 
   it('snapshots live urls', async () => {
@@ -205,22 +210,49 @@ describe('percy storybook', () => {
     ]));
   });
 
-  it('does not upload and logs snapshots with --dry-run', async () => {
-    await Storybook.run(['http://localhost:9000', '--dry-run']);
+  it('includes additional snapshots defined by config options', async () => {
+    fs.writeFileSync(configFile, [
+      'version: 2',
+      'storybook:',
+      '  additional-snapshots:',
+      '    - include: [First, Second]',
+      '      suffix: " (added)"',
+      '      args: { foo: bar }'
+    ].join('\n'));
+
+    await Storybook.run(['http://localhost:9000', `--config=${configFile}`]);
 
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy] Found 3 snapshots',
+      '[percy] Processing 5 snapshots...',
+      '[percy] Snapshot taken: Snapshot: First',
+      '[percy] Snapshot taken: Snapshot: First (added)',
+      '[percy] Snapshot taken: Snapshot: Second',
+      '[percy] Snapshot taken: Snapshot: Second (added)',
+      '[percy] Snapshot taken: Skip: But Not Me'
+    ]));
+  });
+
+  it('does not upload and logs snapshots with --dry-run', async () => {
+    await Storybook.run(['http://localhost:9000', '--dry-run']);
+
+    expect(logger.stderr).toEqual([
+      '[percy] Build not created'
+    ]);
+    expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Snapshot found: Snapshot: First',
       '[percy] Snapshot found: Snapshot: Second',
-      '[percy] Snapshot found: Skip: But Not Me'
+      '[percy] Snapshot found: Skip: But Not Me',
+      '[percy] Found 3 snapshots'
     ]));
 
     // coverage for `snapshot(s)` log
     logger.reset();
     await Storybook.run(['http://localhost:9000', '--dry-run', '--include=First']);
 
-    expect(logger.stderr).toEqual([]);
+    expect(logger.stderr).toEqual([
+      '[percy] Build not created'
+    ]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Found 1 snapshot',
       '[percy] Snapshot found: Snapshot: First'
@@ -231,21 +263,21 @@ describe('percy storybook', () => {
     await Storybook.run(['http://localhost:9000', '--dry-run', '--verbose', '--include=Args']);
 
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy:cli:storybook] Found 4 snapshots',
-      '[percy:cli:storybook] Snapshot found: Args',
-      '[percy:cli:storybook] Snapshot found: Args (bold)',
-      '[percy:cli:storybook] Snapshot found: Custom Args',
-      '[percy:cli:storybook] Snapshot found: Purple (Args)'
+      '[percy:core:snapshot] Snapshot found: Args',
+      '[percy:core:snapshot] Snapshot found: Args (bold)',
+      '[percy:core:snapshot] Snapshot found: Custom Args',
+      '[percy:core:snapshot] Snapshot found: Purple (Args)',
+      '[percy:core] Found 4 snapshots'
     ]));
 
     expect(logger.stderr).toEqual(jasmine.arrayContaining([
-      '[percy:cli:storybook] -> url: http://localhost:9000/iframe.html?id=args--args',
-      '[percy:cli:storybook] -> url: http://localhost:9000/iframe.html?id=args--args&args=' +
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args',
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
         encodeURIComponent('text:Snapshot+custom+args;style.font:1rem+sans-serif'),
-      '[percy:cli:storybook] -> url: http://localhost:9000/iframe.html?id=args--args&args=' +
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
         encodeURIComponent('text:Snapshot+custom+bold+args;style.font:1rem+sans-serif;') +
         encodeURIComponent('style.fontWeight:bold'),
-      '[percy:cli:storybook] -> url: http://localhost:9000/iframe.html?id=args--args&args=' +
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
         encodeURIComponent('text:Snapshot+purple+args;style.font:1rem+sans-serif;') +
         encodeURIComponent('style.fontWeight:bold;style.color:purple')
     ]));
@@ -255,13 +287,91 @@ describe('percy storybook', () => {
     await Storybook.run(['http://localhost:9000', '--dry-run', '--include=Options: Invalid']);
 
     expect(logger.stderr).toEqual([
-      '[percy] Invalid parameters:',
-      '[percy] - percy.invalid: unknown property'
+      '[percy] Invalid Storybook parameters:',
+      '[percy] - percy.invalid: unknown property',
+      '[percy] Build not created'
     ]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Found 2 snapshots',
       '[percy] Snapshot found: Options: Invalid One',
       '[percy] Snapshot found: Options: Invalid Two'
     ]));
+  });
+
+  describe('with protected urls', () => {
+    beforeAll(() => {
+      let auth = [
+        `Basic ${Buffer.from('foo:bar').toString('base64')}`,
+        `Basic ${Buffer.from('foobar').toString('base64')}`,
+        'Token xyzzy'
+      ];
+
+      let stories = [{
+        id: 'test--test',
+        kind: 'Test',
+        name: 'test'
+      }];
+
+      server.reply('/iframe.html', req => {
+        if (!auth.includes(req.headers.authorization)) {
+          return [403, 'text/plain', 'Invalid auth'];
+        }
+
+        return [200, 'text/html', [
+          '<script>__STORYBOOK_CLIENT_API__ = {',
+          `  raw: () => ${JSON.stringify(stories)}`,
+          '}</script>'
+        ].join('')];
+      });
+    });
+
+    it('takes snapshots with discovery auth username & password', async () => {
+      fs.writeFileSync(configFile, [
+        'version: 2',
+        'discovery:',
+        '  authorization:',
+        '    username: foo',
+        '    password: bar'
+      ].join('\n'));
+
+      await Storybook.run(['http://localhost:8000', `--config=${configFile}`]);
+
+      expect(logger.stderr).toEqual([]);
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        '[percy] Snapshot taken: Test: test'
+      ]));
+    });
+
+    it('takes snapshots with discovery auth username only', async () => {
+      fs.writeFileSync(configFile, [
+        'version: 2',
+        'discovery:',
+        '  authorization:',
+        '    username: foobar'
+      ].join('\n'));
+
+      await Storybook.run(['http://localhost:8000', `--config=${configFile}`]);
+
+      expect(logger.stderr).toEqual([]);
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        '[percy] Snapshot taken: Test: test'
+      ]));
+    });
+
+    it('takes snapshots with discovery request-headers', async () => {
+      fs.writeFileSync(configFile, [
+        'version: 2',
+        'discovery:',
+        '  request-headers:',
+        '    Authorization: Token xyzzy'
+      ].join('\n'));
+
+      await Storybook.run(['http://localhost:8000', `--config=${configFile}`]);
+
+      expect(logger.stderr).toEqual([]);
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        '[percy] Snapshot taken: Test: test'
+      ]));
+    });
   });
 });

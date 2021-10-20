@@ -1,5 +1,4 @@
 import { flags } from '@percy/cli-command';
-import request from '@percy/client/dist/request';
 import logger from '@percy/logger';
 import Command from '../../command';
 
@@ -28,14 +27,8 @@ export class Start extends Command {
 
   log = logger('cli:storybook:start');
 
-  // Called on error, interupt, or after running
-  async finally(error) {
-    await super.finally(error);
-    this.process?.kill();
-  }
-
-  // Starts Storybook in a child process and returns its url
-  async storybook() {
+  // Starts Storybook in a child process and resolves when ready
+  async startStorybook() {
     let { host, port } = this.flags;
     let args = ['--ci', `--host=${host}`, `--port=${port}`];
 
@@ -44,22 +37,17 @@ export class Start extends Command {
     this.log.info(`Running "start-storybook ${args.join(' ')}"`);
 
     return new Promise((resolve, reject) => {
-      this.process = spawn('start-storybook', args, { stdio: 'inherit' });
-      this.process.on('error', reject);
-      if (!this.process.pid) return;
+      let proc = spawn('start-storybook', args, { stdio: 'inherit' });
+      proc.on('error', reject);
 
-      /* istanbul ignore next: this is a storybook flag we don't need to test */
-      let proto = args.includes('--https') ? 'https' : 'http';
-      let url = `${proto}://${host}:${port}`;
+      if (proc.pid) {
+        /* istanbul ignore next: this is a storybook flag we don't need to test */
+        let proto = args.includes('--https') ? 'https' : 'http';
+        let close = () => proc.kill();
 
-      // wait for the preview iframe to be ready
-      request(`${url}/iframe.html`, {
-        retries: 60,
-        interval: 1000,
-        retryNotFound: true
-      }).then(() => {
-        resolve(url);
-      });
+        this.setStorybookUrl(`${proto}://${host}:${port}`)
+          .then(() => resolve({ close }), reject);
+      }
     });
   }
 }

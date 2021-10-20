@@ -20,32 +20,29 @@ export class Storybook extends Command {
 
   log = logger('cli:storybook');
 
-  // Called on error, interupt, or after running
-  async finally(error) {
-    await super.finally(error);
-    this.server?.close();
-  }
-
   // Serves a static directory and resolves when listening.
-  async storybook() {
-    let urlOrDir = this.args.url_or_build_dir;
-    if (/^https?:\/\//.test(urlOrDir)) return urlOrDir;
+  async startStorybook() {
+    let done = async url => {
+      let logTimeout = setTimeout(this.log.warn, 3000, (
+        'Waiting on a response from Storybook...'));
+      await this.setStorybookUrl(url);
+      clearTimeout(logTimeout);
+    };
 
-    if (!existsSync(urlOrDir)) {
-      return this.error(`Not found: ${urlOrDir}`);
-    }
-
-    this.log.debug(`Serving Storybook build: ${urlOrDir}`);
+    let dir = this.args.url_or_build_dir;
+    if (/^https?:\/\//.test(dir)) return done(dir);
+    if (!existsSync(dir)) return this.error(`Not found: ${dir}`);
+    this.log.debug(`Serving Storybook build: ${dir}`);
 
     let http = require('http');
     let serve = require('serve-handler');
 
-    return new Promise(resolve => {
-      this.server = http.createServer((req, res) => {
-        serve(req, res, { public: urlOrDir, cleanUrls: false });
-      }).listen(() => {
-        let { port } = this.server.address();
-        resolve(`http://localhost:${port}`);
+    return new Promise((resolve, reject) => {
+      let server = http.createServer((req, res) => {
+        serve(req, res, { public: dir, cleanUrls: false });
+      }).on('error', reject).listen(() => {
+        done(`http://localhost:${server.address().port}`)
+          .then(() => resolve(server), reject);
       });
     });
   }

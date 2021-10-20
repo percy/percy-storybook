@@ -43,8 +43,7 @@ describe('percy storybook:start', () => {
     setTimeout(() => fakeProc.emit('error', new Error('FAKE ENOENT')), 100);
     mockRequire('cross-spawn', () => fakeProc);
 
-    await expectAsync(Start.run([...args]))
-      .toBeRejectedWithError('EEXIT: 1');
+    await expectAsync(Start.run([...args])).toBeRejectedWithError('EEXIT: 1');
 
     expect(logger.stdout).toEqual([
       `[percy] Running "start-storybook --ci --host=localhost --port=9000 ${args.join(' ')}"`
