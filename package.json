@@ -48,7 +48,7 @@
     "@babel/eslint-plugin": "^7.16.5",
     "@babel/plugin-proposal-class-properties": "^7.16.7",
     "@babel/preset-env": "^7.16.11",
-    "@babel/register": "^7.16.9",
+    "@babel/register": "^7.17.0",
     "@oclif/dev-cli": "^1.26.10",
     "@storybook/react": "^6.4.18",
     "babel-eslint": "^10.0.3",
