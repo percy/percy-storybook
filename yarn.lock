@@ -1829,14 +1829,6 @@
     ts-dedent "^2.0.0"
     util-deprecate "^1.0.2"
 
-"@storybook/client-logger@6.4.17":
-  version "6.4.17"
-  resolved "https://registry.yarnpkg.com/@storybook/client-logger/-/client-logger-6.4.17.tgz#50652859592c489b671f010455b8ce85d21a1b3d"
-  integrity sha512-awKBTOWHXHBxAIl8a/Zy/BitIw49A+0RnhPGuf8aFAw2Ym/vKR4bI8lRHVPtlR6RIHFp5rC1g32HmCQfKE22Fw==
-  dependencies:
-    core-js "^3.8.2"
-    global "^4.4.0"
-
 "@storybook/client-logger@6.4.18":
   version "6.4.18"
   resolved "https://registry.yarnpkg.com/@storybook/client-logger/-/client-logger-6.4.18.tgz#4ad8ea7d67b17e5db8f15cffcc2f984df3479462"
@@ -2167,29 +2159,12 @@
     ts-dedent "^2.0.0"
     webpack "4"
 
-"@storybook/router@6.4.18":
+"@storybook/router@6.4.18", "@storybook/router@^6.4.18":
   version "6.4.18"
   resolved "https://registry.yarnpkg.com/@storybook/router/-/router-6.4.18.tgz#8803dd78277f8602d6c11dae56f6229474dfa54c"
   integrity sha512-itvSWHhG1X/NV1sMlwP1qKtF0HfiIaAHImr0LwQ2K2F6/CI11W68dJAs4WBUdwzA0+H0Joyu/2a/6mCQHcee1A==
   dependencies:
     "@storybook/client-logger" "6.4.18"
-    core-js "^3.8.2"
-    fast-deep-equal "^3.1.3"
-    global "^4.4.0"
-    history "5.0.0"
-    lodash "^4.17.21"
-    memoizerific "^1.11.3"
-    qs "^6.10.0"
-    react-router "^6.0.0"
-    react-router-dom "^6.0.0"
-    ts-dedent "^2.0.0"
-
-"@storybook/router@^6.4.17":
-  version "6.4.17"
-  resolved "https://registry.yarnpkg.com/@storybook/router/-/router-6.4.17.tgz#d53c4f9a4ccaa21a7bbe8d875a1a81c9dba2a6f2"
-  integrity sha512-GLhzth83BB2BbUkM/+ld2JITIbDQtzFLs/CnZZQKq6aR93Kou6VK2epHnIwrPyWbP6rsGavR/8L/UWeBdwwTrQ==
-  dependencies:
-    "@storybook/client-logger" "6.4.17"
     core-js "^3.8.2"
     fast-deep-equal "^3.1.3"
     global "^4.4.0"
