@@ -35,7 +35,7 @@
   "dependencies": {
     "@percy/cli-command": "^1.0.0-beta.74",
     "@percy/core": "^1.0.0-beta.71",
-    "@percy/logger": "^1.0.0-beta.71",
+    "@percy/logger": "^1.0.0-beta.75",
     "@storybook/router": "^6.4.18",
     "cross-spawn": "^7.0.3",
     "qs": "^6.10.3",
@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "@babel/cli": "^7.17.0",
-    "@babel/core": "^7.17.0",
+    "@babel/core": "^7.17.2",
     "@babel/eslint-parser": "^7.17.0",
     "@babel/eslint-plugin": "^7.16.5",
     "@babel/plugin-proposal-class-properties": "^7.16.7",
