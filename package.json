@@ -33,7 +33,7 @@
     }
   },
   "dependencies": {
-    "@percy/cli-command": "^1.0.0-beta.74",
+    "@percy/cli-command": "^1.0.0-beta.75",
     "@percy/core": "^1.0.0-beta.71",
     "@percy/logger": "^1.0.0-beta.71",
     "@storybook/router": "^6.4.18",
