@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "@babel/cli": "^7.17.0",
-    "@babel/core": "^7.17.2",
+    "@babel/core": "^7.17.5",
     "@babel/eslint-parser": "^7.17.0",
     "@babel/eslint-plugin": "^7.16.5",
     "@babel/plugin-proposal-class-properties": "^7.16.7",
