@@ -33,9 +33,9 @@
     }
   },
   "dependencies": {
-    "@percy/cli-command": "^1.0.0-beta.75",
+    "@percy/cli-command": "^1.0.0-beta.76",
     "@percy/core": "^1.0.0-beta.71",
-    "@percy/logger": "^1.0.0-beta.71",
+    "@percy/logger": "^1.0.0-beta.76",
     "@storybook/router": "^6.4.19",
     "cross-spawn": "^7.0.3",
     "qs": "^6.10.3",
