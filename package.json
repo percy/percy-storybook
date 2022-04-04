@@ -50,7 +50,7 @@
     "@babel/preset-env": "^7.16.11",
     "@babel/register": "^7.17.7",
     "@oclif/dev-cli": "^1.26.10",
-    "@storybook/react": "^6.4.19",
+    "@storybook/react": "^6.4.20",
     "babel-eslint": "^10.0.3",
     "babel-plugin-istanbul": "^6.1.1",
     "cross-env": "^7.0.3",
