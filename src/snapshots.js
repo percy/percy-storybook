@@ -1,7 +1,6 @@
-import logger from '@percy/logger';
-import PercyConfig from '@percy/config';
-import { merge } from '@percy/config/dist/utils';
-import { buildArgsParam } from '@storybook/router/utils';
+import { logger, PercyConfig } from '@percy/cli-command';
+import { buildArgsParam } from '@storybook/router/utils.js';
+import evaluatePercyStorybookData from './eval.js';
 import qs from 'qs';
 
 // Returns true or false if the provided story should be skipped by matching against include and
@@ -36,11 +35,10 @@ function shouldSkipStory(story, config) {
 function getSnapshotConfig(story, config, validations) {
   let { id, ...options } = PercyConfig.migrate(story, '/storybook');
 
-  for (let e of (PercyConfig.validate(options, '/storybook') || [])) {
-    validations.add(`- percy.${e.path}: ${e.message}`);
-  }
+  let errors = PercyConfig.validate(options, '/storybook');
+  for (let e of (errors || [])) validations.add(`- percy.${e.path}: ${e.message}`);
 
-  return merge([config, options, { id }], (path, prev, next) => {
+  return PercyConfig.merge([config, options, { id }], (path, prev, next) => {
     // normalize, but do not merge include or exclude options
     if (path.length === 1 && ['include', 'exclude'].includes(path[0])) {
       return [path, [].concat(next).filter(Boolean)];
@@ -49,24 +47,21 @@ function getSnapshotConfig(story, config, validations) {
 }
 
 // Prunes non-snapshot options and adds a URL generated from story args and query params.
-function toStorySnapshot(story, url) {
-  let {
-    id, args, queryParams,
-    skip, include, exclude,
-    ...snapshot
-  } = story;
-
+function toStorybookSnapshot({
+  id, args, queryParams,
+  skip, include, exclude,
+  baseUrl, ...snapshot
+}) {
   let params = { ...queryParams, id };
   if (args) params.args = buildArgsParam({}, args);
   let storyPreview = `iframe.html?${qs.stringify(params)}`;
-  snapshot.url = new URL(storyPreview, url).href;
-
+  snapshot.url = new URL(storyPreview, baseUrl).href;
   return snapshot;
 }
 
 // Reduces Storybook story options to snapshot options, including variations in story URLs due to
 // story args and other query params.
-export async function mapStorySnapshots(stories, { url, config }) {
+async function mapStorybookSnapshots(stories, config) {
   let log = logger('storybook:config');
   let validations = new Set();
 
@@ -80,18 +75,18 @@ export async function mapStorySnapshots(stories, { url, config }) {
       getSnapshotConfig(story, config, validations);
 
     return all.concat(
-      toStorySnapshot(options, url),
+      toStorybookSnapshot(options),
       additionalSnapshots.reduce((add, snap) => {
         let { prefix = '', suffix = '', ...opts } = snap;
         let name = `${prefix}${story.name}${suffix}`;
-        opts = merge([options, { name }, opts]);
+        opts = PercyConfig.merge([options, { name }, opts]);
 
         if (shouldSkipStory(opts, config)) {
           log.debug(`Skipping story: ${opts.name}`);
           return add;
         }
 
-        return add.concat(toStorySnapshot(opts, url));
+        return add.concat(toStorybookSnapshot(opts));
       }, []));
   }, []);
 
@@ -103,16 +98,30 @@ export async function mapStorySnapshots(stories, { url, config }) {
   return snapshots;
 }
 
-// Transforms authorization credentials into a basic auth header and returns all config request
-// headers with the additional authorization header if not already set.
-export function getAuthHeaders(config) {
-  let headers = { ...config.requestHeaders };
-  let auth = config.authorization;
+// Collects Storybook snapshots, sets environment info, and patches client to optionally deal with
+// JavaScript enabled Storybook stories.
+export async function getStorybookSnapshots(percy, url) {
+  let data = await evaluatePercyStorybookData(percy, url);
+  let { environmentInfo, previewResource, stories } = data;
+  percy.setConfig({ environmentInfo });
 
-  if (auth && !(headers.authorization || headers.Authorization)) {
-    let creds = auth.username + (auth.password ? `:${auth.password}` : '');
-    headers.Authorization = `Basic ${Buffer.from(creds).toString('base64')}`;
-  }
+  // patch client to override root resources with the raw preview when JS is enabled
+  percy.client.sendSnapshot = (buildId, options) => {
+    if (options.enableJavaScript) {
+      let root = options.resources.find(r => r.root);
+      Object.assign(root, previewResource, { url: root.url });
+    }
 
-  return headers;
+    // super.sendSnapshot(buildId, options)
+    let { sendSnapshot } = percy.client.constructor.prototype;
+    return sendSnapshot.call(percy.client, buildId, options);
+  };
+
+  // map stories and global config into snapshots
+  return mapStorybookSnapshots(stories, {
+    ...percy.config.storybook,
+    baseUrl: url
+  });
 }
+
+export default getStorybookSnapshots;

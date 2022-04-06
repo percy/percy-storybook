@@ -1,49 +1,53 @@
-import path from 'path';
-import EventEmitter from 'events';
-import mockRequire from 'mock-require';
-import logger from '@percy/logger/test/helpers';
-import mockAPI from '@percy/client/test/helpers';
-import { Start } from '../src/commands/storybook/start';
+import { logger, setupTest } from '@percy/cli-command/test/helpers';
+import { start } from '../src/index.js';
 
 describe('percy storybook:start', () => {
   const args = [
-    `--config-dir=${path.join(__dirname, '.storybook')}`,
-    '--loglevel', 'error'
+    '--config-dir=./test/.storybook',
+    '--loglevel=error'
   ];
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    start.packageInformation = { name: '@percy/storybook' };
     process.env.PERCY_TOKEN = '<<PERCY_TOKEN>>';
-    mockAPI.start(50);
-    logger.mock();
+    await setupTest();
   });
 
   afterEach(() => {
     delete process.env.PERCY_TOKEN;
-    process.removeAllListeners();
-    mockRequire.stopAll();
   });
 
   it('starts storybook and snapshots stories', async () => {
-    await Start.run([...args]);
+    await start([...args]);
 
-    expect(logger.stderr).toEqual([]);
+    // if there are stderr logs ensure it is only an acceptable warning
+    expect(logger.stderr).toEqual(logger.stderr.length ? [
+      '[percy] Waiting on a response from Storybook...'
+    ] : []);
+
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       `[percy] Running "start-storybook --ci --host=localhost --port=9000 ${args.join(' ')}"`,
       '[percy] Percy has started!',
-      '[percy] Processing 3 snapshots...',
       '[percy] Snapshot taken: Snapshot: First',
       '[percy] Snapshot taken: Snapshot: Second',
       '[percy] Snapshot taken: Skip: But Not Me',
+      '[percy] Uploading 3 snapshots...',
       '[percy] Finalized build #1: https://percy.io/test/test/123'
     ]));
   });
 
   it('logs any errors encountered while starting storybook', async () => {
-    let fakeProc = Object.assign(new EventEmitter(), { kill: () => {} });
-    setTimeout(() => fakeProc.emit('error', new Error('FAKE ENOENT')), 100);
-    mockRequire('cross-spawn', () => fakeProc);
+    let { default: EventEmitter } = await import('events');
+    let { default: crossSpawn } = await import('cross-spawn');
 
-    await expectAsync(Start.run([...args])).toBeRejectedWithError('EEXIT: 1');
+    // stub cross-spawn to return an event emitter that emits an error
+    spyOn(crossSpawn, 'spawn').and.callFake(() => {
+      let fake = Object.assign(new EventEmitter(), { kill: () => {} });
+      fake.emit('error', new Error('FAKE ENOENT'));
+      return fake;
+    });
+
+    await expectAsync(start([...args])).toBeRejectedWithError('FAKE ENOENT');
 
     expect(logger.stdout).toEqual([
       `[percy] Running "start-storybook --ci --host=localhost --port=9000 ${args.join(' ')}"`

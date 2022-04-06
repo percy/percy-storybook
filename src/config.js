@@ -1,72 +1,78 @@
-import { snapshotSchema } from '@percy/core/dist/config';
-
-export const configSchema = {
-  storybook: {
-    type: 'object',
-    additionalProperties: false,
-    properties: {
-      include: {
-        anyOf: [
-          { oneOf: [{ type: 'string' }, { instanceof: 'RegExp' }] },
-          { type: 'array', items: { $ref: '#/properties/include/anyOf/0' } }
-        ]
-      },
-      exclude: {
-        anyOf: [
-          { oneOf: [{ type: 'string' }, { instanceof: 'RegExp' }] },
-          { type: 'array', items: { $ref: '#/properties/exclude/anyOf/0' } }
-        ]
-      },
-      args: {
-        type: 'object',
-        normalize: false
-      },
-      queryParams: {
-        type: 'object',
-        normalize: false
-      },
-      waitForSelector: {
-        $ref: '/snapshot#/properties/waitForSelector'
-      },
-      waitForTimeout: {
-        $ref: '/snapshot#/properties/waitForTimeout'
-      },
-      additionalSnapshots: {
-        type: 'array',
-        items: {
-          ...snapshotSchema.properties.additionalSnapshots.items,
-
-          properties: {
-            include: { $ref: '#/properties/include' },
-            exclude: { $ref: '#/properties/exclude' },
-            args: { $ref: '#/properties/args' },
-            queryParams: { $ref: '#/properties/queryParams' },
-            waitForSelector: { $ref: '#/properties/waitForSelector' },
-            waitForTimeout: { $ref: '#/properties/waitForTimeout' },
-            name: { $ref: '/snapshot#/properties/additionalSnapshots/items/properties/name' },
-            prefix: { $ref: '/snapshot#/properties/additionalSnapshots/items/properties/prefix' },
-            suffix: { $ref: '/snapshot#/properties/additionalSnapshots/items/properties/suffix' }
+export const storybookSchema = {
+  $id: '/storybook',
+  $ref: '/storybook#/$defs/params',
+  $defs: {
+    common: {
+      type: 'object',
+      $ref: '/snapshot#/$defs/filter',
+      properties: {
+        args: {
+          type: 'object',
+          normalize: false
+        },
+        queryParams: {
+          type: 'object',
+          normalize: false
+        },
+        waitForSelector: {
+          $ref: '/snapshot#/$defs/precapture/properties/waitForSelector'
+        },
+        waitForTimeout: {
+          $ref: '/snapshot#/$defs/precapture/properties/waitForTimeout'
+        }
+      }
+    },
+    options: {
+      type: 'object',
+      $ref: '/storybook#/$defs/common',
+      properties: {
+        additionalSnapshots: {
+          type: 'array',
+          items: {
+            type: 'object',
+            $ref: '/storybook#/$defs/common',
+            unevaluatedProperties: false,
+            oneOf: [{
+              required: ['name']
+            }, {
+              anyOf: [
+                { required: ['prefix'] },
+                { required: ['suffix'] }
+              ]
+            }],
+            properties: {
+              name: { type: 'string' },
+              prefix: { type: 'string' },
+              suffix: { type: 'string' }
+            },
+            errors: {
+              oneOf: ({ params }) => params.passingSchemas
+                ? 'prefix & suffix are ignored when a name is provided'
+                : 'missing required name, prefix, or suffix'
+            }
           }
         }
+      }
+    },
+    params: {
+      type: 'object',
+      unevaluatedProperties: false,
+      allOf: [
+        { $ref: '/snapshot#/$defs/common' },
+        { $ref: '/storybook#/$defs/options' }
+      ],
+      properties: {
+        name: { type: 'string' },
+        skip: { type: 'boolean' }
       }
     }
   }
 };
 
-export const storyParamsSchema = {
-  $id: '/storybook',
-  type: 'object',
-  additionalProperties: false,
-  disallow: ['url', 'execute'],
-  properties: {
-    ...snapshotSchema.properties,
-    ...configSchema.storybook.properties,
-
-    skip: { type: 'boolean' }
+export const configSchema = {
+  storybook: {
+    type: 'object',
+    $ref: '/storybook#/$defs/options',
+    unevaluatedProperties: false
   }
 };
-
-export const schemas = [
-  configSchema,
-  storyParamsSchema
-];

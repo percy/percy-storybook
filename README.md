@@ -49,20 +49,85 @@ Automatically run `start-storybook`:
 $ percy storybook:start --port=9009 --static-dir=./public
 ```
 
-#### CLI options:
+## Commands:
+<!-- commands -->
+* [`percy storybook`](#percy-storybook)
+* [`percy storybook:start`](#percy-storybookstart)
 
-``` sh
--c, --config=config                              percy configuration file path
--d, --dry-run                                    prints a list of stories to snapshot without snapshotting
--i, --include=include                            pattern matching story names to only include for snapshotting
--e, --exclude=exclude                            pattern matching story names to always exclude from snapshotting
--h, --allowed-hostname=allowed-hostname          asset discovery allowed hostnames
--t, --network-idle-timeout=network-idle-timeout  asset discovery idle timeout
---disable-cache                                  disable asset discovery caches
--q, --quiet                                      log errors only
--v, --verbose                                    log everything
---silent                                         log nothing
+### `percy storybook`
+
+Snapshot static or hosted Storybook stories
+
 ```
+Usage:
+  $ percy storybook [options] <url|directory>
+
+Arguments:
+  url|directory                      Storybook url or build output directory
+
+Subcommands:
+  storybook:start [options]          Run start-storybook to snapshot stories
+  help [command]                     Display command help
+
+Options:
+  -i, --include <pattern>            Pattern matching story names to include in snapshots
+  -e, --exclude <pattern>            Pattern matching story names to exclude from snapshots
+
+Percy options:
+  -c, --config <file>                Config file path
+  -d, --dry-run                      Print snapshot names only
+  -h, --allowed-hostname <hostname>  Allowed hostnames to capture in asset discovery
+  --disallowed-hostname <hostname>   Disallowed hostnames to abort in asset discovery
+  -t, --network-idle-timeout <ms>    Asset discovery network idle timeout
+  --disable-cache                    Disable asset discovery caches
+  --debug                            Debug asset discovery and do not upload snapshots
+
+Global options:
+  -v, --verbose                      Log everything
+  -q, --quiet                        Log errors only
+  -s, --silent                       Log nothing
+  --help                             Display command help
+
+Examples:
+  $ percy storybook ./build
+  $ percy storybook http://localhost:9000/
+```
+
+### `percy storybook:start`
+
+Run start-storybook to snapshot stories
+
+```
+Usage:
+  $ percy storybook:start [options]
+
+Options:
+  -i, --include <pattern>            Pattern matching story names to include in snapshots
+  -e, --exclude <pattern>            Pattern matching story names to exclude from snapshots
+  --port [number]                    Port to start Storybook (default: 9000)
+  --host [hostname]                  Host to start Storybook (default: "localhost")
+
+Percy options:
+  -c, --config <file>                Config file path
+  -d, --dry-run                      Print snapshot names only
+  -h, --allowed-hostname <hostname>  Allowed hostnames to capture in asset discovery
+  --disallowed-hostname <hostname>   Disallowed hostnames to abort in asset discovery
+  -t, --network-idle-timeout <ms>    Asset discovery network idle timeout
+  --disable-cache                    Disable asset discovery caches
+  --debug                            Debug asset discovery and do not upload snapshots
+
+Global options:
+  -v, --verbose                      Log everything
+  -q, --quiet                        Log errors only
+  -s, --silent                       Log nothing
+  --help                             Display command help
+
+Examples:
+  $ percy storybook:start
+  $ percy storybook:start --port 9000
+  $ percy storybook:start --static-dir public
+```
+<!-- commandsstop -->
 
 ## Configuration
 
