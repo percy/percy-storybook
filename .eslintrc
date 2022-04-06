@@ -5,12 +5,16 @@ plugins:
 rules:
   prefer-const: off
   no-unused-expressions: off
+  import/no-extraneous-dependencies: error
   promise/param-names: off
+  multiline-ternary: off
   semi: [error, always]
+  yield-star-spacing: [error, after]
   generator-star-spacing:
     - error
     - before: false
       after: false
+      named: after
   space-before-function-paren:
     - error
     - anonymous: never
