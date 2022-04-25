@@ -34,7 +34,7 @@
     ]
   },
   "dependencies": {
-    "@percy/cli-command": "^1.0.8",
+    "@percy/cli-command": "^1.1.0",
     "@storybook/router": "^6.4.22",
     "cross-spawn": "^7.0.3",
     "qs": "^6.10.3"
