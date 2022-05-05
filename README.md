@@ -155,8 +155,8 @@ options](https://docs.percy.io/docs/cli-configuration#per-snapshot-configuration
 - **name** - Snapshot name. (default: `${story.kind}: ${story.name}`)
 - **args** - [Story args](https://storybook.js.org/docs/react/writing-stories/args) to use when snapshotting.
 - **queryParams** - Query parameters to use when snapshotting.
-- **waitForTimeout** - Wait for a timeout before taking the snapshot.
-- **waitForSelector** - Wait for a selector to exist before taking the snapshot.
+- **waitForTimeout** - Wait for a timeout before taking the snapshot (in milliseconds as [Puppeteer Docs suggest](https://puppeteer.github.io/puppeteer/docs/puppeteer.page.waitfortimeout/)).
+- **waitForSelector** - Wait for a selector to exist before taking the snapshot (use the syntax [suggested in Puppeteer Docs](https://puppeteer.github.io/puppeteer/docs/puppeteer.page.waitforselector/)).
 - **include** - An array of regex patterns matching story names to only include for snapshotting.
 - **exclude** - An array of regex patterns matching story names to always exclude from snapshotting.
 - **additionalSnapshots** - An array of additional snapshots to take of this story.
