@@ -59,7 +59,7 @@
     "jasmine": "^4.1.0",
     "jasmine-spec-reporter": "^7.0.0",
     "mock-require": "^3.0.3",
-    "nock": "^13.2.4",
+    "nock": "^13.2.6",
     "nyc": "^15.0.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
