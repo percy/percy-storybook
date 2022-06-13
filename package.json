@@ -37,7 +37,7 @@
     "@percy/cli-command": "^1.2.1",
     "@storybook/router": "~6.4.22",
     "cross-spawn": "^7.0.3",
-    "qs": "^6.10.3"
+    "qs": "^6.10.5"
   },
   "devDependencies": {
     "@babel/cli": "^7.17.10",
