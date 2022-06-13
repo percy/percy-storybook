@@ -6332,10 +6332,10 @@ iterate-value@^1.0.2:
     es-get-iterator "^1.0.2"
     iterate-iterator "^1.0.1"
 
-jasmine-core@^4.1.0:
-  version "4.1.0"
-  resolved "https://registry.npmjs.org/jasmine-core/-/jasmine-core-4.1.0.tgz"
-  integrity sha512-8E8BiffCL8sBwK1zU9cbavLe8xpJAgOduSJ6N8PJVv8VosQ/nxVTuXj2kUeHxTlZBVvh24G19ga7xdiaxlceKg==
+jasmine-core@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/jasmine-core/-/jasmine-core-4.2.0.tgz#0605bea284d6d78276f43c47de2532ecd4a73b00"
+  integrity sha512-OcFpBrIhnbmb9wfI8cqPSJ50pv3Wg4/NSgoZIqHzIwO/2a9qivJWzv8hUvaREIMYYJBas6AvfXATFdVuzzCqVw==
 
 jasmine-spec-reporter@^7.0.0:
   version "7.0.0"
@@ -6344,13 +6344,13 @@ jasmine-spec-reporter@^7.0.0:
   dependencies:
     colors "1.4.0"
 
-jasmine@^4.1.0:
-  version "4.1.0"
-  resolved "https://registry.npmjs.org/jasmine/-/jasmine-4.1.0.tgz"
-  integrity sha512-4VhjbUgwfNS9CBnUMoSWr9tdNgOoOhNIjAD8YRxTn+PmOf4qTSC0Uqhk66dWGnz2vJxtNIU0uBjiwnsp4Ud9VA==
+jasmine@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/jasmine/-/jasmine-4.2.0.tgz#a5e9e2af25813da3517f5dafa9e46b2d896d996a"
+  integrity sha512-6SQRXHs5O++mp52PkoJoi9zuLYqp1IaqepRNmAQn5rUBo9VUnckpkkXQQD5PAuCCVVB1ULDImvWYCPV/ZVnaGQ==
   dependencies:
     glob "^7.1.6"
-    jasmine-core "^4.1.0"
+    jasmine-core "^4.2.0"
 
 jest-worker@^26.5.0:
   version "26.6.2"
