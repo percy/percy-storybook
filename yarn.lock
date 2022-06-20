@@ -1790,6 +1790,14 @@
     core-js "^3.8.2"
     global "^4.4.0"
 
+"@storybook/client-logger@6.5.9":
+  version "6.5.9"
+  resolved "https://registry.yarnpkg.com/@storybook/client-logger/-/client-logger-6.5.9.tgz#dc1669abe8c45af1cc38f74c6f4b15ff33e63014"
+  integrity sha512-DOHL6p0uiDd3gV/Sb2FR+Vh6OiPrrf8BrA06uvXWsMRIIvEEvnparxv9EvPg7FlmUX0T3nq7d3juwjx4F8Wbcg==
+  dependencies:
+    core-js "^3.8.2"
+    global "^4.4.0"
+
 "@storybook/components@6.4.22":
   version "6.4.22"
   resolved "https://registry.npmjs.org/@storybook/components/-/components-6.4.22.tgz"
@@ -2112,7 +2120,7 @@
     ts-dedent "^2.0.0"
     webpack "4"
 
-"@storybook/router@6.4.22", "@storybook/router@~6.4.22":
+"@storybook/router@6.4.22":
   version "6.4.22"
   resolved "https://registry.yarnpkg.com/@storybook/router/-/router-6.4.22.tgz#e3cc5cd8595668a367e971efb9695bbc122ed95e"
   integrity sha512-zeuE8ZgFhNerQX8sICQYNYL65QEi3okyzw7ynF58Ud6nRw4fMxSOHcj2T+nZCIU5ufozRL4QWD/Rg9P2s/HtLw==
@@ -2128,6 +2136,17 @@
     react-router "^6.0.0"
     react-router-dom "^6.0.0"
     ts-dedent "^2.0.0"
+
+"@storybook/router@~6.5.9":
+  version "6.5.9"
+  resolved "https://registry.yarnpkg.com/@storybook/router/-/router-6.5.9.tgz#4740248f8517425b2056273fb366ace8a17c65e8"
+  integrity sha512-G2Xp/2r8vU2O34eelE+G5VbEEVFDeHcCURrVJEROh6dq2asFJAPbzslVXSeCqgOTNLSpRDJ2NcN5BckkNqmqJg==
+  dependencies:
+    "@storybook/client-logger" "6.5.9"
+    core-js "^3.8.2"
+    memoizerific "^1.11.3"
+    qs "^6.10.0"
+    regenerator-runtime "^0.13.7"
 
 "@storybook/semver@^7.3.2":
   version "7.3.2"
