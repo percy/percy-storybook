@@ -11,7 +11,7 @@ assignees: ''
 
 There are common setup gotchas that happen with Percy's SDKs, it would be worth reading
 the debugging document, which might already answer your question:
-https://docs.percy.io/docs/debugging-sdk
+https://docs.percy.io/docs/debugging-sdks
 
 ## Reach out to Percy support instead?
 
