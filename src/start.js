@@ -28,8 +28,8 @@ export const start = command('start', {
   }
 }, async function*({ percy, flags, argv, log, exit }) {
   if (!percy) exit(0, 'Percy is disabled');
-  let { getStorybookSnapshots } = await import('./snapshots.js');
-  let { default: { spawn } } = await import('cross-spawn');
+  let { takeStorybookSnapshots } = yield import('./snapshots.js');
+  let { default: { spawn } } = yield import('cross-spawn');
   let { host, port } = flags;
 
   let args = ['--ci', `--host=${host}`, `--port=${port}`, ...argv];
@@ -42,10 +42,10 @@ export const start = command('start', {
   try {
     yield* percy.yield.start();
 
-    yield* percy.yield.snapshot({
+    yield* takeStorybookSnapshots(percy, {
       /* istanbul ignore next: this is a storybook flag we don't need to test */
       baseUrl: `${argv.includes('--https') ? 'https' : 'http'}://${host}:${port}`,
-      snapshots: baseUrl => getStorybookSnapshots(percy, baseUrl)
+      flags
     });
 
     yield* percy.yield.stop();

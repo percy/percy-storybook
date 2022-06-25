@@ -7,6 +7,11 @@ import { storybook } from '../src/index.js';
 describe('percy storybook', () => {
   let server, proc;
 
+  const FAKE_PREVIEW = '{ ' + [
+    'async extract() {},',
+    'channel: { emit() {} }'
+  ].join(' ') + ' }';
+
   beforeAll(async () => {
     server = await createTestServer({
       default: () => [200, 'text/html', '<p>Not Storybook</p>']
@@ -48,10 +53,10 @@ describe('percy storybook', () => {
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Percy has started!',
+      '[percy] Processing 3 snapshots...',
       '[percy] Snapshot taken: Snapshot: First',
       '[percy] Snapshot taken: Snapshot: Second',
       '[percy] Snapshot taken: Skip: But Not Me',
-      '[percy] Uploading 3 snapshots...',
       '[percy] Finalized build #1: https://percy.io/test/test/123'
     ]));
   });
@@ -63,10 +68,10 @@ describe('percy storybook', () => {
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Percy has started!',
+      '[percy] Processing 3 snapshots...',
       '[percy] Snapshot taken: Snapshot: First',
       '[percy] Snapshot taken: Snapshot: Second',
       '[percy] Snapshot taken: Skip: But Not Me',
-      '[percy] Uploading 3 snapshots...',
       '[percy] Finalized build #1: https://percy.io/test/test/123'
     ]));
   });
@@ -76,7 +81,6 @@ describe('percy storybook', () => {
       .toBeRejectedWithError('Not found: .sb-build');
 
     expect(logger.stderr).toEqual([
-      '[percy] Build not created',
       '[percy] Error: Not found: .sb-build'
     ]);
   });
@@ -104,7 +108,8 @@ describe('percy storybook', () => {
   it('errors when no snapshots are found', async () => {
     // fake storybook client api with no stories
     server.reply('/iframe.html', () => [200, 'text/html', (
-      '<script>__STORYBOOK_CLIENT_API__ = { raw: () => [] }</script>'
+      `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+      '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
     )]);
 
     await expectAsync(storybook(['http://localhost:8000']))
@@ -131,14 +136,15 @@ describe('percy storybook', () => {
     ]);
   });
 
-  it('replaces dom snapshots with the preview dom when javascript is enabled', async () => {
+  it('uses the preview dom when javascript is enabled', async () => {
     let previewDOM = '<p>This is the preview</p>';
     let i = 0;
 
     let storyDOM = [
       '<!DOCTYPE html><html><head></head><body>',
       '<p>This is a story. The html needs to be complete since it gets serialized</p>',
-      '<script>__STORYBOOK_CLIENT_API__ = { raw: () => ' + JSON.stringify([
+      `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+      '<script>__STORYBOOK_STORY_STORE__ = { raw: () => ' + JSON.stringify([
         { id: '1', kind: 'foo', name: 'bar' },
         { id: '2', kind: 'foo', name: 'bar/baz', parameters: { percy: { enableJavaScript: true } } }
       ]) + ' }</script>',
@@ -184,8 +190,8 @@ describe('percy storybook', () => {
 
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy] Snapshot taken: Skip: But Not Me',
-      '[percy] Uploading 1 snapshot...'
+      '[percy] Processing 1 snapshot...',
+      '[percy] Snapshot taken: Skip: But Not Me'
     ]));
   });
 
@@ -194,9 +200,9 @@ describe('percy storybook', () => {
 
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
+      '[percy] Processing 2 snapshots...',
       '[percy] Snapshot taken: Skip: Skipped',
-      '[percy] Snapshot taken: Skip: But Not Me',
-      '[percy] Uploading 2 snapshots...'
+      '[percy] Snapshot taken: Skip: But Not Me'
     ]));
   });
 
@@ -218,8 +224,7 @@ describe('percy storybook', () => {
       '[percy] Snapshot taken: Snapshot: First (added)',
       '[percy] Snapshot taken: Snapshot: Second',
       '[percy] Snapshot taken: Snapshot: Second (added)',
-      '[percy] Snapshot taken: Skip: But Not Me',
-      '[percy] Uploading 5 snapshots...'
+      '[percy] Snapshot taken: Skip: But Not Me'
     ]));
   });
 
@@ -308,9 +313,8 @@ describe('percy storybook', () => {
         }
 
         return [200, 'text/html', [
-          '<script>__STORYBOOK_CLIENT_API__ = {',
-          `  raw: () => ${JSON.stringify(stories)}`,
-          '}</script>'
+          `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+          `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(stories)} }</script>`
         ].join('')];
       });
     });
