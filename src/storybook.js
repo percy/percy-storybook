@@ -35,21 +35,24 @@ export const storybook = command('storybook', {
   }
 }, async function*({ percy, args, flags, exit }) {
   if (!percy) exit(0, 'Percy is disabled');
-  let { getStorybookSnapshots } = yield import('./snapshots.js');
-  let { url, serve } = args;
+  let { takeStorybookSnapshots } = yield import('./snapshots.js');
+  let { createServer } = yield import('@percy/cli-command/utils');
+  let server = args.serve && await createServer(args).listen();
 
   try {
     yield* percy.yield.start();
 
-    yield* percy.yield.snapshot({
-      [url ? 'baseUrl' : 'serve']: url || serve,
-      snapshots: baseUrl => getStorybookSnapshots(percy, baseUrl)
+    yield* takeStorybookSnapshots(percy, {
+      baseUrl: args.url ?? server?.address(),
+      flags
     });
 
     yield* percy.yield.stop();
   } catch (error) {
     await percy.stop(true);
     throw error;
+  } finally {
+    await server?.close();
   }
 });
 

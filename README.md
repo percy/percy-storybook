@@ -153,7 +153,11 @@ options](https://docs.percy.io/docs/cli-configuration#per-snapshot-configuration
 
 - **skip** - Boolean indicating whether or not to skip this story.
 - **name** - Snapshot name. (default: `${story.kind}: ${story.name}`)
-- **args** - [Story args](https://storybook.js.org/docs/react/writing-stories/args) to use when snapshotting.
+- **args** - [Story args](https://storybook.js.org/docs/react/writing-stories/args) to use when
+  taking the snapshot.
+- **globals** - [Story
+  globals](https://storybook.js.org/docs/react/essentials/toolbars-and-globals#globals) to use when
+  taking the snapshot.
 - **queryParams** - Query parameters to use when snapshotting.
 - **waitForTimeout** - Wait for a timeout before taking the snapshot.
 - **waitForSelector** - Wait for a selector to exist before taking the snapshot.
@@ -164,6 +168,7 @@ options](https://docs.percy.io/docs/cli-configuration#per-snapshot-configuration
   - **suffix** - A suffix added to this additional snapshot's name.
   - **name** - Snapshot name. Replaces the inherited name.
   - **args** - Additional story args for this additional snapshot.
+  - **globals** - Additional story globals for this additional snapshot.
   - **queryParams** - Additional query parameters for this additional snapshot.
   - **include** - Only apply the additional snapshot to matching stories.
   - **exclude** - Do not apply the additional snapshot to matching stories.
@@ -210,6 +215,7 @@ this SDK also adds the following Storybook specific options:
 version: 2
 storybook:
   args: {}
+  globals: {}
   queryParams: {}
   waitForTimeout: 0
   waitForSelector: ''

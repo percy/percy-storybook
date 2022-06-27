@@ -10,6 +10,10 @@ export const storybookSchema = {
           type: 'object',
           normalize: false
         },
+        globals: {
+          type: 'object',
+          normalize: false
+        },
         queryParams: {
           type: 'object',
           normalize: false

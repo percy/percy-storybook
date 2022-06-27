@@ -1,7 +1,13 @@
 import { logger, PercyConfig } from '@percy/cli-command';
-import { buildArgsParam } from '@storybook/router/utils.js';
-import evaluatePercyStorybookData from './eval.js';
-import qs from 'qs';
+
+import {
+  buildStoryUrl,
+  fetchStorybookPreviewResource,
+  evalStorybookEnvironmentInfo,
+  evalStorybookStorySnapshots,
+  evalSetCurrentStory,
+  withPage
+} from './utils.js';
 
 // Returns true or false if the provided story should be skipped by matching against include and
 // exclude filter options. If any global filters are provided, they will override story filters.
@@ -46,22 +52,29 @@ function getSnapshotConfig(story, config, validations) {
   });
 }
 
-// Prunes non-snapshot options and adds a URL generated from story args and query params.
-function toStorybookSnapshot({
-  id, args, queryParams,
-  skip, include, exclude,
-  baseUrl, ...snapshot
-}) {
-  let params = { ...queryParams, id };
-  if (args) params.args = buildArgsParam({}, args);
-  let storyPreview = `iframe.html?${qs.stringify(params)}`;
-  snapshot.url = new URL(storyPreview, baseUrl).href;
-  return snapshot;
+// Split snapshots into chunks of shards according to the provided size, count, and index
+function shardSnapshots(snapshots, { shardSize, shardCount, shardIndex }) {
+  if (!shardSize && !shardCount) {
+    throw new Error("Found '--shard-index' but missing '--shard-size' or '--shard-count'");
+  } else if (shardSize && shardCount) {
+    throw new Error("Must specify either '--shard-size' OR '--shard-count' not both");
+  }
+
+  let total = snapshots.length;
+  let size = shardSize ?? Math.ceil(total / shardCount);
+  let count = shardCount ?? Math.ceil(total / shardSize);
+
+  if (shardIndex == null || shardIndex >= count) {
+    throw new Error((!shardIndex ? "Missing '--shard-index'." : (
+      `The provided '--shard-index' (${shardIndex}) is out of range.`
+    )) + ` Found ${count} shards of ${size} snapshots each (${total} total)`);
+  }
+
+  return snapshots.splice(size * shardIndex, size);
 }
 
-// Reduces Storybook story options to snapshot options, including variations in story URLs due to
-// story args and other query params.
-async function mapStorybookSnapshots(stories, config) {
+// Map and reduce collected Storybook stories into an array of snapshot options
+function mapStorybookSnapshots(stories, config, flags) {
   let log = logger('storybook:config');
   let validations = new Set();
 
@@ -72,56 +85,99 @@ async function mapStorybookSnapshots(stories, config) {
     }
 
     let { additionalSnapshots = [], ...options } =
-      getSnapshotConfig(story, config, validations);
+        getSnapshotConfig(story, config, validations);
 
-    return all.concat(
-      toStorybookSnapshot(options),
-      additionalSnapshots.reduce((add, snap) => {
-        let { prefix = '', suffix = '', ...opts } = snap;
-        let name = `${prefix}${story.name}${suffix}`;
-        opts = PercyConfig.merge([options, { name }, opts]);
+    return all.concat(options, (
+      additionalSnapshots.reduce((add, {
+        prefix = '', suffix = '', ...snap
+      }) => {
+        let opts = PercyConfig.merge([options, {
+          name: `${prefix}${story.name}${suffix}`
+        }, snap]);
 
         if (shouldSkipStory(opts, config)) {
           log.debug(`Skipping story: ${opts.name}`);
           return add;
         }
 
-        return add.concat(toStorybookSnapshot(opts));
-      }, []));
+        return add.concat(opts);
+      }, [])
+    ));
   }, []);
 
+  // log validation warnings
   if (validations.size) {
     log.warn('Invalid Storybook parameters:');
     for (let msg of validations) log.warn(msg);
   }
 
-  return snapshots;
+  // maybe split snapshots into shards
+  if (flags.shardSize || flags.shardCount || flags.shardIndex) {
+    snapshots = shardSnapshots(snapshots, flags, log);
+  }
+
+  // error when missing snapshots and remove used filter options
+  if (!snapshots.length) throw new Error('No snapshots found');
+  return snapshots.map(({ skip, include, exclude, ...s }) => s);
 }
 
 // Collects Storybook snapshots, sets environment info, and patches client to optionally deal with
 // JavaScript enabled Storybook stories.
-export async function getStorybookSnapshots(percy, url) {
-  let data = await evaluatePercyStorybookData(percy, url);
-  let { environmentInfo, previewResource, stories } = data;
+export async function* takeStorybookSnapshots(percy, { baseUrl, flags }) {
+  let aboutUrl = new URL('?path=/settings/about', baseUrl).href;
+  let previewUrl = new URL('iframe.html', baseUrl).href;
+  let log = logger('storybook');
+  let lastCount;
+
+  log.debug(`Requesting Storybook: ${baseUrl}`);
+  // start a timeout to show a log if storybook takes a few seconds to respond
+  let logTimeout = setTimeout(log.warn, 3000, 'Waiting on a response from Storybook...');
+  let previewResource = yield fetchStorybookPreviewResource(percy, previewUrl);
+  clearTimeout(logTimeout);
+
+  // launch the percy browser if not launched during dry-runs
+  yield percy.browser.launch();
+
+  // gather storybook data in parallel
+  let [environmentInfo, stories] = yield Promise.all([
+    withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo)),
+    withPage(percy, previewUrl, async p => mapStorybookSnapshots(
+      await p.eval(evalStorybookStorySnapshots),
+      percy.config.storybook, flags
+    ))
+  ]);
+
+  // set storybook environment info
   percy.setConfig({ environmentInfo });
 
-  // patch client to override root resources with the raw preview when JS is enabled
-  percy.client.sendSnapshot = (buildId, options) => {
-    if (options.enableJavaScript) {
-      let root = options.resources.find(r => r.root);
-      Object.assign(root, previewResource, { url: root.url });
+  // use a single page to capture story snapshots without reloading
+  yield withPage(percy, previewUrl, async page => {
+    // determines when to retry page crashes
+    lastCount = stories.length;
+
+    while (stories.length) {
+      // separate story and snapshot options
+      let { id, args, globals, queryParams, ...options } = stories[0];
+      let story = { id, args, globals, queryParams };
+      let url = await buildStoryUrl(previewUrl, story);
+
+      // when javascript is enabled, the preview dom is used
+      let domSnapshot = previewResource.content;
+
+      // when javascript is not enabled, or when dry-running, take a dom snapshot of the story
+      if (!(flags.dryRun || options.enableJavaScript || percy.config.snapshot.enableJavaScript)) {
+        await page.eval(evalSetCurrentStory, story);
+        ({ dom: domSnapshot } = await page.snapshot(options));
+      }
+
+      // snapshots are queued and do not need to be awaited on
+      percy.snapshot({ url, domSnapshot, ...options });
+      // discard this story when done
+      stories.shift();
     }
-
-    // super.sendSnapshot(buildId, options)
-    let { sendSnapshot } = percy.client.constructor.prototype;
-    return sendSnapshot.call(percy.client, buildId, options);
-  };
-
-  // map stories and global config into snapshots
-  return mapStorybookSnapshots(stories, {
-    ...percy.config.storybook,
-    baseUrl: url
+  }, () => {
+    log.debug(`Page crashed while loading story: ${stories[0].id}`);
+    // return true to retry as long as the length decreases
+    return lastCount > stories.length;
   });
 }
-
-export default getStorybookSnapshots;
