@@ -72,6 +72,10 @@ Subcommands:
 Options:
   -i, --include <pattern>            Pattern matching story names to include in snapshots
   -e, --exclude <pattern>            Pattern matching story names to exclude from snapshots
+  --shard-count <number>             Number of shards to split snapshots into
+  --shard-size <number>              Size of each shard to split snapshots into
+  --shard-index <index>              Index of the shard to take snapshots of
+  --partial                          Marks the build as a partial build
 
 Percy options:
   -c, --config <file>                Config file path
@@ -104,6 +108,10 @@ Usage:
 Options:
   -i, --include <pattern>            Pattern matching story names to include in snapshots
   -e, --exclude <pattern>            Pattern matching story names to exclude from snapshots
+  --shard-count <number>             Number of shards to split snapshots into
+  --shard-size <number>              Size of each shard to split snapshots into
+  --shard-index <index>              Index of the shard to take snapshots of
+  --partial                          Marks the build as a partial build
   --port [number]                    Port to start Storybook (default: 9000)
   --host [hostname]                  Host to start Storybook (default: "localhost")
 
