@@ -45,7 +45,7 @@
     "@babel/eslint-parser": "^7.18.2",
     "@babel/eslint-plugin": "^7.17.7",
     "@babel/preset-env": "^7.18.2",
-    "@storybook/react": "^6.5.8",
+    "@storybook/react": "^6.5.9",
     "babel-eslint": "^10.0.3",
     "babel-plugin-istanbul": "^6.1.1",
     "cross-env": "^7.0.3",
