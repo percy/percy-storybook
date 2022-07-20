@@ -1,4 +1,5 @@
 import { request, createRootResource } from '@percy/cli-command/utils';
+import { buildArgsParam } from '@storybook/router';
 
 // Transforms authorization credentials into a basic auth header and returns all config request
 // headers with the additional authorization header if not already set.
@@ -15,27 +16,12 @@ function getAuthHeaders(config) {
 }
 
 // Build a url for storybook to determine initial state from
-export async function buildStoryUrl(baseUrl, story) {
-  let { buildArgsParam } = await import('@storybook/router');
-  let url = new URL(baseUrl);
-
-  url.searchParams.set('id', story.id);
-
-  if (story.globals) {
-    url.searchParams.set('globals', buildArgsParam({}, story.globals));
-  }
-
-  if (story.args) {
-    url.searchParams.set('args', buildArgsParam({}, story.args));
-  }
-
-  if (story.queryParams) {
-    for (let [param, value] in Object.entries(story.queryParams)) {
-      url.searchParams.set(param, value);
-    }
-  }
-
-  return url.href;
+export function buildStoryUrl(baseUrl, story) {
+  let url = `${baseUrl}?id=${story.id}`;
+  if (story.args) url += `&args=${buildArgsParam(null, story.args)}`;
+  if (story.globals) url += `&globals=${buildArgsParam(null, story.globals)}`;
+  if (story.queryParams) url += `&${new URLSearchParams(story.queryParams)}`;
+  return url;
 }
 
 // Fetch the raw Storybook preview resource to use when JS is enabled

@@ -106,9 +106,13 @@ function mapStorybookSnapshots(stories, config, flags) {
     snapshots = shardSnapshots(snapshots, flags, log);
   }
 
-  // error when missing snapshots and remove used filter options
+  // error when missing snapshots
   if (!snapshots.length) throw new Error('No snapshots found');
-  return snapshots.map(({ skip, include, exclude, ...s }) => s);
+
+  // remove filter options and generate story snapshot URLs
+  return snapshots.map(({ skip, include, exclude, ...s }) => ({
+    url: buildStoryUrl(previewUrl, s), ...s
+  }));
 }
 
 // Collects Storybook snapshots, sets environment info, and patches client to optionally deal with
