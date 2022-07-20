@@ -368,4 +368,104 @@ describe('percy storybook', () => {
       ]));
     });
   });
+
+  describe('splitting snapshots', () => {
+    beforeEach(() => {
+      delete process.env.PERCY_PARALLEL_TOTAL;
+      delete process.env.PERCY_PARTIAL_BUILD;
+    });
+
+    it('can use --shard-count to split snapshots and set PERCY_PARALLEL_TOTAL', async () => {
+      expect(process.env.PERCY_PARALLEL_TOTAL).toBeUndefined();
+
+      await expectAsync(storybook(['http://localhost:9000', '--dry-run', '--shard-count=2']))
+        .toBeRejectedWithError("Missing '--shard-index'. Found 2 shards of 2 snapshots each (3 total)");
+
+      expect(process.env.PERCY_PARALLEL_TOTAL).toEqual('2');
+
+      expect(logger.stderr).toEqual([
+        '[percy] Build not created',
+        "[percy] Error: Missing '--shard-index'. Found 2 shards of 2 snapshots each (3 total)"
+      ]);
+    });
+
+    it('can use --shard-size to split snapshots and imply PERCY_PARALLEL_TOTAL=-1', async () => {
+      expect(process.env.PERCY_PARALLEL_TOTAL).toBeUndefined();
+
+      await expectAsync(storybook(['http://localhost:9000', '--dry-run', '--shard-size=1']))
+        .toBeRejectedWithError("Missing '--shard-index'. Found 3 shards of 1 snapshots each (3 total)");
+
+      expect(process.env.PERCY_PARALLEL_TOTAL).toEqual('-1');
+
+      expect(logger.stderr).toEqual([
+        '[percy] Build not created',
+        "[percy] Error: Missing '--shard-index'. Found 3 shards of 1 snapshots each (3 total)"
+      ]);
+    });
+
+    it('can use --shard-index to select a group of split snapshots to take', async () => {
+      await storybook(['http://localhost:9000', '--dry-run', '--shard-count=3', '--shard-index=1']);
+
+      expect(logger.stderr).toEqual([
+        '[percy] Build not created'
+      ]);
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        '[percy] Percy has started!',
+        '[percy] Snapshot found: Snapshot: Second',
+        '[percy] Found 1 snapshot'
+      ]));
+    });
+
+    it('can use --partial to set PERCY_PARTIAL_BUILD', async () => {
+      expect(process.env.PERCY_PARTIAL_BUILD).toBeUndefined();
+      expect(process.env.PERCY_PARALLEL_TOTAL).toBeUndefined();
+
+      await expectAsync(storybook(['http://localhost:9000', '--dry-run', '--shard-count=2', '--partial']))
+        .toBeRejectedWithError("Missing '--shard-index'. Found 2 shards of 2 snapshots each (3 total)");
+
+      expect(process.env.PERCY_PARTIAL_BUILD).toEqual('1');
+      // --shard-count + --partial should set PERCY_PARALLEL_TOTAL=-1
+      expect(process.env.PERCY_PARALLEL_TOTAL).toEqual('-1');
+
+      expect(logger.stderr).toEqual([
+        '[percy] Build not created',
+        "[percy] Error: Missing '--shard-index'. Found 2 shards of 2 snapshots each (3 total)"
+      ]);
+    });
+
+    it('errors when providing both --shard-count and --shard-size', async () => {
+      await expectAsync(storybook(['http://localhost:9000', '--dry-run', '--shard-size=1', '--shard-count=3']))
+        .toBeRejectedWithError("Must specify either '--shard-size' OR '--shard-count' not both");
+
+      expect(logger.stderr).toEqual([
+        '[percy] Build not created',
+        "[percy] Error: Must specify either '--shard-size' OR '--shard-count' not both"
+      ]);
+    });
+
+    it('errors when providing --shard-index without either --shard-count or --shard-size', async () => {
+      await expectAsync(storybook(['http://localhost:9000', '--dry-run', '--shard-index=0']))
+        .toBeRejectedWithError("Found '--shard-index' but missing '--shard-size' or '--shard-count'");
+
+      expect(logger.stderr).toEqual([
+        '[percy] Build not created',
+        "[percy] Error: Found '--shard-index' but missing '--shard-size' or '--shard-count'"
+      ]);
+    });
+
+    it('errors when providing --shard-index outside the possible range', async () => {
+      await expectAsync(
+        storybook(['http://localhost:9000', '--dry-run', '--shard-size=2', '--shard-index=7'])
+      ).toBeRejectedWithError(
+        "The provided '--shard-index' (7) is out of range." +
+          ' Found 2 shards of 2 snapshots each (3 total)'
+      );
+
+      expect(logger.stderr).toEqual([
+        '[percy] Build not created',
+        "[percy] Error: The provided '--shard-index' (7) is out of range." +
+          ' Found 2 shards of 2 snapshots each (3 total)'
+      ]);
+    });
+  });
 });

@@ -112,7 +112,7 @@ function mapStorybookSnapshots(stories, config, flags) {
   }
 
   // maybe split snapshots into shards
-  if (flags.shardSize || flags.shardCount || flags.shardIndex) {
+  if ((flags.shardSize || flags.shardCount || flags.shardIndex) != null) {
     snapshots = shardSnapshots(snapshots, flags, log);
   }
 
