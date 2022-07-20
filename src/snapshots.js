@@ -11,9 +11,7 @@ import {
 
 // Returns true or false if the provided story should be skipped by matching against include and
 // exclude filter options. If any global filters are provided, they will override story filters.
-function shouldSkipStory(story, config) {
-  let { skip, include, exclude } = story;
-
+function shouldSkipStory(name, options, config) {
   let matches = regexp => {
     /* istanbul ignore else: sanity check */
     if (typeof regexp === 'string') {
@@ -21,17 +19,16 @@ function shouldSkipStory(story, config) {
       regexp = new RegExp(parsed ?? regexp, flags);
     }
 
-    return regexp?.test?.(story.name);
+    return regexp?.test?.(name);
   };
 
-  // if a global filter is present, override story filters
-  if (config?.include || config?.exclude) {
-    include = [].concat(config.include).filter(Boolean);
-    exclude = [].concat(config.exclude).filter(Boolean);
-  }
+  // if a global filter is present, disregard story filters
+  let filter = (config?.include || config?.exclude) ? config : options;
+  let include = [].concat(filter?.include).filter(Boolean);
+  let exclude = [].concat(filter?.exclude).filter(Boolean);
 
   // if included, don't skip; if excluded always exclude
-  skip = include?.length ? !include.some(matches) : skip;
+  let skip = include?.length ? !include.some(matches) : options.skip;
   if (!skip && !exclude?.some(matches)) return false;
   return true;
 }
@@ -79,29 +76,22 @@ function mapStorybookSnapshots(stories, config, flags) {
   let validations = new Set();
 
   let snapshots = stories.reduce((all, story) => {
-    if (shouldSkipStory(story, config)) {
+    if (shouldSkipStory(story.name, story, config)) {
       log.debug(`Skipping story: ${story.name}`);
       return all;
     }
 
     let { additionalSnapshots = [], ...options } =
-        getSnapshotConfig(story, config, validations);
+      getSnapshotConfig(story, config, validations);
 
     return all.concat(options, (
       additionalSnapshots.reduce((add, {
         prefix = '', suffix = '', ...snap
-      }) => {
-        let opts = PercyConfig.merge([options, {
+      }) => shouldSkipStory(story.name, snap, config) ? add : (
+        add.concat(PercyConfig.merge([options, {
           name: `${prefix}${story.name}${suffix}`
-        }, snap]);
-
-        if (shouldSkipStory(opts, config)) {
-          log.debug(`Skipping story: ${opts.name}`);
-          return add;
-        }
-
-        return add.concat(opts);
-      }, [])
+        }, snap]))
+      ), [])
     ));
   }, []);
 
