@@ -39,22 +39,9 @@ export const start = command('start', {
     spawn('start-storybook', args, { stdio: 'inherit' }).on('error', reject)
   ));
 
-  try {
-    yield* percy.yield.start();
-
-    yield* takeStorybookSnapshots(percy, {
-      /* istanbul ignore next: this is a storybook flag we don't need to test */
-      baseUrl: `${argv.includes('--https') ? 'https' : 'http'}://${host}:${port}`,
-      flags
-    });
-
-    yield* percy.yield.stop();
-  } catch (error) {
-    await percy.stop(true);
-    throw error;
-  } finally {
-    proc.kill();
-  }
+  /* istanbul ignore next: this is a storybook flag we don't need to test */
+  let baseUrl = `${argv.includes('--https') ? 'https' : 'http'}://${host}:${port}`;
+  yield* takeStorybookSnapshots(percy, () => proc.kill(), { baseUrl, flags });
 });
 
 export default start;
