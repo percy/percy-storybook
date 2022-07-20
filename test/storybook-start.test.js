@@ -14,6 +14,7 @@ describe('percy storybook:start', () => {
   });
 
   afterEach(() => {
+    delete process.env.PERCY_ENABLE;
     delete process.env.PERCY_TOKEN;
   });
 
@@ -54,6 +55,16 @@ describe('percy storybook:start', () => {
     ]);
     expect(logger.stderr).toEqual([
       '[percy] Error: FAKE ENOENT'
+    ]);
+  });
+
+  it('does nothing when percy is disabled', async () => {
+    process.env.PERCY_ENABLE = '0';
+    await start(['http://localhost:9000']);
+
+    expect(logger.stdout).toEqual([]);
+    expect(logger.stderr).toEqual([
+      '[percy] Percy is disabled'
     ]);
   });
 });
