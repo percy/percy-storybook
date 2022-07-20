@@ -101,10 +101,19 @@ export function evalSetCurrentStory({ waitFor }, story) {
     'Storybook object not found on the window. ' +
       'Open Storybook and check the console for errors.'
   ))).then(channel => {
+    // emit a series of events to render the desired story
     channel.emit('updateGlobals', { globals: {} });
     channel.emit('setCurrentStory', { storyId: story.id });
     channel.emit('updateQueryParams', { ...story.queryParams });
     channel.emit('updateGlobals', { globals: story.globals });
     channel.emit('updateStoryArgs', { storyId: story.id, updatedArgs: story.args });
+
+    // resolve when rendered, reject on any other renderer event
+    return new Promise((resolve, reject) => {
+      channel.on('storyRendered', resolve);
+      channel.on('storyMissing', reject);
+      channel.on('storyErrored', reject);
+      channel.on('storyThrewException', reject);
+    });
   });
 }
