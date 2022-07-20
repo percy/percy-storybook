@@ -26,6 +26,4 @@ jobs:
         env:
           PERCY_POSTINSTALL_BROWSER: true
       - run: yarn build
-      - run: yarn test
-        env:
-          DUMP_FAILED_TEST_LOGS: true
+      - run: yarn test:coverage
