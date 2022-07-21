@@ -11,9 +11,7 @@ import {
 
 // Returns true or false if the provided story should be skipped by matching against include and
 // exclude filter options. If any global filters are provided, they will override story filters.
-function shouldSkipStory(story, config) {
-  let { skip, include, exclude } = story;
-
+function shouldSkipStory(name, options, config) {
   let matches = regexp => {
     /* istanbul ignore else: sanity check */
     if (typeof regexp === 'string') {
@@ -21,17 +19,16 @@ function shouldSkipStory(story, config) {
       regexp = new RegExp(parsed ?? regexp, flags);
     }
 
-    return regexp?.test?.(story.name);
+    return regexp?.test?.(name);
   };
 
-  // if a global filter is present, override story filters
-  if (config?.include || config?.exclude) {
-    include = [].concat(config.include).filter(Boolean);
-    exclude = [].concat(config.exclude).filter(Boolean);
-  }
+  // if a global filter is present, disregard story filters
+  let filter = (config?.include || config?.exclude) ? config : options;
+  let include = [].concat(filter?.include).filter(Boolean);
+  let exclude = [].concat(filter?.exclude).filter(Boolean);
 
   // if included, don't skip; if excluded always exclude
-  skip = include?.length ? !include.some(matches) : skip;
+  let skip = include?.length ? !include.some(matches) : options.skip;
   if (!skip && !exclude?.some(matches)) return false;
   return true;
 }
@@ -74,34 +71,27 @@ function shardSnapshots(snapshots, { shardSize, shardCount, shardIndex }) {
 }
 
 // Map and reduce collected Storybook stories into an array of snapshot options
-function mapStorybookSnapshots(stories, config, flags) {
+function mapStorybookSnapshots(stories, { previewUrl, flags, config }) {
   let log = logger('storybook:config');
   let validations = new Set();
 
   let snapshots = stories.reduce((all, story) => {
-    if (shouldSkipStory(story, config)) {
+    if (shouldSkipStory(story.name, story, config)) {
       log.debug(`Skipping story: ${story.name}`);
       return all;
     }
 
     let { additionalSnapshots = [], ...options } =
-        getSnapshotConfig(story, config, validations);
+      getSnapshotConfig(story, config, validations);
 
     return all.concat(options, (
       additionalSnapshots.reduce((add, {
         prefix = '', suffix = '', ...snap
-      }) => {
-        let opts = PercyConfig.merge([options, {
+      }) => shouldSkipStory(story.name, snap, config) ? add : (
+        add.concat(PercyConfig.merge([options, {
           name: `${prefix}${story.name}${suffix}`
-        }, snap]);
-
-        if (shouldSkipStory(opts, config)) {
-          log.debug(`Skipping story: ${opts.name}`);
-          return add;
-        }
-
-        return add.concat(opts);
-      }, [])
+        }, snap]))
+      ), [])
     ));
   }, []);
 
@@ -112,72 +102,85 @@ function mapStorybookSnapshots(stories, config, flags) {
   }
 
   // maybe split snapshots into shards
-  if (flags.shardSize || flags.shardCount || flags.shardIndex) {
+  if ((flags.shardSize || flags.shardCount || flags.shardIndex) != null) {
     snapshots = shardSnapshots(snapshots, flags, log);
   }
 
-  // error when missing snapshots and remove used filter options
+  // error when missing snapshots
   if (!snapshots.length) throw new Error('No snapshots found');
-  return snapshots.map(({ skip, include, exclude, ...s }) => s);
+
+  // remove filter options and generate story snapshot URLs
+  return snapshots.map(({ skip, include, exclude, ...s }) => ({
+    url: buildStoryUrl(previewUrl, s), ...s
+  }));
 }
 
-// Collects Storybook snapshots, sets environment info, and patches client to optionally deal with
-// JavaScript enabled Storybook stories.
-export async function* takeStorybookSnapshots(percy, { baseUrl, flags }) {
-  let aboutUrl = new URL('?path=/settings/about', baseUrl).href;
-  let previewUrl = new URL('iframe.html', baseUrl).href;
-  let log = logger('storybook');
-  let lastCount;
+// Starts the percy instance and collects Storybook snapshots, calling the callback when done
+export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags }) {
+  try {
+    let aboutUrl = new URL('?path=/settings/about', baseUrl).href;
+    let previewUrl = new URL('iframe.html', baseUrl).href;
+    let log = logger('storybook');
+    let lastCount;
 
-  log.debug(`Requesting Storybook: ${baseUrl}`);
-  // start a timeout to show a log if storybook takes a few seconds to respond
-  let logTimeout = setTimeout(log.warn, 3000, 'Waiting on a response from Storybook...');
-  let previewResource = yield fetchStorybookPreviewResource(percy, previewUrl);
-  clearTimeout(logTimeout);
+    log.debug(`Requesting Storybook: ${baseUrl}`);
+    // start a timeout to show a log if storybook takes a few seconds to respond
+    let logTimeout = setTimeout(log.warn, 3000, 'Waiting on a response from Storybook...');
+    let previewResource = yield fetchStorybookPreviewResource(percy, previewUrl);
+    clearTimeout(logTimeout);
 
-  // launch the percy browser if not launched during dry-runs
-  yield percy.browser.launch();
+    // start percy
+    yield* percy.yield.start();
+    // launch the percy browser if not launched during dry-runs
+    yield percy.browser.launch();
 
-  // gather storybook data in parallel
-  let [environmentInfo, stories] = yield Promise.all([
-    withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo)),
-    withPage(percy, previewUrl, async p => mapStorybookSnapshots(
-      await p.eval(evalStorybookStorySnapshots),
-      percy.config.storybook, flags
-    ))
-  ]);
+    // gather storybook data in parallel
+    let [environmentInfo, stories] = yield Promise.all([
+      withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo)),
+      withPage(percy, previewUrl, async p => mapStorybookSnapshots(
+        await p.eval(evalStorybookStorySnapshots), {
+          previewUrl, flags, config: percy.config.storybook
+        }))
+    ]);
 
-  // set storybook environment info
-  percy.setConfig({ environmentInfo });
+    // set storybook environment info
+    percy.setConfig({ environmentInfo });
 
-  // use a single page to capture story snapshots without reloading
-  yield withPage(percy, previewUrl, async page => {
-    // determines when to retry page crashes
-    lastCount = stories.length;
+    // use a single page to capture story snapshots without reloading
+    yield withPage(percy, previewUrl, async page => {
+      // determines when to retry page crashes
+      lastCount = stories.length;
 
-    while (stories.length) {
-      // separate story and snapshot options
-      let { id, args, globals, queryParams, ...options } = stories[0];
-      let story = { id, args, globals, queryParams };
-      let url = await buildStoryUrl(previewUrl, story);
+      while (stories.length) {
+        // separate story and snapshot options
+        let { id, args, globals, queryParams, ...options } = stories[0];
+        // when javascript is enabled, the preview dom is used
+        let domSnapshot = previewResource.content;
 
-      // when javascript is enabled, the preview dom is used
-      let domSnapshot = previewResource.content;
+        // when javascript is not enabled and not dry-running, take a dom snapshot of the story
+        if (!(flags.dryRun || options.enableJavaScript || percy.config.snapshot.enableJavaScript)) {
+          await page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
+          ({ dom: domSnapshot } = await page.snapshot(options));
+        }
 
-      // when javascript is not enabled, or when dry-running, take a dom snapshot of the story
-      if (!(flags.dryRun || options.enableJavaScript || percy.config.snapshot.enableJavaScript)) {
-        await page.eval(evalSetCurrentStory, story);
-        ({ dom: domSnapshot } = await page.snapshot(options));
+        // snapshots are queued and do not need to be awaited on
+        percy.snapshot({ domSnapshot, ...options });
+        // discard this story when done
+        stories.shift();
       }
+    }, () => {
+      log.debug(`Page crashed while loading story: ${stories[0].id}`);
+      // return true to retry as long as the length decreases
+      return lastCount > stories.length;
+    });
 
-      // snapshots are queued and do not need to be awaited on
-      percy.snapshot({ url, domSnapshot, ...options });
-      // discard this story when done
-      stories.shift();
-    }
-  }, () => {
-    log.debug(`Page crashed while loading story: ${stories[0].id}`);
-    // return true to retry as long as the length decreases
-    return lastCount > stories.length;
-  });
+    // will stop once snapshots are done processing
+    yield* percy.yield.stop();
+  } catch (error) {
+    // force stop and re-throw
+    await percy.stop(true);
+    throw error;
+  } finally {
+    await callback();
+  }
 }

@@ -15,20 +15,25 @@ export const flags = [{
 }, {
   name: 'shard-count',
   description: 'Number of shards to split snapshots into',
+  validate: (count, { operators }) => (process.env.PERCY_PARALLEL_TOTAL ||= ((
+    // default total to -1 for partial builds or the provided the count otherwise
+    Array.from(operators.entries()).find(a => a[0].name === 'partial')?.[1]
+  ) ? '-1' : `${count}`)),
   parse: v => parseInt(v, 10),
   type: 'number'
 }, {
   name: 'shard-size',
   description: 'Size of each shard to split snapshots into',
+  validate: () => (process.env.PERCY_PARALLEL_TOTAL ||= '-1'),
   parse: v => parseInt(v, 10),
   type: 'number'
 }, {
   name: 'shard-index',
   description: 'Index of the shard to take snapshots of',
-  parse: v => (process.env.PERCY_PARALLEL_TOTAL ||= '-1') && parseInt(v, 10),
+  parse: v => parseInt(v, 10),
   type: 'index'
 }, {
   name: 'partial',
   description: 'Marks the build as a partial build',
-  parse: () => !!(process.env.PERCY_PARTIAL_BUILD ||= '1')
+  validate: () => (process.env.PERCY_PARTIAL_BUILD ||= '1')
 }];

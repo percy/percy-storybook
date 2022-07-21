@@ -9,7 +9,7 @@ describe('percy storybook', () => {
 
   const FAKE_PREVIEW = '{ ' + [
     'async extract() {},',
-    'channel: { emit() {} }'
+    'channel: { emit() {}, on(a, c) { a === "storyRendered" && c() } }'
   ].join(' ') + ' }';
 
   beforeAll(async () => {
@@ -131,7 +131,6 @@ describe('percy storybook', () => {
 
     expect(logger.stderr).toEqual([
       '[percy] Waiting on a response from Storybook...',
-      '[percy] Build not created',
       '[percy] Error: 418 I\'m a Teapot'
     ]);
   });
@@ -228,6 +227,33 @@ describe('percy storybook', () => {
     ]));
   });
 
+  it('warns when additional snapshots specify conflicting name options', async () => {
+    fs.writeFileSync('.percy.yml', [
+      'version: 2',
+      'storybook:',
+      '  additional-snapshots:',
+      '    - include: /first/i',
+      '      prefix: "A "',
+      '      suffix: " (added)"',
+      '      name: No prefix or suffix',
+      '    - include: /second/i'
+    ].join('\n'));
+
+    await storybook(['http://localhost:9000']);
+
+    expect(logger.stderr).toEqual([
+      '[percy] Invalid config:',
+      '[percy] - storybook.additionalSnapshots[0]: prefix & suffix are ignored when a name is provided',
+      '[percy] - storybook.additionalSnapshots[1]: missing required name, prefix, or suffix'
+    ]);
+    expect(logger.stdout).toEqual(jasmine.arrayContaining([
+      '[percy] Snapshot taken: Snapshot: First',
+      '[percy] Snapshot taken: No prefix or suffix',
+      '[percy] Snapshot taken: Snapshot: Second',
+      '[percy] Snapshot taken: Skip: But Not Me'
+    ]));
+  });
+
   it('does not upload and logs snapshots with --dry-run', async () => {
     await storybook(['http://localhost:9000', '--dry-run']);
 
@@ -267,14 +293,13 @@ describe('percy storybook', () => {
 
     expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args',
-      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
-        encodeURIComponent('text:Snapshot+custom+args;style.font:1rem+sans-serif'),
-      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
-        encodeURIComponent('text:Snapshot+custom+bold+args;style.font:1rem+sans-serif;') +
-        encodeURIComponent('style.fontWeight:bold'),
-      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
-        encodeURIComponent('text:Snapshot+purple+args;style.font:1rem+sans-serif;') +
-        encodeURIComponent('style.fontWeight:bold;style.color:purple')
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args' +
+        '&args=text:Snapshot+custom+args;style.font:1rem+sans-serif',
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args' +
+        '&args=text:Snapshot+custom+bold+args;style.font:1rem+sans-serif;style.fontWeight:bold',
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args' +
+        '&args=text:Snapshot+purple+args;style.font:1rem+sans-serif;' +
+        'style.fontWeight:bold;style.color:purple'
     ]));
   });
 
@@ -290,6 +315,53 @@ describe('percy storybook', () => {
       '[percy] Snapshot found: Options: Invalid One',
       '[percy] Snapshot found: Options: Invalid Two',
       '[percy] Found 2 snapshots'
+    ]));
+  });
+
+  it('can append custom args, globals, and query params to story urls', async () => {
+    await storybook(['http://localhost:9000', '--dry-run', '--verbose', '--include=/params/']);
+
+    expect(logger.stdout).toEqual(jasmine.arrayContaining([
+      '[percy:core:snapshot] Snapshot found: From params',
+      '[percy:core:snapshot] Snapshot found: From params w/ globals',
+      '[percy:core:snapshot] Snapshot found: From params w/ query params',
+      '[percy:core:snapshot] Snapshot found: From params w/ mixed params',
+      '[percy:core] Found 4 snapshots'
+    ]));
+
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params',
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
+        '&globals=text:+with+globals',
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
+        '&text=+with+query+params',
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
+        '&args=text:Args&globals=text:+globals&text=+and+params'
+    ]));
+  });
+
+  it('handles page crashes while taking snapshots', async () => {
+    // eslint-disable-next-line import/no-extraneous-dependencies
+    let { Percy } = await import('@percy/core');
+
+    let error = new Error('Page crashed');
+    let spy = spyOn(Percy.prototype, 'snapshot').and.callThrough()
+      .withArgs(jasmine.objectContaining({ name: 'Snapshot: Second' }))
+      .and.throwError(error);
+
+    await expectAsync(storybook(['http://localhost:9000', '--dry-run', '--verbose']))
+      .toBeRejectedWith(error);
+
+    // called once for the first snapshot and twice while retrying the second
+    expect(spy).toHaveBeenCalledTimes(3);
+
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
+      '[percy:storybook] Page crashed while loading story: snapshot--second',
+      '[percy:core] Build not created',
+      `[percy:cli] ${error.stack}`
+    ]));
+    expect(logger.stdout).toEqual(jasmine.arrayContaining([
+      '[percy:core:snapshot] Snapshot found: Snapshot: First'
     ]));
   });
 
@@ -366,6 +438,106 @@ describe('percy storybook', () => {
       expect(logger.stdout).toEqual(jasmine.arrayContaining([
         '[percy] Snapshot taken: Test: test'
       ]));
+    });
+  });
+
+  describe('splitting snapshots', () => {
+    beforeEach(() => {
+      delete process.env.PERCY_PARALLEL_TOTAL;
+      delete process.env.PERCY_PARTIAL_BUILD;
+    });
+
+    it('can use --shard-count to split snapshots and set PERCY_PARALLEL_TOTAL', async () => {
+      expect(process.env.PERCY_PARALLEL_TOTAL).toBeUndefined();
+
+      await expectAsync(storybook(['http://localhost:9000', '--dry-run', '--shard-count=2']))
+        .toBeRejectedWithError("Missing '--shard-index'. Found 2 shards of 2 snapshots each (3 total)");
+
+      expect(process.env.PERCY_PARALLEL_TOTAL).toEqual('2');
+
+      expect(logger.stderr).toEqual([
+        '[percy] Build not created',
+        "[percy] Error: Missing '--shard-index'. Found 2 shards of 2 snapshots each (3 total)"
+      ]);
+    });
+
+    it('can use --shard-size to split snapshots and imply PERCY_PARALLEL_TOTAL=-1', async () => {
+      expect(process.env.PERCY_PARALLEL_TOTAL).toBeUndefined();
+
+      await expectAsync(storybook(['http://localhost:9000', '--dry-run', '--shard-size=1']))
+        .toBeRejectedWithError("Missing '--shard-index'. Found 3 shards of 1 snapshots each (3 total)");
+
+      expect(process.env.PERCY_PARALLEL_TOTAL).toEqual('-1');
+
+      expect(logger.stderr).toEqual([
+        '[percy] Build not created',
+        "[percy] Error: Missing '--shard-index'. Found 3 shards of 1 snapshots each (3 total)"
+      ]);
+    });
+
+    it('can use --shard-index to select a group of split snapshots to take', async () => {
+      await storybook(['http://localhost:9000', '--dry-run', '--shard-count=3', '--shard-index=1']);
+
+      expect(logger.stderr).toEqual([
+        '[percy] Build not created'
+      ]);
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        '[percy] Percy has started!',
+        '[percy] Snapshot found: Snapshot: Second',
+        '[percy] Found 1 snapshot'
+      ]));
+    });
+
+    it('can use --partial to set PERCY_PARTIAL_BUILD', async () => {
+      expect(process.env.PERCY_PARTIAL_BUILD).toBeUndefined();
+      expect(process.env.PERCY_PARALLEL_TOTAL).toBeUndefined();
+
+      await expectAsync(storybook(['http://localhost:9000', '--dry-run', '--shard-count=2', '--partial']))
+        .toBeRejectedWithError("Missing '--shard-index'. Found 2 shards of 2 snapshots each (3 total)");
+
+      expect(process.env.PERCY_PARTIAL_BUILD).toEqual('1');
+      // --shard-count + --partial should set PERCY_PARALLEL_TOTAL=-1
+      expect(process.env.PERCY_PARALLEL_TOTAL).toEqual('-1');
+
+      expect(logger.stderr).toEqual([
+        '[percy] Build not created',
+        "[percy] Error: Missing '--shard-index'. Found 2 shards of 2 snapshots each (3 total)"
+      ]);
+    });
+
+    it('errors when providing both --shard-count and --shard-size', async () => {
+      await expectAsync(storybook(['http://localhost:9000', '--dry-run', '--shard-size=1', '--shard-count=3']))
+        .toBeRejectedWithError("Must specify either '--shard-size' OR '--shard-count' not both");
+
+      expect(logger.stderr).toEqual([
+        '[percy] Build not created',
+        "[percy] Error: Must specify either '--shard-size' OR '--shard-count' not both"
+      ]);
+    });
+
+    it('errors when providing --shard-index without either --shard-count or --shard-size', async () => {
+      await expectAsync(storybook(['http://localhost:9000', '--dry-run', '--shard-index=0']))
+        .toBeRejectedWithError("Found '--shard-index' but missing '--shard-size' or '--shard-count'");
+
+      expect(logger.stderr).toEqual([
+        '[percy] Build not created',
+        "[percy] Error: Found '--shard-index' but missing '--shard-size' or '--shard-count'"
+      ]);
+    });
+
+    it('errors when providing --shard-index outside the possible range', async () => {
+      await expectAsync(
+        storybook(['http://localhost:9000', '--dry-run', '--shard-size=2', '--shard-index=7'])
+      ).toBeRejectedWithError(
+        "The provided '--shard-index' (7) is out of range." +
+          ' Found 2 shards of 2 snapshots each (3 total)'
+      );
+
+      expect(logger.stderr).toEqual([
+        '[percy] Build not created',
+        "[percy] Error: The provided '--shard-index' (7) is out of range." +
+          ' Found 2 shards of 2 snapshots each (3 total)'
+      ]);
     });
   });
 });

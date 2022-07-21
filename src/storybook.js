@@ -24,7 +24,7 @@ export const storybook = command('storybook', {
   ],
 
   percy: {
-    deferUploads: true
+    delayUploads: true
   },
 
   config: {
@@ -39,21 +39,10 @@ export const storybook = command('storybook', {
   let { createServer } = yield import('@percy/cli-command/utils');
   let server = args.serve && await createServer(args).listen();
 
-  try {
-    yield* percy.yield.start();
-
-    yield* takeStorybookSnapshots(percy, {
-      baseUrl: args.url ?? server?.address(),
-      flags
-    });
-
-    yield* percy.yield.stop();
-  } catch (error) {
-    await percy.stop(true);
-    throw error;
-  } finally {
-    await server?.close();
-  }
+  yield* takeStorybookSnapshots(percy, () => server?.close(), {
+    baseUrl: args.url ?? server?.address(),
+    flags
+  });
 });
 
 export default storybook;
