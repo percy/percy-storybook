@@ -1,11 +1,13 @@
 import { logger, PercyConfig } from '@percy/cli-command';
+import qs from 'qs';
 
 import {
-  buildStoryUrl,
   fetchStorybookPreviewResource,
   evalStorybookEnvironmentInfo,
   evalStorybookStorySnapshots,
   evalSetCurrentStory,
+  validateStoryArgs,
+  encodeStoryArgs,
   withPage
 } from './utils.js';
 
@@ -35,11 +37,11 @@ function shouldSkipStory(name, options, config) {
 
 // Returns snapshot config options for a Storybook story merged with global Storybook
 // options. Validation error messages will be added to the provided validations set.
-function getSnapshotConfig(story, config, validations) {
+function getSnapshotConfig(story, config, invalid) {
   let { id, ...options } = PercyConfig.migrate(story, '/storybook');
 
   let errors = PercyConfig.validate(options, '/storybook');
-  for (let e of (errors || [])) validations.add(`- percy.${e.path}: ${e.message}`);
+  for (let e of (errors || [])) invalid.set(e.path, e.message);
 
   return PercyConfig.merge([config, options, { id }], (path, prev, next) => {
     // normalize, but do not merge include or exclude options
@@ -47,6 +49,21 @@ function getSnapshotConfig(story, config, validations) {
       return [path, [].concat(next).filter(Boolean)];
     }
   });
+}
+
+// Returns a copy of the provided config object with encoded Storybook args and globals
+function encodeStorybookConfig(config = {}, invalid) {
+  return Object.entries(config).reduce((acc, [key, value]) => Object.assign(acc, {
+    [key]: ((key === 'args' || key === 'globals') && (
+      encodeStoryArgs(Object.entries(value).reduce((acc, [k, v]) => {
+        if (validateStoryArgs(k, v)) return Object.assign(acc, { [k]: v });
+        invalid.set(`${key}.${k}`, `omitted potentially unsafe ${key.slice(0, -1)}`);
+        return acc;
+      }, {}))
+    )) || (key === 'additionalSnapshots' && (
+      value.map(s => encodeStorybookConfig(s, invalid))
+    )) || value
+  }), {});
 }
 
 // Split snapshots into chunks of shards according to the provided size, count, and index
@@ -70,24 +87,39 @@ function shardSnapshots(snapshots, { shardSize, shardCount, shardIndex }) {
   return snapshots.splice(size * shardIndex, size);
 }
 
+// Transforms a set of pre-encoded args into a single query parameter value
+function buildStorybookArgsParam(args) {
+  let argsParam = qs.stringify(args, {
+    encode: false,
+    delimiter: ';',
+    allowDots: true,
+    format: 'RFC1738'
+  });
+
+  return argsParam
+    .replace(/ /g, '+')
+    .replace(/=/g, ':');
+}
+
 // Map and reduce collected Storybook stories into an array of snapshot options
 function mapStorybookSnapshots(stories, { previewUrl, flags, config }) {
   let log = logger('storybook:config');
-  let validations = new Set();
+  let invalid = new Map(stories.invalid);
+  let conf = encodeStorybookConfig(config, invalid);
 
-  let snapshots = stories.reduce((all, story) => {
+  let snapshots = stories.data.reduce((all, story) => {
     if (shouldSkipStory(story.name, story, config)) {
       log.debug(`Skipping story: ${story.name}`);
       return all;
     }
 
     let { additionalSnapshots = [], ...options } =
-      getSnapshotConfig(story, config, validations);
+      getSnapshotConfig(story, conf, invalid);
 
     return all.concat(options, (
       additionalSnapshots.reduce((add, {
         prefix = '', suffix = '', ...snap
-      }) => shouldSkipStory(story.name, snap, config) ? add : (
+      }) => shouldSkipStory(story.name, snap) ? add : (
         add.concat(PercyConfig.merge([options, {
           name: `${prefix}${story.name}${suffix}`
         }, snap]))
@@ -96,9 +128,10 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config }) {
   }, []);
 
   // log validation warnings
-  if (validations.size) {
+  if (invalid.size) {
     log.warn('Invalid Storybook parameters:');
-    for (let msg of validations) log.warn(msg);
+    invalid = Array.from(invalid.entries()).sort(([a], [b]) => a.localeCompare(b));
+    for (let [k, msg] of invalid) log.warn(`- percy.${k}: ${msg}`);
   }
 
   // maybe split snapshots into shards
@@ -110,9 +143,13 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config }) {
   if (!snapshots.length) throw new Error('No snapshots found');
 
   // remove filter options and generate story snapshot URLs
-  return snapshots.map(({ skip, include, exclude, ...s }) => ({
-    url: buildStoryUrl(previewUrl, s), ...s
-  }));
+  return snapshots.map(({ skip, include, exclude, ...story }) => {
+    let url = `${previewUrl}?id=${story.id}`;
+    if (story.args) url += `&args=${buildStorybookArgsParam(story.args)}`;
+    if (story.globals) url += `&globals=${buildStorybookArgsParam(story.globals)}`;
+    for (let [k, v] of Object.entries(story.queryParams ?? {})) url += `&${k}=${v}`;
+    return Object.assign(story, { url });
+  });
 }
 
 // Starts the percy instance and collects Storybook snapshots, calling the callback when done
@@ -139,7 +176,9 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
       withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo)),
       withPage(percy, previewUrl, async p => mapStorybookSnapshots(
         await p.eval(evalStorybookStorySnapshots), {
-          previewUrl, flags, config: percy.config.storybook
+          config: percy.config.storybook,
+          previewUrl,
+          flags
         }))
     ]);
 
@@ -169,7 +208,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
         stories.shift();
       }
     }, () => {
-      log.debug(`Page crashed while loading story: ${stories[0].id}`);
+      log.debug(`Page crashed while loading story: ${stories[0].name}`);
       // return true to retry as long as the length decreases
       return lastCount > stories.length;
     });
