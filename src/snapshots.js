@@ -1,4 +1,5 @@
 import { logger, PercyConfig } from '@percy/cli-command';
+import { yieldAll } from '@percy/cli-command/utils';
 import qs from 'qs';
 
 import {
@@ -172,45 +173,48 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     yield percy.browser.launch();
 
     // gather storybook data in parallel
-    let [environmentInfo, stories] = yield Promise.all([
+    let [environmentInfo, stories] = yield* yieldAll([
       withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo)),
-      withPage(percy, previewUrl, async p => mapStorybookSnapshots(
-        await p.eval(evalStorybookStorySnapshots), {
-          config: percy.config.storybook,
-          previewUrl,
-          flags
-        }))
+      withPage(percy, previewUrl, p => p.eval(evalStorybookStorySnapshots))
     ]);
+
+    // map stories to snapshot options
+    let snapshots = mapStorybookSnapshots(stories, {
+      config: percy.config.storybook,
+      previewUrl,
+      flags
+    });
 
     // set storybook environment info
     percy.setConfig({ environmentInfo });
 
     // use a single page to capture story snapshots without reloading
-    yield withPage(percy, previewUrl, async page => {
+    yield* withPage(percy, previewUrl, async function*(page) {
       // determines when to retry page crashes
-      lastCount = stories.length;
+      lastCount = snapshots.length;
 
-      while (stories.length) {
+      while (snapshots.length) {
         // separate story and snapshot options
-        let { id, args, globals, queryParams, ...options } = stories[0];
-        // when javascript is enabled, the preview dom is used
-        let domSnapshot = previewResource.content;
+        let { id, args, globals, queryParams, ...options } = snapshots[0];
 
-        // when javascript is not enabled and not dry-running, take a dom snapshot of the story
-        if (!(flags.dryRun || options.enableJavaScript || percy.config.snapshot.enableJavaScript)) {
-          await page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
-          ({ dom: domSnapshot } = await page.snapshot(options));
+        if (flags.dryRun || options.enableJavaScript || percy.config.snapshot.enableJavaScript) {
+          // when dry-running or when javascript is enabled, use the preview dom
+          options.domSnapshot = previewResource.content;
+        } else {
+          // when not dry-running and javascript is not enabled, capture the story dom
+          yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
+          options.domSnapshot = (yield page.snapshot(options)).dom;
         }
 
         // snapshots are queued and do not need to be awaited on
-        percy.snapshot({ domSnapshot, ...options });
-        // discard this story when done
-        stories.shift();
+        percy.snapshot(options);
+        // discard this story snapshot when done
+        snapshots.shift();
       }
     }, () => {
-      log.debug(`Page crashed while loading story: ${stories[0].name}`);
+      log.debug(`Page crashed while loading story: ${snapshots[0].name}`);
       // return true to retry as long as the length decreases
-      return lastCount > stories.length;
+      return lastCount > snapshots.length;
     });
 
     // will stop once snapshots are done processing
