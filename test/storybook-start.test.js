@@ -29,10 +29,10 @@ describe('percy storybook:start', () => {
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       `[percy] Running "start-storybook --ci --host=localhost --port=9000 ${args.join(' ')}"`,
       '[percy] Percy has started!',
-      '[percy] Processing 3 snapshots...',
       '[percy] Snapshot taken: Snapshot: First',
       '[percy] Snapshot taken: Snapshot: Second',
       '[percy] Snapshot taken: Skip: But Not Me',
+      jasmine.stringMatching('\\[percy\\] Processing \\d snapshots?'),
       '[percy] Finalized build #1: https://percy.io/test/test/123'
     ]));
   });
