@@ -42,6 +42,22 @@ export default {
             color: 'purple'
           }
         }
+      }, {
+        prefix: 'Special ',
+        args: {
+          null: null,
+          undefined: undefined,
+          smallNum: 3,
+          largeNum: 12_000_000,
+          date: new Date('2022-01-01T00:00Z'),
+          rgb: 'rgb(20, 30, 40)',
+          rgba: 'rgba(20, 30, 40, .5)',
+          hsl: 'hsl(120, 80%, 30%)',
+          hsla: 'hsla(120, 80%, 30%, .5)',
+          shortHex: '#c6c',
+          longHex: '#a907cf',
+          alphaHex: '#a907cf9f'
+        }
       }]
     }
   }

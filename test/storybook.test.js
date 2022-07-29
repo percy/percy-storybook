@@ -7,10 +7,9 @@ import { storybook } from '../src/index.js';
 describe('percy storybook', () => {
   let server, proc;
 
-  const FAKE_PREVIEW = '{ ' + [
-    'async extract() {},',
-    'channel: { emit() {}, on(a, c) { a === "storyRendered" && c() } }'
-  ].join(' ') + ' }';
+  const FAKE_PREVIEW = '{ async extract() {}, ' +
+    'channel: { emit() {}, on: (a, c) => a === "storyRendered" && c() }' +
+  ' }';
 
   beforeAll(async () => {
     server = await createTestServer({
@@ -107,10 +106,10 @@ describe('percy storybook', () => {
 
   it('errors when no snapshots are found', async () => {
     // fake storybook client api with no stories
-    server.reply('/iframe.html', () => [200, 'text/html', (
+    server.reply('/iframe.html', () => [200, 'text/html', [
       `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
       '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
-    )]);
+    ].join('')]);
 
     await expectAsync(storybook(['http://localhost:8000']))
       .toBeRejectedWithError('No snapshots found');
@@ -132,6 +131,27 @@ describe('percy storybook', () => {
     expect(logger.stderr).toEqual([
       '[percy] Waiting on a response from Storybook...',
       '[percy] Error: 418 I\'m a Teapot'
+    ]);
+  });
+
+  it('errors when the storybook page errors', async () => {
+    server.reply('/iframe.html', () => [200, 'text/html', [
+      `<script>__STORYBOOK_PREVIEW__ = { async extract() {}, ${
+        'channel: { emit() {}, on: (a, c) => a === "storyErrored" && c(new Error("Story Error")) }'
+      } }</script>`,
+      `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])} }</script>`
+    ].join('')]);
+
+    await expectAsync(storybook(['http://localhost:8000']))
+    // message contains the client stack trace
+      .toBeRejectedWithError(/^Story Error\n.*\/iframe\.html.*$/s);
+
+    expect(logger.stderr).toEqual([
+      '[percy] Build not created',
+      // message contains the client stack trace
+      jasmine.stringMatching(/^\[percy\] Error: Story Error\n.*\/iframe\.html.*$/s)
     ]);
   });
 
@@ -288,37 +308,60 @@ describe('percy storybook', () => {
       '[percy:core:snapshot] Snapshot found: Args (bold)',
       '[percy:core:snapshot] Snapshot found: Custom Args',
       '[percy:core:snapshot] Snapshot found: Purple (Args)',
-      '[percy:core] Found 4 snapshots'
+      '[percy:core:snapshot] Snapshot found: Special Args',
+      '[percy:core] Found 5 snapshots'
     ]));
 
     expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args',
-      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args' +
-        '&args=text:Snapshot+custom+args;style.font:1rem+sans-serif',
-      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args' +
-        '&args=text:Snapshot+custom+bold+args;style.font:1rem+sans-serif;style.fontWeight:bold',
-      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args' +
-        '&args=text:Snapshot+purple+args;style.font:1rem+sans-serif;' +
-        'style.fontWeight:bold;style.color:purple'
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
+        'text:Snapshot+custom+args;style.font:1rem+sans-serif',
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
+        'text:Snapshot+custom+bold+args;style.font:1rem+sans-serif;style.fontWeight:bold',
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
+        'text:Snapshot+purple+args;' +
+        'style.font:1rem+sans-serif;' +
+        'style.fontWeight:bold;' +
+        'style.color:purple',
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
+        'null:!null;undefined:!undefined;' +
+        'smallNum:3;largeNum:12000000;' +
+        'date:!date(2022-01-01T00:00:00.000Z);' +
+        'rgb:!rgb(20,30,40);rgba:!rgba(20,30,40,.5);' +
+        'hsl:!hsl(120,80,30);hsla:!hsla(120,80,30,.5);' +
+        'shortHex:!hex(c6c);longHex:!hex(a907cf);alphaHex:!hex(a907cf9f)'
     ]));
   });
 
-  it('logs a warning when using invalid percy options', async () => {
+  it('warns when using invalid percy options', async () => {
+    fs.writeFileSync('.percy.yml', [
+      'version: 2',
+      'storybook:',
+      '  additional-snapshots:',
+      '    - include: /two/i',
+      '      suffix: " (2)"',
+      '      args: { invalid: "!@#$%" }',
+      '      globals: { invalid: "^&*()" }'
+    ].join('\n'));
+
     await storybook(['http://localhost:9000', '--dry-run', '--include=Options: Invalid']);
 
     expect(logger.stderr).toEqual([
       '[percy] Invalid Storybook parameters:',
+      '[percy] - percy.args.invalid: omitted potentially unsafe arg',
+      '[percy] - percy.globals.invalid: omitted potentially unsafe global',
       '[percy] - percy.invalid: unknown property',
       '[percy] Build not created'
     ]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Snapshot found: Options: Invalid One',
       '[percy] Snapshot found: Options: Invalid Two',
-      '[percy] Found 2 snapshots'
+      '[percy] Snapshot found: Options: Invalid Two (2)',
+      '[percy] Found 3 snapshots'
     ]));
   });
 
-  it('can append custom args, globals, and query params to story urls', async () => {
+  it('appends custom args, globals, and query params to story urls', async () => {
     await storybook(['http://localhost:9000', '--dry-run', '--verbose', '--include=/params/']);
 
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
@@ -334,9 +377,9 @@ describe('percy storybook', () => {
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
         '&globals=text:+with+globals',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
-        '&text=+with+query+params',
+        `&text=${encodeURIComponent(' with query params')}`,
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
-        '&args=text:Args&globals=text:+globals&text=+and+params'
+        `&args=text:Args&globals=text:+globals&text=${encodeURIComponent(' and params')}`
     ]));
   });
 
@@ -356,7 +399,7 @@ describe('percy storybook', () => {
     expect(spy).toHaveBeenCalledTimes(3);
 
     expect(logger.stderr).toEqual(jasmine.arrayContaining([
-      '[percy:storybook] Page crashed while loading story: snapshot--second',
+      '[percy:storybook] Page crashed while loading story: Snapshot: Second',
       '[percy:core] Build not created',
       `[percy:cli] ${error.stack}`
     ]));
