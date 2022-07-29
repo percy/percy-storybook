@@ -341,7 +341,8 @@ describe('percy storybook', () => {
       '    - include: /two/i',
       '      suffix: " (2)"',
       '      args: { invalid: "!@#$%" }',
-      '      globals: { invalid: "^&*()" }'
+      '      globals: { invalid: "^&*()" }',
+      '      waitForSelector: .foo-bar'
     ].join('\n'));
 
     await storybook(['http://localhost:9000', '--dry-run', '--include=Options: Invalid']);

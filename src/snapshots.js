@@ -206,6 +206,8 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
           options.domSnapshot = (yield page.snapshot(options)).dom;
         }
 
+        // validate without logging to prune all other options
+        PercyConfig.validate(options, '/snapshot/dom');
         // snapshots are queued and do not need to be awaited on
         percy.snapshot(options);
         // discard this story snapshot when done
