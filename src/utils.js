@@ -1,4 +1,4 @@
-import { request, createRootResource } from '@percy/cli-command/utils';
+import { request, createRootResource, yieldTo } from '@percy/cli-command/utils';
 
 // Transforms authorization credentials into a basic auth header and returns all config request
 // headers with the additional authorization header if not already set.
@@ -96,9 +96,9 @@ export function decodeStoryArgs(value) {
 
 // Borrows a percy discovery browser page to navigate to a URL and evaluate a function, returning
 // the results and normalizing any thrown errors.
-export async function withPage(percy, url, callback, retry) {
+export async function* withPage(percy, url, callback, retry) {
   // provide discovery options that may impact how the page loads
-  let page = await percy.browser.page({
+  let page = yield percy.browser.page({
     networkIdleTimeout: percy.config.discovery.networkIdleTimeout,
     requestHeaders: getAuthHeaders(percy.config.discovery),
     userAgent: percy.config.discovery.userAgent
@@ -123,20 +123,21 @@ export async function withPage(percy, url, callback, retry) {
   ), ...args);
 
   try {
-    await page.goto(url);
-    return await callback(page);
+    yield page.goto(url);
+    return yield* yieldTo(callback(page));
   } catch (error) {
     // if the page crashed and retry returns truthy, try again
-    if (error.message?.includes('crashed') && retry?.()) return withPage(...arguments);
-    /* istanbul ignore next: purposefully not handling real errors */
-    if (typeof error !== 'string') throw error;
+    if (error.message?.includes('crashed') && retry?.()) {
+      return yield* withPage(...arguments);
+    }
 
-    throw new Error(error.replace(
+    /* istanbul ignore next: purposefully not handling real errors */
+    throw (typeof error !== 'string' ? error : new Error(error.replace(
       // strip generic error names and confusing stack traces
       /^Error:\s((.+?)\n\s+at\s.+)$/s,
       // keep the stack trace if the error came from a client script
       /\n\s+at\s.+?\(https?:/.test(error) ? '$1' : '$2'
-    ));
+    )));
   } finally {
     // always clean up and close the page
     await page?.close();
