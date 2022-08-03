@@ -341,7 +341,8 @@ describe('percy storybook', () => {
       '    - include: /two/i',
       '      suffix: " (2)"',
       '      args: { invalid: "!@#$%" }',
-      '      globals: { invalid: "^&*()" }'
+      '      globals: { invalid: "^&*()" }',
+      '      waitForSelector: .foo-bar'
     ].join('\n'));
 
     await storybook(['http://localhost:9000', '--dry-run', '--include=Options: Invalid']);
@@ -358,6 +359,39 @@ describe('percy storybook', () => {
       '[percy] Snapshot found: Options: Invalid Two',
       '[percy] Snapshot found: Options: Invalid Two (2)',
       '[percy] Found 3 snapshots'
+    ]));
+  });
+
+  it('warns when using capture options with javascript enabled', async () => {
+    fs.writeFileSync('.percy.yml', [
+      'version: 2',
+      'snapshot:',
+      '  enableJavaScript: true',
+      'storybook:',
+      '  waitForSelector: "#root"',
+      '  additionalSnapshots:',
+      '    - include: Skip',
+      '      suffix: " (Invalid Wait)"',
+      '      waitForSelector: "body"',
+      '    - include: Skip',
+      '      suffix: " (Valid Wait)"',
+      '      enableJavaScript: false',
+      '      waitForSelector: "body"'
+    ].join('\n'));
+
+    await storybook(['http://localhost:9000']);
+
+    expect(logger.stderr).toEqual([
+      '[percy] Invalid config:',
+      '[percy] - storybook.waitForSelector: not used with JavaScript enabled',
+      '[percy] - storybook.additionalSnapshots[0].waitForSelector: not used with JavaScript enabled'
+    ]);
+    expect(logger.stdout).toEqual(jasmine.arrayContaining([
+      '[percy] Snapshot taken: Snapshot: First',
+      '[percy] Snapshot taken: Snapshot: Second',
+      '[percy] Snapshot taken: Skip: But Not Me',
+      '[percy] Snapshot taken: Skip: But Not Me (Invalid Wait)',
+      '[percy] Snapshot taken: Skip: But Not Me (Valid Wait)'
     ]));
   });
 
