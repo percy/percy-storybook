@@ -186,7 +186,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     });
 
     // set storybook environment info
-    percy.setConfig({ environmentInfo });
+    percy.client.addEnvironmentInfo(environmentInfo);
 
     // use a single page to capture story snapshots without reloading
     yield* withPage(percy, previewUrl, async function*(page) {
@@ -203,7 +203,8 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
         } else {
           // when not dry-running and javascript is not enabled, capture the story dom
           yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
-          options.domSnapshot = (yield page.snapshot(options)).dom;
+          let { dom, domSnapshot = dom } = yield page.snapshot(options);
+          options.domSnapshot = domSnapshot;
         }
 
         // validate without logging to prune all other options
