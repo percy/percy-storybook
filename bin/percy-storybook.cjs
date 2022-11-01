@@ -5,3 +5,5 @@ log.warn('The `percy-storybook` command has been deprecated. Use @percy/cli inst
 log.info('See upgrade instructions here: https://github.com/percy/percy-storybook#upgrading');
 
 process.exit(1);
+
+
