@@ -13,7 +13,7 @@ const SKIPPED_ASSETS = [
   /\.log$/,
   /\.DS_Store$/,
 ];
-const MAX_FILE_SIZE_BYTES = 15728640; // 15MB.
+const MAX_FILE_SIZE_BYTES = 26214400; // 25MB.
 
 // Synchronously walk the build directory, read each file
 function gatherBuildResources(buildDir) {
