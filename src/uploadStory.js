@@ -34,6 +34,11 @@ export default async function uploadStory(
     e._percy = {
       story,
     };
-    throw e;
+    // silently fail duplicates
+    if (e.name === 'StatusCodeError' && e.statusCode === 400 && e.message.includes('snapshot must be unique')) {
+      console.log('Ignoring duplicate snapshot', story);
+    } else {
+      throw e;
+    }
   }
 }
