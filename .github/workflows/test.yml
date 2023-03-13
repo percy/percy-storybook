@@ -26,4 +26,18 @@ jobs:
         env:
           PERCY_POSTINSTALL_BROWSER: true
       - run: yarn build
+      - name: Set up @percy/cli from git
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          cd /tmp
+          git clone --branch ${{ github.event.inputs.branch }} --depth 1 https://github.com/percy/cli
+          cd cli
+          PERCY_PACKAGES=`find packages -type d -depth 1 | sed -e 's/packages/@percy/g' | tr '\n' ' '`
+          git log -1
+          yarn
+          yarn build
+          yarn global:link
+          cd ${{ github.workspace }} 
+          yarn remove @percy/cli && yarn link `echo $PERCY_PACKAGES`
+          npx percy --version
       - run: yarn test:coverage
