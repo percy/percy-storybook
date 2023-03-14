@@ -4,6 +4,11 @@ on:
     branches: [master]
   pull_request:
   workflow_dispatch:
+    inputs:
+      branch:
+        required: false
+        type: string
+        default: master
 jobs:
   test:
     name: Test
