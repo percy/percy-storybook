@@ -1,7 +1,7 @@
 name: Test
 on:
   push:
-    branches: [master]
+    branches: [master, cli-regression]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -30,7 +30,6 @@ jobs:
       - run: yarn
         env:
           PERCY_POSTINSTALL_BROWSER: true
-      - run: yarn build
       - name: Set up @percy/cli from git
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
