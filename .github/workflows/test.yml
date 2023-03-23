@@ -30,7 +30,7 @@ jobs:
         env:
           PERCY_POSTINSTALL_BROWSER: true
       - name: Set up @percy/cli from git
-        # if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           cd /tmp
           git clone --branch master --depth 1 https://github.com/percy/cli
