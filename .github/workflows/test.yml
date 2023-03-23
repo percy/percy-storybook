@@ -41,7 +41,7 @@ jobs:
           yarn build
           yarn global:link
           cd ${{ github.workspace }} 
-          yarn remove @percy/cli && yarn link `echo $PERCY_PACKAGES`
+          echo "Packages $PERCY_PACKAGES"
+          yarn link `echo $PERCY_PACKAGES`
           npx percy --version
-          yarn build
       - run: yarn test:coverage
