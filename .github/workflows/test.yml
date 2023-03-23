@@ -35,13 +35,10 @@ jobs:
           cd /tmp
           git clone --branch master --depth 1 https://github.com/percy/cli
           cd cli
-          PERCY_PACKAGES=`find packages -mindepth 1 -maxdepth 1 -type d | sed -e 's/packages/@percy/g' | tr '\n' ' '`
           git log -1
           yarn
           yarn build
           yarn global:link
           cd ${{ github.workspace }} 
-          echo "Packages $PERCY_PACKAGES"
-          yarn link `echo $PERCY_PACKAGES`
-          npx percy --version
+          yarn link @percy/cli-command
       - run: yarn test:coverage
