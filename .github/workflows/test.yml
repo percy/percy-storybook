@@ -30,10 +30,10 @@ jobs:
         env:
           PERCY_POSTINSTALL_BROWSER: true
       - name: Set up @percy/cli from git
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        # if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           cd /tmp
-          git clone --branch ${{ github.event.inputs.branch }} --depth 1 https://github.com/percy/cli
+          git clone --branch master --depth 1 https://github.com/percy/cli
           cd cli
           PERCY_PACKAGES=`find packages -type d -depth 1 | sed -e 's/packages/@percy/g' | tr '\n' ' '`
           git log -1
