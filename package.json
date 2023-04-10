@@ -31,7 +31,7 @@
   },
   "@percy/cli": {
     "commands": [
-      "../dist/storybook.js"
+      "./dist/storybook.js"
     ]
   },
   "dependencies": {
