@@ -3,6 +3,7 @@ import spawn from 'cross-spawn';
 import { request } from '@percy/cli-command/utils';
 import { api, logger, setupTest, createTestServer } from '@percy/cli-command/test/helpers';
 import { storybook } from '../src/index.js';
+import polyfill from './polyfill.js';
 
 describe('percy storybook', () => {
   let server, proc;
@@ -191,7 +192,7 @@ describe('percy storybook', () => {
       req.body.data.relationships.resources
         .data.find(r => r.attributes['is-root']).id
     ]).sort((a, b) => a[0] > b[0] ? 1 : -1)).toEqual([
-      ['foo: bar', sha(storyDOM)],
+      ['foo: bar', sha(storyDOM.replace('<head></head>', `<head>${polyfill}</head>`))],
       ['foo: bar/baz', sha(previewDOM)]
     ]);
   });
@@ -304,11 +305,11 @@ describe('percy storybook', () => {
     await storybook(['http://localhost:9000', '--dry-run', '--verbose', '--include=Args']);
 
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy:core:snapshot] Snapshot found: Args',
-      '[percy:core:snapshot] Snapshot found: Args (bold)',
-      '[percy:core:snapshot] Snapshot found: Custom Args',
-      '[percy:core:snapshot] Snapshot found: Purple (Args)',
-      '[percy:core:snapshot] Snapshot found: Special Args',
+      '[percy:core] Snapshot found: Args',
+      '[percy:core] Snapshot found: Args (bold)',
+      '[percy:core] Snapshot found: Custom Args',
+      '[percy:core] Snapshot found: Purple (Args)',
+      '[percy:core] Snapshot found: Special Args',
       '[percy:core] Found 5 snapshots'
     ]));
 
@@ -399,10 +400,10 @@ describe('percy storybook', () => {
     await storybook(['http://localhost:9000', '--dry-run', '--verbose', '--include=/params/']);
 
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy:core:snapshot] Snapshot found: From params',
-      '[percy:core:snapshot] Snapshot found: From params w/ globals',
-      '[percy:core:snapshot] Snapshot found: From params w/ query params',
-      '[percy:core:snapshot] Snapshot found: From params w/ mixed params',
+      '[percy:core] Snapshot found: From params',
+      '[percy:core] Snapshot found: From params w/ globals',
+      '[percy:core] Snapshot found: From params w/ query params',
+      '[percy:core] Snapshot found: From params w/ mixed params',
       '[percy:core] Found 4 snapshots'
     ]));
 
