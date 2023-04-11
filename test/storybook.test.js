@@ -439,7 +439,7 @@ describe('percy storybook', () => {
       `[percy:cli] ${error.stack}`
     ]));
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy:core:snapshot] Snapshot found: Snapshot: First'
+      '[percy:core] Snapshot found: Snapshot: First'
     ]));
   });
 
