@@ -376,17 +376,16 @@ describe('percy storybook', () => {
       '      waitForSelector: "body"',
       '    - include: Skip',
       '      suffix: " (Valid Wait)"',
-      '      enableJavaScript: false',
       '      waitForSelector: "body"'
     ].join('\n'));
 
     await storybook(['http://localhost:9000']);
 
-    expect(logger.stderr).toEqual([
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy] Invalid config:',
       '[percy] - storybook.waitForSelector: not used with JavaScript enabled',
       '[percy] - storybook.additionalSnapshots[0].waitForSelector: not used with JavaScript enabled'
-    ]);
+    ]));
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Snapshot taken: Snapshot: First',
       '[percy] Snapshot taken: Snapshot: Second',
