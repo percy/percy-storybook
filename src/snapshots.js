@@ -203,6 +203,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
         } else {
           // when not dry-running and javascript is not enabled, capture the story dom
           yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
+          /* istanbul ignore next: tested, but coverage is stripped */
           let { dom, domSnapshot = dom } = yield page.snapshot(options);
           options.domSnapshot = domSnapshot;
         }

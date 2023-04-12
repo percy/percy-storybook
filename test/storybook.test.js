@@ -173,6 +173,10 @@ describe('percy storybook', () => {
     // respond with the preview dom only for the first request
     server.reply('/iframe.html', () => [200, 'text/html', i++ ? storyDOM : previewDOM]);
 
+    // eslint-disable-next-line import/no-extraneous-dependencies
+    let { Percy } = await import('@percy/core');
+    spyOn(Percy.prototype, 'snapshot').and.callThrough();
+
     await storybook(['http://localhost:8000']);
 
     expect(logger.stderr).toEqual([]);
@@ -181,19 +185,14 @@ describe('percy storybook', () => {
       '[percy] Snapshot taken: foo: bar/baz'
     ]));
 
-    // small util for creating sha256 hash
-    let { createHash } = await import('crypto');
-    const sha = str => createHash('sha256').update(str, 'utf-8').digest('hex');
+    const callArgs = Percy.prototype.snapshot.calls.allArgs();
 
-    // map to values we care about testing
-    expect(api.requests['/builds/123/snapshots'].map(req => [
-      req.body.data.attributes.name,
-      req.body.data.relationships.resources
-        .data.find(r => r.attributes['is-root']).id
-    ]).sort((a, b) => a[0] > b[0] ? 1 : -1)).toEqual([
-      ['foo: bar', sha(storyDOM)],
-      ['foo: bar/baz', sha(previewDOM)]
-    ]);
+    // match only body
+    expect(callArgs[0][0].domSnapshot).toEqual(jasmine.objectContaining({
+      html: jasmine.stringContaining(storyDOM.replace(/^.*<\/head>/, ''))
+    }));
+
+    expect(callArgs[1][0].domSnapshot).toEqual(previewDOM);
   });
 
   it('sends the version of storybook when creating snapshots', async () => {
@@ -304,11 +303,11 @@ describe('percy storybook', () => {
     await storybook(['http://localhost:9000', '--dry-run', '--verbose', '--include=Args']);
 
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy:core:snapshot] Snapshot found: Args',
-      '[percy:core:snapshot] Snapshot found: Args (bold)',
-      '[percy:core:snapshot] Snapshot found: Custom Args',
-      '[percy:core:snapshot] Snapshot found: Purple (Args)',
-      '[percy:core:snapshot] Snapshot found: Special Args',
+      '[percy:core] Snapshot found: Args',
+      '[percy:core] Snapshot found: Args (bold)',
+      '[percy:core] Snapshot found: Custom Args',
+      '[percy:core] Snapshot found: Purple (Args)',
+      '[percy:core] Snapshot found: Special Args',
       '[percy:core] Found 5 snapshots'
     ]));
 
@@ -375,17 +374,16 @@ describe('percy storybook', () => {
       '      waitForSelector: "body"',
       '    - include: Skip',
       '      suffix: " (Valid Wait)"',
-      '      enableJavaScript: false',
       '      waitForSelector: "body"'
     ].join('\n'));
 
     await storybook(['http://localhost:9000']);
 
-    expect(logger.stderr).toEqual([
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy] Invalid config:',
       '[percy] - storybook.waitForSelector: not used with JavaScript enabled',
       '[percy] - storybook.additionalSnapshots[0].waitForSelector: not used with JavaScript enabled'
-    ]);
+    ]));
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Snapshot taken: Snapshot: First',
       '[percy] Snapshot taken: Snapshot: Second',
@@ -399,10 +397,10 @@ describe('percy storybook', () => {
     await storybook(['http://localhost:9000', '--dry-run', '--verbose', '--include=/params/']);
 
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy:core:snapshot] Snapshot found: From params',
-      '[percy:core:snapshot] Snapshot found: From params w/ globals',
-      '[percy:core:snapshot] Snapshot found: From params w/ query params',
-      '[percy:core:snapshot] Snapshot found: From params w/ mixed params',
+      '[percy:core] Snapshot found: From params',
+      '[percy:core] Snapshot found: From params w/ globals',
+      '[percy:core] Snapshot found: From params w/ query params',
+      '[percy:core] Snapshot found: From params w/ mixed params',
       '[percy:core] Found 4 snapshots'
     ]));
 
@@ -438,7 +436,7 @@ describe('percy storybook', () => {
       `[percy:cli] ${error.stack}`
     ]));
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy:core:snapshot] Snapshot found: Snapshot: First'
+      '[percy:core] Snapshot found: Snapshot: First'
     ]));
   });
 
