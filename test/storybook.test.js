@@ -3,7 +3,6 @@ import spawn from 'cross-spawn';
 import { request } from '@percy/cli-command/utils';
 import { api, logger, setupTest, createTestServer } from '@percy/cli-command/test/helpers';
 import { storybook } from '../src/index.js';
-import polyfill from './polyfill.js';
 
 describe('percy storybook', () => {
   let server, proc;
@@ -174,6 +173,10 @@ describe('percy storybook', () => {
     // respond with the preview dom only for the first request
     server.reply('/iframe.html', () => [200, 'text/html', i++ ? storyDOM : previewDOM]);
 
+    // eslint-disable-next-line import/no-extraneous-dependencies
+    let { Percy } = await import('@percy/core');
+    spyOn(Percy.prototype, 'snapshot').and.callThrough();
+
     await storybook(['http://localhost:8000']);
 
     expect(logger.stderr).toEqual([]);
@@ -182,19 +185,14 @@ describe('percy storybook', () => {
       '[percy] Snapshot taken: foo: bar/baz'
     ]));
 
-    // small util for creating sha256 hash
-    let { createHash } = await import('crypto');
-    const sha = str => createHash('sha256').update(str, 'utf-8').digest('hex');
+    const callArgs = Percy.prototype.snapshot.calls.allArgs();
 
-    // map to values we care about testing
-    expect(api.requests['/builds/123/snapshots'].map(req => [
-      req.body.data.attributes.name,
-      req.body.data.relationships.resources
-        .data.find(r => r.attributes['is-root']).id
-    ]).sort((a, b) => a[0] > b[0] ? 1 : -1)).toEqual([
-      ['foo: bar', sha(storyDOM.replace('<head></head>', `<head>${polyfill}</head>`))],
-      ['foo: bar/baz', sha(previewDOM)]
-    ]);
+    // match only body
+    expect(callArgs[0][0].domSnapshot).toEqual(jasmine.objectContaining({
+      html: jasmine.stringContaining(storyDOM.replace(/^.*<\/head>/, ''))
+    }));
+
+    expect(callArgs[1][0].domSnapshot).toEqual(previewDOM);
   });
 
   it('sends the version of storybook when creating snapshots', async () => {
