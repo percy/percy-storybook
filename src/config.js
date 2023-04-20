@@ -42,10 +42,6 @@ export const storybookSchema = {
         queryParams: {
           type: 'object',
           normalize: false
-        },
-        domTransformation: {
-          type: 'string',
-          normalize: false
         }
       }
     },
