@@ -100,7 +100,7 @@ describe('percy storybook', () => {
     expect(logger.stderr).toEqual([
       '[percy] Build not created',
       '[percy] Error: Storybook object not found on the window. ' +
-        'Open Storybook and check the console for errors.'
+      'Open Storybook and check the console for errors.'
     ]);
   });
 
@@ -136,8 +136,7 @@ describe('percy storybook', () => {
 
   it('errors when the storybook page errors', async () => {
     server.reply('/iframe.html', () => [200, 'text/html', [
-      `<script>__STORYBOOK_PREVIEW__ = { async extract() {}, ${
-        'channel: { emit() {}, on: (a, c) => a === "storyErrored" && c(new Error("Story Error")) }'
+      `<script>__STORYBOOK_PREVIEW__ = { async extract() {}, ${'channel: { emit() {}, on: (a, c) => a === "storyErrored" && c(new Error("Story Error")) }'
       } }</script>`,
       `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
         { id: '1', kind: 'foo', name: 'bar' }
@@ -145,7 +144,7 @@ describe('percy storybook', () => {
     ].join('')]);
 
     await expectAsync(storybook(['http://localhost:8000']))
-    // message contains the client stack trace
+      // message contains the client stack trace
       .toBeRejectedWithError(/^Story Error\n.*\/iframe\.html.*$/s);
 
     expect(logger.stderr).toEqual([
@@ -193,6 +192,40 @@ describe('percy storybook', () => {
     }));
 
     expect(callArgs[1][0].domSnapshot).toEqual(previewDOM);
+  });
+
+  fit('should not remove element when domTransformation is not passed', async () => {
+    // eslint-disable-next-line import/no-extraneous-dependencies
+    let { Percy } = await import('@percy/core');
+    spyOn(Percy.prototype, 'snapshot').and.callThrough();
+
+    await storybook(['http://localhost:9000', '--include=First']);
+
+    const callArgs = Percy.prototype.snapshot.calls.allArgs();
+
+    expect(callArgs[0][0].domSnapshot).toEqual(jasmine.objectContaining({
+      html: jasmine.stringContaining('<p class="removeMe">This heading should be removed using domTransformation</p>')
+    }));
+  });
+
+  fit('removes element when domTransformation is passed', async () => {
+    fs.writeFileSync('.percy.yml', [
+      'version: 2',
+      'storybook:',
+      '  domTransformation: \'(documentElement) => { documentElement.querySelectorAll(".removeMe").forEach(ele => ele.remove()); return documentElement; }\''
+    ].join('\n'));
+
+    // eslint-disable-next-line import/no-extraneous-dependencies
+    let { Percy } = await import('@percy/core');
+    spyOn(Percy.prototype, 'snapshot').and.callThrough();
+
+    await storybook(['http://localhost:9000', '--include=First']);
+
+    const callArgs = Percy.prototype.snapshot.calls.allArgs();
+
+    expect(callArgs[0][0].domSnapshot).not.toEqual(jasmine.objectContaining({
+      html: jasmine.stringContaining('<p class="removeMe">This heading should be removed using domTransformation</p>')
+    }));
   });
 
   it('sends the version of storybook when creating snapshots', async () => {
@@ -314,21 +347,21 @@ describe('percy storybook', () => {
     expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
-        'text:Snapshot+custom+args;style.font:1rem+sans-serif',
+      'text:Snapshot+custom+args;style.font:1rem+sans-serif',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
-        'text:Snapshot+custom+bold+args;style.font:1rem+sans-serif;style.fontWeight:bold',
+      'text:Snapshot+custom+bold+args;style.font:1rem+sans-serif;style.fontWeight:bold',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
-        'text:Snapshot+purple+args;' +
-        'style.font:1rem+sans-serif;' +
-        'style.fontWeight:bold;' +
-        'style.color:purple',
+      'text:Snapshot+purple+args;' +
+      'style.font:1rem+sans-serif;' +
+      'style.fontWeight:bold;' +
+      'style.color:purple',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
-        'null:!null;undefined:!undefined;' +
-        'smallNum:3;largeNum:12000000;' +
-        'date:!date(2022-01-01T00:00:00.000Z);' +
-        'rgb:!rgb(20,30,40);rgba:!rgba(20,30,40,.5);' +
-        'hsl:!hsl(120,80,30);hsla:!hsla(120,80,30,.5);' +
-        'shortHex:!hex(c6c);longHex:!hex(a907cf);alphaHex:!hex(a907cf9f)'
+      'null:!null;undefined:!undefined;' +
+      'smallNum:3;largeNum:12000000;' +
+      'date:!date(2022-01-01T00:00:00.000Z);' +
+      'rgb:!rgb(20,30,40);rgba:!rgba(20,30,40,.5);' +
+      'hsl:!hsl(120,80,30);hsla:!hsla(120,80,30,.5);' +
+      'shortHex:!hex(c6c);longHex:!hex(a907cf);alphaHex:!hex(a907cf9f)'
     ]));
   });
 
@@ -407,11 +440,11 @@ describe('percy storybook', () => {
     expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
-        '&globals=text:+with+globals',
+      '&globals=text:+with+globals',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
-        `&text=${encodeURIComponent(' with query params')}`,
+      `&text=${encodeURIComponent(' with query params')}`,
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
-        `&args=text:Args&globals=text:+globals&text=${encodeURIComponent(' and params')}`
+      `&args=text:Args&globals=text:+globals&text=${encodeURIComponent(' and params')}`
     ]));
   });
 
@@ -605,13 +638,13 @@ describe('percy storybook', () => {
         storybook(['http://localhost:9000', '--dry-run', '--shard-size=2', '--shard-index=7'])
       ).toBeRejectedWithError(
         "The provided '--shard-index' (7) is out of range." +
-          ' Found 2 shards of 2 snapshots each (3 total)'
+        ' Found 2 shards of 2 snapshots each (3 total)'
       );
 
       expect(logger.stderr).toEqual([
         '[percy] Build not created',
         "[percy] Error: The provided '--shard-index' (7) is out of range." +
-          ' Found 2 shards of 2 snapshots each (3 total)'
+        ' Found 2 shards of 2 snapshots each (3 total)'
       ]);
     });
   });

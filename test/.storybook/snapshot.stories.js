@@ -1,7 +1,10 @@
 import React from 'react';
 
 const Snapshot = ({ when }) => (
-  <p>Snapshot me {when}!</p>
+  <div>
+    <p className='removeMe'>This heading should be removed using domTransformation</p>
+    <p>Snapshot me {when}!</p>
+  </div>
 );
 
 export default {
