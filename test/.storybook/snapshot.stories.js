@@ -16,6 +16,11 @@ export const First = () => (
   <Snapshot when="first"/>
 );
 
+First.parameters = {
+  percy: {
+    domTransformation: '(documentElement) => { documentElement.querySelectorAll(".removeMe").forEach(ele => ele.remove()); }'
+  }
+}
 export const Second = () => (
   <Snapshot when="second"/>
 );

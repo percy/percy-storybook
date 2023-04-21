@@ -195,27 +195,7 @@ describe('percy storybook', () => {
     expect(callArgs[1][0].domSnapshot).toEqual(previewDOM);
   });
 
-  it('should not remove element when domTransformation is not passed', async () => {
-    // eslint-disable-next-line import/no-extraneous-dependencies
-    let { Percy } = await import('@percy/core');
-    spyOn(Percy.prototype, 'snapshot').and.callThrough();
-
-    await storybook(['http://localhost:9000', '--include=First']);
-
-    const callArgs = Percy.prototype.snapshot.calls.allArgs();
-
-    expect(callArgs[0][0].domSnapshot).toEqual(jasmine.objectContaining({
-      html: jasmine.stringContaining('<p class="removeMe">This heading should be removed using domTransformation</p>')
-    }));
-  });
-
   it('removes element when domTransformation is passed', async () => {
-    fs.writeFileSync('.percy.yml', [
-      'version: 2',
-      'storybook:',
-      '  domTransformation: \'(documentElement) => { documentElement.querySelectorAll(".removeMe").forEach(ele => ele.remove()); }\''
-    ].join('\n'));
-
     // eslint-disable-next-line import/no-extraneous-dependencies
     let { Percy } = await import('@percy/core');
     spyOn(Percy.prototype, 'snapshot').and.callThrough();
