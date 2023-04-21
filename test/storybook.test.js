@@ -195,6 +195,20 @@ describe('percy storybook', () => {
     expect(callArgs[1][0].domSnapshot).toEqual(previewDOM);
   });
 
+  it('removes element when domTransformation is passed', async () => {
+    // eslint-disable-next-line import/no-extraneous-dependencies
+    let { Percy } = await import('@percy/core');
+    spyOn(Percy.prototype, 'snapshot').and.callThrough();
+
+    await storybook(['http://localhost:9000', '--include=First']);
+
+    const callArgs = Percy.prototype.snapshot.calls.allArgs();
+
+    expect(callArgs[0][0].domSnapshot).not.toEqual(jasmine.objectContaining({
+      html: jasmine.stringContaining('<p class="removeMe">This heading should be removed using domTransformation</p>')
+    }));
+  });
+
   it('sends the version of storybook when creating snapshots', async () => {
     await storybook(['http://localhost:9000']);
 

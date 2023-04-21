@@ -1,7 +1,10 @@
 import React from 'react';
 
 const Snapshot = ({ when }) => (
-  <p>Snapshot me {when}!</p>
+  <div>
+    <p className='removeMe'>This heading should be removed using domTransformation</p>
+    <p>Snapshot me {when}!</p>
+  </div>
 );
 
 export default {
@@ -13,6 +16,11 @@ export const First = () => (
   <Snapshot when="first"/>
 );
 
+First.parameters = {
+  percy: {
+    domTransformation: '(documentElement) => { documentElement.querySelectorAll(".removeMe").forEach(ele => ele.remove()); }'
+  }
+}
 export const Second = () => (
   <Snapshot when="second"/>
 );
