@@ -198,9 +198,11 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
         let { id, args, globals, queryParams, ...options } = snapshots[0];
 
         if (flags.dryRun || options.enableJavaScript || percy.config.snapshot.enableJavaScript) {
+          log.debug(`Loading story via previewResource: ${options.name}`);
           // when dry-running or when javascript is enabled, use the preview dom
           options.domSnapshot = previewResource.content;
         } else {
+          log.debug(`Loading story: ${options.name}`);
           // when not dry-running and javascript is not enabled, capture the story dom
           yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
           /* istanbul ignore next: tested, but coverage is stripped */
