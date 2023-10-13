@@ -181,7 +181,9 @@ describe('percy storybook', () => {
       expect(logger.stderr).toEqual([
         '[percy] Failed to capture story: foo: bar',
         // error logs contain the client stack trace
-        jasmine.stringMatching(/^\[percy\] Error: Story Error\n.*\/iframe\.html.*$/s)
+        jasmine.stringMatching(/^\[percy\] Error: Story Error\n.*\/iframe\.html.*$/s),
+        // does not create a build if all stories failed [ 1 in this case ]
+        '[percy] Build not created'
       ]);
     });
   });

@@ -188,6 +188,14 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     // set storybook environment info
     percy.client.addEnvironmentInfo(environmentInfo);
 
+    // We use an outer and inner loop on same snapshots.length
+    // - we create a new page and load one story on it at a time for snapshotting
+    // - if it throws exception then we want to catch it outside of `withPage` call as
+    //   when `withPage` returns it closes the page
+    // - we want to make sure we close the page that had exception in story to make sure
+    //   we dont reuse a page which is possibly in a weird state due to last exception
+    // - so post exception we come out of inner loop and skip the story, create new page
+    //   using outer loop and continue next stories again on a new page
     while (snapshots.length) {
       try {
         // use a single page to capture story snapshots without reloading
