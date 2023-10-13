@@ -188,38 +188,62 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     // set storybook environment info
     percy.client.addEnvironmentInfo(environmentInfo);
 
-    // use a single page to capture story snapshots without reloading
-    yield* withPage(percy, previewUrl, async function*(page) {
-      // determines when to retry page crashes
-      lastCount = snapshots.length;
+    // We use an outer and inner loop on same snapshots.length
+    // - we create a new page and load one story on it at a time for snapshotting
+    // - if it throws exception then we want to catch it outside of `withPage` call as
+    //   when `withPage` returns it closes the page
+    // - we want to make sure we close the page that had exception in story to make sure
+    //   we dont reuse a page which is possibly in a weird state due to last exception
+    // - so post exception we come out of inner loop and skip the story, create new page
+    //   using outer loop and continue next stories again on a new page
+    while (snapshots.length) {
+      try {
+        // use a single page to capture story snapshots without reloading
+        yield* withPage(percy, previewUrl, async function*(page) {
+          // determines when to retry page crashes
+          lastCount = snapshots.length;
 
-      while (snapshots.length) {
-        // separate story and snapshot options
-        let { id, args, globals, queryParams, ...options } = snapshots[0];
+          while (snapshots.length) {
+            // separate story and snapshot options
+            let { id, args, globals, queryParams, ...options } = snapshots[0];
 
-        if (flags.dryRun || options.enableJavaScript || percy.config.snapshot.enableJavaScript) {
-          // when dry-running or when javascript is enabled, use the preview dom
-          options.domSnapshot = previewResource.content;
+            if (flags.dryRun || options.enableJavaScript || percy.config.snapshot.enableJavaScript) {
+              log.debug(`Loading story via previewResource: ${options.name}`);
+              // when dry-running or when javascript is enabled, use the preview dom
+              options.domSnapshot = previewResource.content;
+            } else {
+              log.debug(`Loading story: ${options.name}`);
+              // when not dry-running and javascript is not enabled, capture the story dom
+              yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
+              /* istanbul ignore next: tested, but coverage is stripped */
+              let { dom, domSnapshot = dom } = yield page.snapshot(options);
+              options.domSnapshot = domSnapshot;
+            }
+
+            // validate without logging to prune all other options
+            PercyConfig.validate(options, '/snapshot/dom');
+            // snapshots are queued and do not need to be awaited on
+            percy.snapshot(options);
+            // discard this story snapshot when done
+            snapshots.shift();
+          }
+        }, () => {
+          log.debug(`Page crashed while loading story: ${snapshots[0].name}`);
+          // return true to retry as long as the length decreases
+          return lastCount > snapshots.length;
+        });
+      } catch (e) {
+        if (process.env.PERCY_SKIP_STORY_ON_ERROR === 'true') {
+          let { name } = snapshots[0];
+          log.error(`Failed to capture story: ${name}`);
+          log.error(e);
+          // ignore story
+          snapshots.shift();
         } else {
-          // when not dry-running and javascript is not enabled, capture the story dom
-          yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
-          /* istanbul ignore next: tested, but coverage is stripped */
-          let { dom, domSnapshot = dom } = yield page.snapshot(options);
-          options.domSnapshot = domSnapshot;
+          throw e;
         }
-
-        // validate without logging to prune all other options
-        PercyConfig.validate(options, '/snapshot/dom');
-        // snapshots are queued and do not need to be awaited on
-        percy.snapshot(options);
-        // discard this story snapshot when done
-        snapshots.shift();
       }
-    }, () => {
-      log.debug(`Page crashed while loading story: ${snapshots[0].name}`);
-      // return true to retry as long as the length decreases
-      return lastCount > snapshots.length;
-    });
+    }
 
     // will stop once snapshots are done processing
     yield* percy.yield.stop();
