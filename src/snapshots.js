@@ -225,17 +225,15 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
           return lastCount > snapshots.length;
         });
       } catch (e) {
-        // if we get an exception while capturing a story
-        // - we want to print error
-        // - skip story
-        // - continue capturing stories on a new page to avoid weird page states
-        let { name } = snapshots[0];
-
-        log.error(`Failed to capture story: ${name}`);
-        log.error(e);
-
-        // ignore story
-        snapshots.shift();
+        if (process.env.PERCY_SKIP_STORY_ON_ERROR === 'true') {
+          let { name } = snapshots[0];
+          log.error(`Failed to capture story: ${name}`);
+          log.error(e);
+          // ignore story
+          snapshots.shift();
+        } else {
+          throw e;
+        }
       }
     }
 

@@ -155,6 +155,37 @@ describe('percy storybook', () => {
     ]);
   });
 
+  describe('with PERCY_SKIP_STORY_ON_ERROR set to true', () => {
+    beforeAll(() => {
+      process.env.PERCY_SKIP_STORY_ON_ERROR = true;
+    });
+
+    afterAll(() => {
+      delete process.env.PERCY_SKIP_STORY_ON_ERROR;
+    });
+
+    it('skips the story and logs the error but does not break build', async () => {
+      server.reply('/iframe.html', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = { async extract() {}, ${
+          'channel: { emit() {}, on: (a, c) => a === "storyErrored" && c(new Error("Story Error")) }'
+        } }</script>`,
+        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+          { id: '1', kind: 'foo', name: 'bar' }
+        ])} }</script>`
+      ].join('')]);
+
+      // does not reject
+      await storybook(['http://localhost:8000']);
+
+      // contains logs of story error
+      expect(logger.stderr).toEqual([
+        '[percy] Failed to capture story: foo: bar',
+        // error logs contain the client stack trace
+        jasmine.stringMatching(/^\[percy\] Error: Story Error\n.*\/iframe\.html.*$/s)
+      ]);
+    });
+  });
+
   it('uses the preview dom when javascript is enabled', async () => {
     let previewDOM = '<p>This is the preview</p>';
     let i = 0;
