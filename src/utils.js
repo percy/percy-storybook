@@ -180,6 +180,9 @@ export function evalStorybookStorySnapshots({ waitFor }) {
   };
 
   return waitFor(async () => {
+    // uncache stories, if cached via storyStorev7: true
+    await (window.__STORYBOOK_PREVIEW__?.cacheAllCSFFiles?.() ||
+      window.__STORYBOOK_STORY_STORE__?.cacheAllCSFFiles?.());
     // use newer storybook APIs before old APIs
     await (window.__STORYBOOK_PREVIEW__?.extract?.() ||
            window.__STORYBOOK_STORY_STORE__?.extract?.());
