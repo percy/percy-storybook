@@ -151,8 +151,8 @@ export function evalStorybookEnvironmentInfo({ waitForXPath }) {
     .then(el => `storybook/${el.innerText.match(/-?\d*\.?\d+/g).join('')}`)
     .catch(() => {
       waitForXPath("//strong[starts-with(text(), 'You are on Storybook ')]", 5000)
-      .then(el => `storybook/${el.innerText.match(/-?\d*\.?\d+/g).join('')}`)
-      .catch(() => 'storybook/unknown')
+        .then(el => `storybook/${el.innerText.match(/-?\d*\.?\d+/g).join('')}`)
+        .catch(() => 'storybook/unknown');
     });
 }
 
