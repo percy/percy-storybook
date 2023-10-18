@@ -149,7 +149,11 @@ export async function* withPage(percy, url, callback, retry) {
 export function evalStorybookEnvironmentInfo({ waitForXPath }) {
   return waitForXPath("//header[starts-with(text(), 'Storybook ')]", 5000)
     .then(el => `storybook/${el.innerText.match(/-?\d*\.?\d+/g).join('')}`)
-    .catch(() => 'storybook/unknown');
+    .catch(() => {
+      waitForXPath("//strong[starts-with(text(), 'You are on Storybook ')]", 5000)
+        .then(el => `storybook/${el.innerText.match(/-?\d*\.?\d+/g).join('')}`)
+        .catch(() => 'storybook/unknown');
+    });
 }
 
 // Evaluate and return serialized Storybook stories to snapshot
