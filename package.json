@@ -37,7 +37,8 @@
   "dependencies": {
     "@percy/cli-command": "^1.24.0",
     "cross-spawn": "^7.0.3",
-    "qs": "^6.11.0"
+    "qs": "^6.11.0",
+    "storybook-v6": "npm:@storybook/react@^6.5.13"
   },
   "devDependencies": {
     "@babel/cli": "^7.23.0",
