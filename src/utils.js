@@ -147,13 +147,12 @@ export async function* withPage(percy, url, callback, retry) {
 // Evaluate and return Storybook environment information from the about page
 /* istanbul ignore next: no instrumenting injected code */
 export function evalStorybookEnvironmentInfo({ waitForXPath }) {
-  return waitForXPath("//header[starts-with(text(), 'Storybook ')]", 5000)
+  var possibleEnvs = [];
+  possibleEnvs.push(waitForXPath("//header[starts-with(text(), 'Storybook ')]", 5000))
+  possibleEnvs.push(waitForXPath("//strong[starts-with(text(), 'You are on Storybook ')]", 5000))
+  return Promise.any(possibleEnvs)
     .then(el => `storybook/${el.innerText.match(/-?\d*\.?\d+/g).join('')}`)
-    .catch(() => {
-      waitForXPath("//strong[starts-with(text(), 'You are on Storybook ')]", 5000)
-        .then(el => `storybook/${el.innerText.match(/-?\d*\.?\d+/g).join('')}`)
-        .catch(() => 'storybook/unknown');
-    });
+    .catch(() => 'storybook/unknown');
 }
 
 // Evaluate and return serialized Storybook stories to snapshot
