@@ -32,11 +32,11 @@ export const start = command('start', {
   let { default: { spawn } } = yield import('cross-spawn');
   let { host, port } = flags;
 
-  let args = ['--ci', `--host=${host}`, `--port=${port}`, ...argv];
-  log.info(`Running "start-storybook ${args.join(' ')}"`);
+  let args = ['dev', '--ci', `--host=${host}`, `--port=${port}`, ...argv];
+  log.info(`Running "storybook ${args.join(' ')}"`);
 
   let proc = yield new Promise((resolve, reject) => resolve(
-    spawn('start-storybook', args, { stdio: 'inherit' }).on('error', reject)
+    spawn('storybook', args, { stdio: 'inherit' }).on('error', reject)
   ));
 
   /* istanbul ignore next: this is a storybook flag we don't need to test */

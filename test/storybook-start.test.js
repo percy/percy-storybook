@@ -27,7 +27,7 @@ describe('percy storybook:start', () => {
     ] : []);
 
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      `[percy] Running "start-storybook --ci --host=localhost --port=9000 ${args.join(' ')}"`,
+      `[percy] Running "storybook dev --ci --host=localhost --port=9000 ${args.join(' ')}"`,
       '[percy] Percy has started!',
       '[percy] Snapshot taken: Snapshot: First',
       '[percy] Snapshot taken: Snapshot: Second',
@@ -51,7 +51,7 @@ describe('percy storybook:start', () => {
     await expectAsync(start([...args])).toBeRejectedWithError('FAKE ENOENT');
 
     expect(logger.stdout).toEqual([
-      `[percy] Running "start-storybook --ci --host=localhost --port=9000 ${args.join(' ')}"`
+      `[percy] Running "storybook dev --ci --host=localhost --port=9000 ${args.join(' ')}"`
     ]);
     expect(logger.stderr).toEqual([
       '[percy] Error: FAKE ENOENT'

@@ -16,7 +16,8 @@ describe('percy storybook', () => {
       default: () => [200, 'text/html', '<p>Not Storybook</p>']
     });
 
-    proc = spawn('start-storybook', [
+    proc = spawn('storybook', [
+      'dev',
       '--config-dir=./test/.storybook',
       '--port=9000',
       '--ci'
