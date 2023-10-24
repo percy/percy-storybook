@@ -16,11 +16,16 @@ describe('percy storybook', () => {
       default: () => [200, 'text/html', '<p>Not Storybook</p>']
     });
 
-    proc = spawn('start-storybook', [
+    let storybookVersion = process.env.STORYBOOK_VERSION || '6';
+    let args = storybookVersion === '7' ? ['dev'] : [];
+    args = args.concat([
       '--config-dir=./test/.storybook',
       '--port=9000',
       '--ci'
-    ], { stdio: 'inherit' });
+    ]);
+    let storybookBinary = storybookVersion === '7' ? 'storybook' : 'start-storybook';
+
+    proc = spawn(storybookBinary, args, { stdio: 'inherit' });
 
     // wait for storybook to become available
     await request('http://localhost:9000', {
