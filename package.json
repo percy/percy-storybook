@@ -37,8 +37,7 @@
   "dependencies": {
     "@percy/cli-command": "^1.24.0",
     "cross-spawn": "^7.0.3",
-    "qs": "^6.11.0",
-    "storybook-v6": "npm:@storybook/react@^6.5.13"
+    "qs": "^6.11.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.23.0",
@@ -46,8 +45,7 @@
     "@babel/eslint-parser": "^7.19.1",
     "@babel/eslint-plugin": "^7.19.1",
     "@babel/preset-env": "^7.22.9",
-    "@storybook/react": "^7.5.0",
-    "@storybook/react-webpack5": "^7.5.0",
+    "@storybook/react": "^6.5.13",
     "babel-eslint": "^10.0.3",
     "babel-plugin-istanbul": "^6.1.1",
     "cross-env": "^7.0.3",
@@ -63,7 +61,6 @@
     "nock": "^13.2.9",
     "nyc": "^15.1.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "storybook": "^7.5.0"
+    "react-dom": "^18.2.0"
   }
 }
