@@ -24,7 +24,7 @@
     "clean": "git clean -Xdf -e !node_modules -e !node_modules/**",
     "lint": "eslint --ignore-path .gitignore .",
     "readme": "percy-cli-readme",
-    "pretest": "storybook build --config-dir=./test/.storybook --output-dir=./test/.storybook-build --loglevel error",
+    "pretest": "build-storybook --config-dir=./test/.storybook --output-dir=./test/.storybook-build --loglevel error",
     "test": "yarn test:env jasmine --config=./test/jasmine.json",
     "test:env": "cross-env NODE_ENV=test NODE_OPTIONS='--loader=./test/loader.js'",
     "test:coverage": "nyc yarn test"
