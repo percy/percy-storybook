@@ -21,7 +21,7 @@ describe('percy storybook', () => {
       '--config-dir=./test/.storybook',
       '--port=9000',
       '--ci'
-    ]);
+    ], { stdio: 'inherit' });
 
     // wait for storybook to become available
     await request('http://localhost:9000', {
