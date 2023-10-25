@@ -9,7 +9,7 @@ on:
         default: master
 jobs:
   test:
-    name: Test
+    name: Test Storybook v6
     strategy:
       matrix:
         os: [ubuntu-latest]
