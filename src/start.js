@@ -1,5 +1,6 @@
 import command from '@percy/cli-command';
 import * as common from './common.js';
+import { checkStorybookVersion } from './utils.js';
 
 export const start = command('start', {
   description: 'Run start-storybook to snapshot stories',
@@ -31,12 +32,12 @@ export const start = command('start', {
   let { takeStorybookSnapshots } = yield import('./snapshots.js');
   let { default: { spawn } } = yield import('cross-spawn');
   let { host, port } = flags;
-  let storybookVersion = process.env.STORYBOOK_VERSION || '6';
+  let storybookVersion = await checkStorybookVersion();
 
-  let args = storybookVersion === '7' ? ['dev'] : [];
+  let args = storybookVersion === 7 ? ['dev'] : [];
   args = args.concat(['--ci', `--host=${host}`, `--port=${port}`, ...argv]);
 
-  let storybookBinary = storybookVersion === '7' ? 'storybook' : 'start-storybook';
+  let storybookBinary = storybookVersion === 7 ? 'storybook' : 'start-storybook';
 
   log.info(`Running "${storybookBinary} ${args.join(' ')}"`);
 

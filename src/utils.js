@@ -1,4 +1,19 @@
 import { request, createRootResource, yieldTo } from '@percy/cli-command/utils';
+import spawn from 'cross-spawn';
+
+// check storybook version
+export function checkStorybookVersion() {
+  return new Promise((resolve, reject) => {
+    spawn('storybook', ['--version'])
+      .on('exit', (code) => { if (code === 0) resolve(7); })
+      .on('error', (err) => {
+        if (err.code === 'ENOENT') {
+          resolve(6);
+        }
+        reject(err);
+      });
+  });
+}
 
 // Transforms authorization credentials into a basic auth header and returns all config request
 // headers with the additional authorization header if not already set.

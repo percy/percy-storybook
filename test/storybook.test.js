@@ -3,6 +3,7 @@ import spawn from 'cross-spawn';
 import { request } from '@percy/cli-command/utils';
 import { api, logger, setupTest, createTestServer } from '@percy/cli-command/test/helpers';
 import { storybook } from '../src/index.js';
+import { checkStorybookVersion } from '../src/utils.js';
 
 describe('percy storybook', () => {
   let server, proc;
@@ -16,14 +17,14 @@ describe('percy storybook', () => {
       default: () => [200, 'text/html', '<p>Not Storybook</p>']
     });
 
-    let storybookVersion = process.env.STORYBOOK_VERSION || '6';
-    let args = storybookVersion === '7' ? ['dev'] : [];
+    let storybookVersion = await checkStorybookVersion();
+    let args = storybookVersion === 7 ? ['dev'] : [];
     args = args.concat([
       '--config-dir=./test/.storybook',
       '--port=9000',
       '--ci'
     ]);
-    let storybookBinary = storybookVersion === '7' ? 'storybook' : 'start-storybook';
+    let storybookBinary = storybookVersion === 7 ? 'storybook' : 'start-storybook';
 
     proc = spawn(storybookBinary, args, { stdio: 'inherit' });
 
