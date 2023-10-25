@@ -7,7 +7,7 @@
     "url": "https://github.com/percy/percy-storybook.git"
   },
   "engine": {
-    "node": ">=16"
+    "node": ">=14"
   },
   "files": [
     "bin",
