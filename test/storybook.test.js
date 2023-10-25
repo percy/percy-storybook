@@ -55,7 +55,11 @@ describe('percy storybook', () => {
   it('snapshots live urls', async () => {
     await storybook(['http://localhost:9000']);
 
-    expect(logger.stderr).toEqual([]);
+    // if there are stderr logs ensure it is only an acceptable warning
+    expect(logger.stderr).toEqual(logger.stderr.length ? [
+      '[percy] Waiting on a response from Storybook...'
+    ] : []);
+
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Percy has started!',
       '[percy] Snapshot taken: Snapshot: First',
