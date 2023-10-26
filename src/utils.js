@@ -142,7 +142,7 @@ export async function* withPage(percy, url, callback, retry) {
     return yield* yieldTo(callback(page));
   } catch (error) {
     // if the page crashed and retry returns truthy, try again
-    if (error.message?.includes('crashed') && retry?.()) {
+    if (error?.message?.includes('crashed') && retry?.()) {
       return yield* withPage(...arguments);
     }
 
