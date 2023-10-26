@@ -16,11 +16,11 @@ jobs:
         node: [14]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions-ecosystem/action-regex-match@v2
+      - uses: actions-ecosystem/action-regex-match@9e6c4fb3d5e898f505be7a1fb6e7b0a278f6665b
         id: regex-match
         if: ${{ github.event_name == 'workflow_dispatch' }}
         with:
-          text: ${{ github.event.inputs.branch }}
+          text: ${{ inputs.branch }}
           regex: '^[a-zA-Z0-9_/\-]+$'
       - name: Break on invalid branch name
         run: exit 1
@@ -43,7 +43,7 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           cd /tmp
-          git clone --branch ${{ github.event.inputs.branch }}  --depth 1 https://github.com/percy/cli
+          git clone --branch ${{ inputs.branch }}  --depth 1 https://github.com/percy/cli
           cd cli
           PERCY_PACKAGES=`find packages -type d -mindepth 1 -maxdepth 1 | sed -e 's/packages/@percy/g' | tr '\n' ' '`
           echo "Packages: $PERCY_PACKAGES"
@@ -55,4 +55,4 @@ jobs:
           yarn link `echo $PERCY_PACKAGES`
           npx percy --version
 
-      - run: yarn test:coverage
+      - run: yarn test
