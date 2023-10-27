@@ -1,4 +1,19 @@
 import { request, createRootResource, yieldTo } from '@percy/cli-command/utils';
+import spawn from 'cross-spawn';
+
+// check storybook version
+export function checkStorybookVersion() {
+  return new Promise((resolve, reject) => {
+    spawn('storybook', ['--version'])
+      .on('exit', (code) => { if (code === 0) resolve(7); })
+      .on('error', (err) => {
+        if (err.code === 'ENOENT') {
+          resolve(6);
+        }
+        reject(err);
+      });
+  });
+}
 
 // Transforms authorization credentials into a basic auth header and returns all config request
 // headers with the additional authorization header if not already set.
@@ -127,7 +142,7 @@ export async function* withPage(percy, url, callback, retry) {
     return yield* yieldTo(callback(page));
   } catch (error) {
     // if the page crashed and retry returns truthy, try again
-    if (error.message?.includes('crashed') && retry?.()) {
+    if (error?.message?.includes('crashed') && retry?.()) {
       return yield* withPage(...arguments);
     }
 
@@ -147,7 +162,10 @@ export async function* withPage(percy, url, callback, retry) {
 // Evaluate and return Storybook environment information from the about page
 /* istanbul ignore next: no instrumenting injected code */
 export function evalStorybookEnvironmentInfo({ waitForXPath }) {
-  return waitForXPath("//header[starts-with(text(), 'Storybook ')]", 5000)
+  let possibleEnvs = [];
+  possibleEnvs.push(waitForXPath("//header[starts-with(text(), 'Storybook ')]", 5000));
+  possibleEnvs.push(waitForXPath("//strong[starts-with(text(), 'You are on Storybook ')]", 5000));
+  return Promise.any(possibleEnvs)
     .then(el => `storybook/${el.innerText.match(/-?\d*\.?\d+/g).join('')}`)
     .catch(() => 'storybook/unknown');
 }
@@ -180,6 +198,9 @@ export function evalStorybookStorySnapshots({ waitFor }) {
   };
 
   return waitFor(async () => {
+    // uncache stories, if cached via storyStorev7: true
+    await (window.__STORYBOOK_PREVIEW__?.cacheAllCSFFiles?.() ||
+      window.__STORYBOOK_STORY_STORE__?.cacheAllCSFFiles?.());
     // use newer storybook APIs before old APIs
     await (window.__STORYBOOK_PREVIEW__?.extract?.() ||
            window.__STORYBOOK_STORY_STORE__?.extract?.());

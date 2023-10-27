@@ -3,6 +3,7 @@ import spawn from 'cross-spawn';
 import { request } from '@percy/cli-command/utils';
 import { api, logger, setupTest, createTestServer } from '@percy/cli-command/test/helpers';
 import { storybook } from '../src/index.js';
+import { checkStorybookVersion } from '../src/utils.js';
 
 describe('percy storybook', () => {
   let server, proc;
@@ -16,11 +17,16 @@ describe('percy storybook', () => {
       default: () => [200, 'text/html', '<p>Not Storybook</p>']
     });
 
-    proc = spawn('start-storybook', [
+    let storybookVersion = await checkStorybookVersion();
+    let args = storybookVersion === 7 ? ['dev'] : [];
+    args = args.concat([
       '--config-dir=./test/.storybook',
       '--port=9000',
       '--ci'
     ]);
+    let storybookBinary = storybookVersion === 7 ? 'storybook' : 'start-storybook';
+
+    proc = spawn(storybookBinary, args, { stdio: 'inherit' });
 
     // wait for storybook to become available
     await request('http://localhost:9000', {
@@ -49,7 +55,11 @@ describe('percy storybook', () => {
   it('snapshots live urls', async () => {
     await storybook(['http://localhost:9000']);
 
-    expect(logger.stderr).toEqual([]);
+    // if there are stderr logs ensure it is only an acceptable warning
+    expect(logger.stderr).toEqual(logger.stderr.length ? [
+      '[percy] Waiting on a response from Storybook...'
+    ] : []);
+
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Percy has started!',
       '[percy] Snapshot taken: Snapshot: First',
