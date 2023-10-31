@@ -142,7 +142,7 @@ export async function* withPage(percy, url, callback, retry) {
     return yield* yieldTo(callback(page));
   } catch (error) {
     // if the page crashed and retry returns truthy, try again
-    if (error?.message?.includes('crashed') && retry?.()) {
+    if (error.message?.includes('crashed') && retry?.()) {
       return yield* withPage(...arguments);
     }
 
@@ -247,9 +247,9 @@ export function evalSetCurrentStory({ waitFor }, story) {
     // resolve when rendered, reject on any other renderer event
     return new Promise((resolve, reject) => {
       channel.on('storyRendered', resolve);
-      channel.on('storyMissing', reject);
-      channel.on('storyErrored', reject);
-      channel.on('storyThrewException', reject);
+      channel.on('storyMissing', () => reject('Story Missing'));
+      channel.on('storyErrored', () => reject('Story Errored'));
+      channel.on('storyThrewException', () => reject('Story Threw Exception'));
     });
   });
 }
