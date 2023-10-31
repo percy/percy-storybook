@@ -199,7 +199,9 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     while (snapshots.length) {
       try {
         // use a single page to capture story snapshots without reloading
-        yield* withPage(percy, previewUrl, async function*(page) {
+        // loading an existing story instead of just iframe.html as that triggers `storyMissing` event
+        // This in turn leads to promise rejection and failure
+        yield* withPage(percy, `${previewUrl}?id=${snapshots[0].id}&viewMode=story`, async function*(page) {
           // determines when to retry page crashes
           lastCount = snapshots.length;
 
