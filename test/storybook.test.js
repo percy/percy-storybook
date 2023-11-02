@@ -156,12 +156,12 @@ describe('percy storybook', () => {
 
     await expectAsync(storybook(['http://localhost:8000']))
     // message contains the client stack trace
-      .toBeRejectedWithError(/^Story Errored\n.*\/iframe\.html.*$/s);
+      .toBeRejectedWithError(/^Story Error\n.*\/iframe\.html.*$/s);
 
     expect(logger.stderr).toEqual([
       '[percy] Build not created',
       // message contains the client stack trace
-      jasmine.stringMatching(/^\[percy\] Error: Story Errored\n.*\/iframe\.html.*$/s)
+      jasmine.stringMatching(/^\[percy\] Error: Story Error\n.*\/iframe\.html.*$/s)
     ]);
   });
 
@@ -191,7 +191,7 @@ describe('percy storybook', () => {
       expect(logger.stderr).toEqual([
         '[percy] Failed to capture story: foo: bar',
         // error logs contain the client stack trace
-        jasmine.stringMatching(/^\[percy\] Error: Story Errored\n.*\/iframe\.html.*$/s),
+        jasmine.stringMatching(/^\[percy\] Error: Story Error\n.*\/iframe\.html.*$/s),
         // does not create a build if all stories failed [ 1 in this case ]
         '[percy] Build not created'
       ]);

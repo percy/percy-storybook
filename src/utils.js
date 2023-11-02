@@ -247,9 +247,9 @@ export function evalSetCurrentStory({ waitFor }, story) {
     // resolve when rendered, reject on any other renderer event
     return new Promise((resolve, reject) => {
       channel.on('storyRendered', resolve);
-      channel.on('storyMissing', () => reject(new Error('Story Missing')));
-      channel.on('storyErrored', () => reject(new Error('Story Errored')));
-      channel.on('storyThrewException', () => reject(new Error('Story Threw Exception')));
+      channel.on('storyMissing', (err) => reject(err || new Error('Story Missing')));
+      channel.on('storyErrored', (err) => reject(err || new Error('Story Errored')));
+      channel.on('storyThrewException', (err) => reject(err || new Error('Story Threw Exception')));
     });
   });
 }
