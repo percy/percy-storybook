@@ -116,6 +116,7 @@ export async function* withPage(percy, url, callback, retry) {
   let page = yield percy.browser.page({
     networkIdleTimeout: percy.config.discovery.networkIdleTimeout,
     requestHeaders: getAuthHeaders(percy.config.discovery),
+    captureServiceWorker: percy.config.captureServiceWorker,
     userAgent: percy.config.discovery.userAgent
   });
 
