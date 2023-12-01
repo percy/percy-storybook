@@ -231,7 +231,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
                   options.domSnapshot = domSnapshot;
                   // validate without logging to prune all other options
                   PercyConfig.validate(options, '/snapshot/dom');
-                  // validate without logging to prune all other options
+                  // snapshots are queued and do not need to be awaited on
                   percy.snapshot({ ...options, widths: [w] });
                 }
               } else {
@@ -239,7 +239,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
                 options.domSnapshot = domSnapshot;
                 // validate without logging to prune all other options
                 PercyConfig.validate(options, '/snapshot/dom');
-                // validate without logging to prune all other options
+                // snapshots are queued and do not need to be awaited on
                 percy.snapshot({ ...options });
               }
             }
