@@ -222,16 +222,25 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
               // when not dry-running and javascript is not enabled, capture the story dom
               yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
               /* istanbul ignore next: tested, but coverage is stripped */
-              for (let i = 0; i < percy.config.snapshot.widths.length; i++) {
-                let w = percy.config.snapshot.widths[i];
-                log.debug(`Capturing snapshot for width - ${w}`);
-                yield page.resize({ width: w, height: percy.config.snapshot.minHeight });
+              if (percy.config?.percy?.deferUploads) {
+                for (let i = 0; i < percy.config.snapshot.widths.length; i++) {
+                  let w = percy.config.snapshot.widths[i];
+                  log.debug(`Capturing snapshot for width - ${w}`);
+                  yield page.resize({ width: w, height: percy.config.snapshot.minHeight });
+                  let { dom, domSnapshot = dom } = yield page.snapshot(options);
+                  options.domSnapshot = domSnapshot;
+                  // validate without logging to prune all other options
+                  PercyConfig.validate(options, '/snapshot/dom');
+                  // validate without logging to prune all other options
+                  percy.snapshot({ ...options, widths: [w] });
+                }
+              } else {
                 let { dom, domSnapshot = dom } = yield page.snapshot(options);
                 options.domSnapshot = domSnapshot;
                 // validate without logging to prune all other options
                 PercyConfig.validate(options, '/snapshot/dom');
                 // validate without logging to prune all other options
-                percy.snapshot({ ...options, widths: [w] });
+                percy.snapshot({ ...options });
               }
             }
             // discard this story snapshot when done

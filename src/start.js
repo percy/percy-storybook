@@ -25,8 +25,7 @@ export const start = command('start', {
   ],
 
   percy: {
-    delayUploads: true,
-    deferUploads: true
+    delayUploads: true
   }
 }, async function*({ percy, flags, argv, log, exit }) {
   if (!percy) exit(0, 'Percy is disabled');
