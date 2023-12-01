@@ -1,6 +1,6 @@
 {
   "name": "@percy/storybook",
-  "version": "5.0.1",
+  "version": "5.0.1-alpha.1",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -8,7 +8,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "latest"
+    "tag": "alpha"
   },
   "engine": {
     "node": ">=14"
