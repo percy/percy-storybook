@@ -213,19 +213,27 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
               log.debug(`Loading story via previewResource: ${options.name}`);
               // when dry-running or when javascript is enabled, use the preview dom
               options.domSnapshot = previewResource.content;
+              // validate without logging to prune all other options
+              PercyConfig.validate(options, '/snapshot/dom');
+              // snapshots are queued and do not need to be awaited on
+              percy.snapshot(options);
             } else {
               log.debug(`Loading story: ${options.name}`);
               // when not dry-running and javascript is not enabled, capture the story dom
               yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
               /* istanbul ignore next: tested, but coverage is stripped */
-              let { dom, domSnapshot = dom } = yield page.snapshot(options);
-              options.domSnapshot = domSnapshot;
+              for (let i = 0; i < percy.config.snapshot.widths.length; i++) {
+                let w = percy.config.snapshot.widths[i];
+                log.debug(`Capturing snapshot for width - ${w}`);
+                yield page.resize({ width: w, height: percy.config.snapshot.minHeight });
+                let { dom, domSnapshot = dom } = yield page.snapshot(options);
+                options.domSnapshot = domSnapshot;
+                // validate without logging to prune all other options
+                PercyConfig.validate(options, '/snapshot/dom');
+                // validate without logging to prune all other options
+                percy.snapshot({ ...options, widths: [w] });
+              }
             }
-
-            // validate without logging to prune all other options
-            PercyConfig.validate(options, '/snapshot/dom');
-            // snapshots are queued and do not need to be awaited on
-            percy.snapshot(options);
             // discard this story snapshot when done
             snapshots.shift();
           }

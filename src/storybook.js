@@ -24,7 +24,8 @@ export const storybook = command('storybook', {
   ],
 
   percy: {
-    delayUploads: true
+    delayUploads: true,
+    deferUploads: true
   },
 
   config: {
