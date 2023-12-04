@@ -154,6 +154,15 @@ describe('percy storybook', () => {
       ])} }</script>`
     ].join('')]);
 
+    server.reply('/iframe.html?id=1&viewMode=story', () => [200, 'text/html', [
+      `<script>__STORYBOOK_PREVIEW__ = { async extract() {}, ${
+        'channel: { emit() {}, on: (a, c) => a === "storyErrored" && c(new Error("Story Error")) }'
+      } }</script>`,
+      `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])} }</script>`
+    ].join('')]);
+
     await expectAsync(storybook(['http://localhost:8000']))
     // message contains the client stack trace
       .toBeRejectedWithError(/^Story Error\n.*\/iframe\.html.*$/s);
@@ -176,6 +185,15 @@ describe('percy storybook', () => {
 
     it('skips the story and logs the error but does not break build', async () => {
       server.reply('/iframe.html', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = { async extract() {}, ${
+          'channel: { emit() {}, on: (a, c) => a === "storyErrored" && c(new Error("Story Error")) }'
+        } }</script>`,
+        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+          { id: '1', kind: 'foo', name: 'bar' }
+        ])} }</script>`
+      ].join('')]);
+
+      server.reply('/iframe.html?id=1&viewMode=story', () => [200, 'text/html', [
         `<script>__STORYBOOK_PREVIEW__ = { async extract() {}, ${
           'channel: { emit() {}, on: (a, c) => a === "storyErrored" && c(new Error("Story Error")) }'
         } }</script>`,
@@ -215,6 +233,7 @@ describe('percy storybook', () => {
 
     // respond with the preview dom only for the first request
     server.reply('/iframe.html', () => [200, 'text/html', i++ ? storyDOM : previewDOM]);
+    server.reply('/iframe.html?id=1&viewMode=story', () => [200, 'text/html', i++ ? storyDOM : previewDOM]);
 
     // eslint-disable-next-line import/no-extraneous-dependencies
     let { Percy } = await import('@percy/core');
@@ -535,6 +554,17 @@ describe('percy storybook', () => {
       }];
 
       server.reply('/iframe.html', req => {
+        if (!auth.includes(req.headers.authorization)) {
+          return [403, 'text/plain', 'Invalid auth'];
+        }
+
+        return [200, 'text/html', [
+          `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+          `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(stories)} }</script>`
+        ].join('')];
+      });
+
+      server.reply('/iframe.html?id=test--test&viewMode=story', req => {
         if (!auth.includes(req.headers.authorization)) {
           return [403, 'text/plain', 'Invalid auth'];
         }
