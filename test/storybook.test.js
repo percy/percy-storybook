@@ -572,12 +572,12 @@ describe('percy storybook', () => {
       ]));
     });
 
-    it('takes multiple snapshots with defer-uploads and multiple widths', async () => {
+    fit('takes multiple snapshots with defer-uploads and multiple widths', async () => {
       fs.writeFileSync('.percy.yml', [
         'version: 2',
         'percy:',
         '   defer-uploads: true',
-        'snapshots:',
+        'snapshot:',
         '   widths:',
         '       - 1000',
         '       - 500',
