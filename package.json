@@ -47,7 +47,7 @@
     "@babel/cli": "^7.23.0",
     "@babel/core": "^7.23.2",
     "@babel/eslint-parser": "^7.19.1",
-    "@babel/eslint-plugin": "^7.19.1",
+    "@babel/eslint-plugin": "^7.23.5",
     "@babel/preset-env": "^7.22.9",
     "@storybook/react": "^7.5.0",
     "@storybook/react-webpack5": "^7.5.0",
