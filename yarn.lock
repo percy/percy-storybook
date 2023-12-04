@@ -5834,14 +5834,13 @@ no-case@^3.0.4:
     lower-case "^2.0.2"
     tslib "^2.0.3"
 
-nock@^13.2.9:
-  version "13.2.9"
-  resolved "https://registry.npmjs.org/nock/-/nock-13.2.9.tgz"
-  integrity sha512-1+XfJNYF1cjGB+TKMWi29eZ0b82QOvQs2YoLNzbpWGqFMtRQHTa57osqdGj4FrFPgkO4D4AZinzUJR9VvW3QUA==
+nock@^13.4.0:
+  version "13.4.0"
+  resolved "https://registry.yarnpkg.com/nock/-/nock-13.4.0.tgz#60aa3f7a4afa9c12052e74d8fb7550f682ef0115"
+  integrity sha512-W8NVHjO/LCTNA64yxAPHV/K47LpGYcVzgKd3Q0n6owhwvD0Dgoterc25R4rnZbckJEb6Loxz1f5QMuJpJnbSyQ==
   dependencies:
     debug "^4.1.0"
     json-stringify-safe "^5.0.1"
-    lodash "^4.17.21"
     propagate "^2.0.0"
 
 node-abort-controller@^3.0.1:
