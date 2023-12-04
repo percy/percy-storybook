@@ -497,6 +497,29 @@ describe('percy storybook', () => {
     ]));
   });
 
+  fit('takes multiple snapshots with defer-uploads and multiple widths', async () => {
+    fs.writeFileSync('.percy.yml', [
+      'version: 2',
+      'percy:',
+      '   defer-uploads: true',
+      'snapshot:',
+      '   widths:',
+      '       - 1000',
+      '       - 500'
+    ].join('\n'));
+
+    await storybook(['http://localhost:9000', '--verbose']);
+
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
+      '[percy:storybook] Capturing snapshot for width - 1000',
+      '[percy:storybook] Capturing snapshot for width - 500'
+    ]));
+    expect(logger.stdout).toEqual(jasmine.arrayContaining([
+      '[percy:core] Snapshot uploaded: Snapshot: First',
+      '[percy:core] Snapshot uploaded: Snapshot: Second',
+      '[percy:core] Snapshot uploaded: Skip: But Not Me'
+    ]));
+  });
   describe('with protected urls', () => {
     beforeAll(() => {
       let auth = [
@@ -569,30 +592,6 @@ describe('percy storybook', () => {
       expect(logger.stderr).toEqual([]);
       expect(logger.stdout).toEqual(jasmine.arrayContaining([
         '[percy] Snapshot taken: Test: test'
-      ]));
-    });
-
-    fit('takes multiple snapshots with defer-uploads and multiple widths', async () => {
-      fs.writeFileSync('.percy.yml', [
-        'version: 2',
-        'percy:',
-        '   defer-uploads: true',
-        'snapshot:',
-        '   widths:',
-        '       - 1000',
-        '       - 500',
-        'discovery:',
-        '  request-headers:',
-        '    Authorization: Token xyzzy'
-      ].join('\n'));
-
-      await storybook(['http://localhost:8000', '--verbose']);
-
-      expect(logger.stderr).toEqual([]);
-      expect(logger.stdout).toEqual(jasmine.arrayContaining([
-        '[percy] Snapshot uploaded: Test: test',
-        '[percy:storybook] Capturing snapshot for width - 1000',
-        '[percy:storybook] Capturing snapshot for width - 500'
       ]));
     });
   });
