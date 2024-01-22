@@ -30,7 +30,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: ./prepare-storybook-v6-tests.sh
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}/node-${{ matrix.node }}/${{ hashFiles('**/yarn.lock') }}
