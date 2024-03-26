@@ -1,5 +1,6 @@
 {
   "name": "@percy/storybook",
+  "version": "5.0.2",
   "description": "Storybook addons for visual testing with Percy",
   "keywords": [
     "storybook-addons",
@@ -9,7 +10,6 @@
     "percy",
     "image-testing"
   ],
-  "version": "5.0.2",
   "license": "MIT",
   "repository": {
     "type": "git",
