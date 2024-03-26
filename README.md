@@ -20,9 +20,8 @@ Prevent regression: Prevents you from experiencing unintended visual regressions
 
 Percy compares new snapshots against relevant baselines to detect visual changes. Percy manages baseline picking across branches so your tests are always relevant. If visual changes are detected, Percy highlights and groups the resulting diffs for you to review.
 
-# Integrate your Storybook tests with Percy
-Before integration, you can explore [Percy’s sample build tutorial for Storybook.](https://www.browserstack.com/docs/percy/sample-build/storybook)
-Integrate your Storybook automated tests with BrowserStack Percy and here's an overview of the integration steps:
+# Run your first build with percy
+[Percy’s sample build tutorial for Storybook.](https://www.browserstack.com/docs/percy/sample-build/storybook)
 
 ## Installation
 
