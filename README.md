@@ -20,7 +20,7 @@ Prevent regression: Prevents you from experiencing unintended visual regressions
 
 Percy compares new snapshots against relevant baselines to detect visual changes. Percy manages baseline selection across branches so your tests are always relevant. If visual changes are detected, Percy highlights and groups the resulting diffs for you to review.
 
-# Run your first build with percy
+## Run your first build with percy
 [Percy’s sample build tutorial for Storybook.](https://www.browserstack.com/docs/percy/sample-build/storybook)
 
 ## Installation
