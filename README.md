@@ -2,7 +2,26 @@
 [![Version](https://img.shields.io/npm/v/@percy/storybook.svg)](https://npmjs.org/package/@percy/storybook)
 ![Test](https://github.com/percy/percy-storybook/workflows/Test/badge.svg)
 
-[Percy](https://percy.io) visual testing for [Storybook](https://storybook.js.org).
+## Visual Testing with Percy
+
+[Percy](https://percy.io) is an all-in-one visual testing and review platform. It captures screenshots, compares them against the baseline, and highlights visual changes. With increased visual coverage, teams can deploy code changes with confidence with every commit.
+
+[Storybook](https://storybook.js.org) supports cross-browser visual testing natively using Percy. You can use Percy for visual testing of web applications on desktop and mobile browsers. 
+
+The benefits of utilizing Percy for visual testing include the following:
+
+- Consistency: Promotes consistent user experience by identifying visual discrepancies early in the development process.
+- Efficiency: Improves efficiency by reducing the time and effort required to manually spot visual regressions.
+- Integrations: Percy integrates with popular tools and services like GitHub, GitLab, Bitbucket, and more.
+- Collaboration: Improves collaboration between developers, designers, and QA teams by providing a visual representation of changes.
+Prevent regression: Prevents you from experiencing unintended visual regressions.
+
+## How does Percy work?
+
+Percy compares new snapshots against relevant baselines to detect visual changes. Percy manages baseline selection across branches so your tests are always relevant. If visual changes are detected, Percy highlights and groups the resulting diffs for you to review.
+
+## Run your first build with percy
+[Percy’s sample build tutorial for Storybook.](https://www.browserstack.com/docs/percy/sample-build/storybook)
 
 ## Installation
 
