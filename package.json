@@ -1,5 +1,14 @@
 {
   "name": "@percy/storybook",
+  "description": "Storybook addons for visual testing with Percy",
+  "keywords": [
+    "storybook-addons",
+    "visual",
+    "visual-testing",
+    "layout-testing",
+    "percy",
+    "image-testing"
+  ],
   "version": "5.0.1",
   "license": "MIT",
   "repository": {
@@ -32,6 +41,10 @@
     "test": "yarn test:env jasmine --config=./test/jasmine.json",
     "test:env": "cross-env NODE_ENV=test NODE_OPTIONS='--loader=./test/loader.js'",
     "test:coverage": "nyc yarn test"
+  },
+  "storybook": {
+    "displayName": "Percy",
+    "icon": "https://avatars.githubusercontent.com/u/12260884"
   },
   "@percy/cli": {
     "commands": [
