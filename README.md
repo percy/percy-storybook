@@ -10,15 +10,15 @@
 
 The benefits of utilizing Percy for visual testing include the following:
 
-- Efficiency: Improves efficiency by reducing the time and effort required to manually spot visual regressions.
 - Consistency: Promotes consistent user experience by identifying visual discrepancies early in the development process.
+- Efficiency: Improves efficiency by reducing the time and effort required to manually spot visual regressions.
 - Integrations: Percy integrates with popular tools and services like GitHub, GitLab, Bitbucket, and more.
 - Collaboration: Improves collaboration between developers, designers, and QA teams by providing a visual representation of changes.
 Prevent regression: Prevents you from experiencing unintended visual regressions.
 
 ## How does Percy work?
 
-Percy compares new snapshots against relevant baselines to detect visual changes. Percy manages baseline picking across branches so your tests are always relevant. If visual changes are detected, Percy highlights and groups the resulting diffs for you to review.
+Percy compares new snapshots against relevant baselines to detect visual changes. Percy manages baseline selection across branches so your tests are always relevant. If visual changes are detected, Percy highlights and groups the resulting diffs for you to review.
 
 # Run your first build with percy
 [Percy’s sample build tutorial for Storybook.](https://www.browserstack.com/docs/percy/sample-build/storybook)
