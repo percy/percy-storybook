@@ -3,12 +3,14 @@
   "version": "5.0.2",
   "description": "Storybook addons for visual testing with Percy",
   "keywords": [
-    "storybook-addons",
+    "storybook",
+    "addon",
     "visual",
     "visual-testing",
     "layout-testing",
     "percy",
-    "image-testing"
+    "image-testing",
+    "test"
   ],
   "license": "MIT",
   "repository": {
