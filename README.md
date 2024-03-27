@@ -4,9 +4,11 @@
 
 ## Visual Testing with Percy
 
-[Percy](https://percy.io?utm_campaign=documentation&utm_medium=partnered&utm_source=storybook) is an all-in-one visual testing and review platform. It captures screenshots, compares them against the baseline, and highlights visual changes. With increased visual coverage, teams can deploy code changes with confidence with every commit.
+[Percy](https://percy.io?utm_source=storybook&utm_medium=partnered&utm_campaign=documentation) is an all-in-one visual testing and review platform. It captures screenshots, compares them against the baseline, and highlights visual changes. With increased visual coverage, teams can deploy code changes with confidence with every commit.
 
-[Storybook](https://storybook.js.org) supports cross-browser visual testing natively using Percy. You can use Percy for visual testing of web applications on desktop and mobile browsers. 
+[Storybook](https://storybook.js.org) supports cross-browser visual testing natively using Percy. You can use Percy for visual testing of web applications on desktop and mobile browsers.
+
+Sign up [here](https://www.browserstack.com/users/sign_in?utm_source=storybook&utm_medium=partnered&utm_campaign=documentation) to get started with Percy for free.
 
 The benefits of utilizing Percy for visual testing include the following:
 
@@ -21,7 +23,7 @@ The benefits of utilizing Percy for visual testing include the following:
 Percy compares new snapshots against relevant baselines to detect visual changes. Percy manages baseline selection across branches so your tests are always relevant. If visual changes are detected, Percy highlights and groups the resulting diffs for you to review.
 
 ## Run your first build with percy
-[Percy’s sample build tutorial for Storybook.](https://www.browserstack.com/docs/percy/sample-build/storybook?utm_campaign=documentation&utm_medium=partnered&utm_source=storybook)
+[Percy’s sample build tutorial for Storybook.](https://www.browserstack.com/docs/percy/sample-build/storybook?utm_source=storybook&utm_medium=partnered&utm_campaign=documentation)
 
 ## Installation
 
@@ -176,7 +178,7 @@ export const parameters = {
 ```
   
 The following `percy` Storybook parameters are accepted in addition to [common per-snapshot 
-options](https://www.browserstack.com/docs/percy/take-percy-snapshots/overview#per-snapshot-configuration?utm_campaign=documentation&utm_medium=partnered&utm_source=storybook):
+options](https://www.browserstack.com/docs/percy/take-percy-snapshots/overview#per-snapshot-configuration?utm_source=storybook&utm_medium=partnered&utm_campaign=documentation):
 
 - **skip** - Boolean indicating whether or not to skip this story.
 - **name** - Snapshot name. (default: `${story.kind}: ${story.name}`)
