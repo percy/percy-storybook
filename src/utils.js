@@ -200,12 +200,14 @@ export function evalStorybookStorySnapshots({ waitFor }) {
 
   return waitFor(async () => {
     // uncache stories, if cached via storyStorev7: true
-    await (window.__STORYBOOK_PREVIEW__?.cacheAllCSFFiles?.() ||
+    await (window.__STORYBOOK_PREVIEW__?.ready?.() ||
+      window.__STORYBOOK_PREVIEW__?.cacheAllCSFFiles?.() ||
       window.__STORYBOOK_STORY_STORE__?.cacheAllCSFFiles?.());
     // use newer storybook APIs before old APIs
     await (window.__STORYBOOK_PREVIEW__?.extract?.() ||
            window.__STORYBOOK_STORY_STORE__?.extract?.());
-    return window.__STORYBOOK_STORY_STORE__.raw();
+    return await window.__STORYBOOK_PREVIEW__?.extract?.().then(data => Object.values(data)) ||
+      window.__STORYBOOK_STORY_STORE__.raw();
   }, 5000).catch(() => Promise.reject(new Error(
     'Storybook object not found on the window. ' +
       'Open Storybook and check the console for errors.'
