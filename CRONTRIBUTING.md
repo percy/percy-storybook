@@ -40,7 +40,7 @@ $ git push origin <topic-branch-name>
 
 **Tips**:
 - For ambitious tasks, open a [draft Pull Request](https://github.blog/2019-02-14-introducing-draft-pull-requests/), in order to get feedback and help from the community.
-- [Allow @percy/agent maintainers to make changes to your Pull Request branch](https://help.github.com/articles/allowing-changes-to-a-pull-request-branch-created-from-a-fork). This way, we can rebase it and make some minor changes if necessary. All changes we make will be done in new commit and we'll ask for your approval before merging them.
+- [Allow @percy/storybook maintainers to make changes to your Pull Request branch](https://help.github.com/articles/allowing-changes-to-a-pull-request-branch-created-from-a-fork). This way, we can rebase it and make some minor changes if necessary. All changes we make will be done in new commit and we'll ask for your approval before merging them.
 
 ## Coding rules
 
