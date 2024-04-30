@@ -1,4 +1,4 @@
-# Contributing to @percy/agent
+# Contributing to @percy/storybook
 
 ✨ Thanks for contributing to **@percy/storybook**! ✨
 
