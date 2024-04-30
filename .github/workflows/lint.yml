@@ -9,7 +9,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
+      - uses: actions/checkout@8459bc0c7e3759cdf591f513d9f141a95fef0a8f
       - uses: actions/setup-node@v3
         with:
           node-version: 16
