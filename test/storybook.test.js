@@ -8,7 +8,7 @@ import { checkStorybookVersion } from '../src/utils.js';
 describe('percy storybook', () => {
   let server, proc;
 
-  const FAKE_PREVIEW = '{ async extract() {}, ' +
+  const FAKE_PREVIEW = '{ async extract() { return [] }, ' +
     'channel: { emit() {}, on: (a, c) => a === "storyRendered" && c() }' +
   ' }';
 
@@ -18,13 +18,13 @@ describe('percy storybook', () => {
     });
 
     let storybookVersion = await checkStorybookVersion();
-    let args = storybookVersion === 7 ? ['dev'] : [];
+    let args = storybookVersion >= 7 ? ['dev'] : [];
     args = args.concat([
       '--config-dir=./test/.storybook',
       '--port=9000',
       '--ci'
     ]);
-    let storybookBinary = storybookVersion === 7 ? 'storybook' : 'start-storybook';
+    let storybookBinary = storybookVersion >= 7 ? 'storybook' : 'start-storybook';
 
     proc = spawn(storybookBinary, args, { stdio: 'inherit' });
 
@@ -44,12 +44,14 @@ describe('percy storybook', () => {
   beforeEach(async () => {
     storybook.packageInformation = { name: '@percy/storybook' };
     process.env.PERCY_TOKEN = '<<PERCY_TOKEN>>';
+    process.env.PERCY_CLIENT_ERROR_LOGS = false;
     await setupTest();
   });
 
   afterEach(() => {
     delete process.env.PERCY_TOKEN;
     delete process.env.PERCY_ENABLE;
+    delete process.env.PERCY_CLIENT_ERROR_LOGS;
   });
 
   it('snapshots live urls', async () => {
@@ -131,22 +133,35 @@ describe('percy storybook', () => {
   });
 
   it('errors when unable to reach storybook', async () => {
+    const errorMessage = 'no coffee'
     server.reply('/iframe.html', () => new Promise(resolve => {
-      setTimeout(resolve, 3000, [418, 'text/plain', 'no coffee']);
+      setTimeout(resolve, 3000, [418, 'text/plain', errorMessage]);
     }));
-
     await expectAsync(storybook(['http://localhost:8000']))
-      .toBeRejectedWithError('418 I\'m a Teapot');
-
+      .toBeRejectedWithError(`418 I\'m a Teapot\n${errorMessage}`);
+    
     expect(logger.stderr).toEqual([
       '[percy] Waiting on a response from Storybook...',
-      '[percy] Error: 418 I\'m a Teapot'
+      `[percy] Error: 418 I\'m a Teapot\n${errorMessage}`
     ]);
   });
 
   it('errors when the storybook page errors', async () => {
     server.reply('/iframe.html', () => [200, 'text/html', [
-      `<script>__STORYBOOK_PREVIEW__ = { async extract() {}, ${
+      `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])}  }, ${
+        'channel: { emit() {}, on: (a, c) => a === "storyErrored" && c(new Error("Story Error")) }'
+      } }</script>`,
+      `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])} }</script>`
+    ].join('')]);
+
+    server.reply('/iframe.html?id=1&viewMode=story', () => [200, 'text/html', [
+      `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])}  }, ${
         'channel: { emit() {}, on: (a, c) => a === "storyErrored" && c(new Error("Story Error")) }'
       } }</script>`,
       `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
@@ -176,7 +191,20 @@ describe('percy storybook', () => {
 
     it('skips the story and logs the error but does not break build', async () => {
       server.reply('/iframe.html', () => [200, 'text/html', [
-        `<script>__STORYBOOK_PREVIEW__ = { async extract() {}, ${
+        `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
+          { id: '1', kind: 'foo', name: 'bar' }
+        ])} }, ${
+          'channel: { emit() {}, on: (a, c) => a === "storyErrored" && c(new Error("Story Error")) }'
+        } }</script>`,
+        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+          { id: '1', kind: 'foo', name: 'bar' }
+        ])} }</script>`
+      ].join('')]);
+
+      server.reply('/iframe.html?id=1&viewMode=story', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
+          { id: '1', kind: 'foo', name: 'bar' }
+        ])} }, ${
           'channel: { emit() {}, on: (a, c) => a === "storyErrored" && c(new Error("Story Error")) }'
         } }</script>`,
         `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
@@ -199,13 +227,20 @@ describe('percy storybook', () => {
   });
 
   it('uses the preview dom when javascript is enabled', async () => {
-    let previewDOM = '<p>This is the preview</p>';
     let i = 0;
+    const FAKE_PREVIEW_V8 = `{ async extract() { return ${JSON.stringify([
+      { id: '1', kind: 'foo', name: 'bar' },
+      { id: '2', kind: 'foo', name: 'bar/baz', parameters: { percy: { enableJavaScript: true } } }
+    ])}
+    }, ` +
+    'channel: { emit() {}, on: (a, c) => a === "storyRendered" && c() }' +
+    ' }';
 
+    let previewDOM = `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V8}</script> <p>This is the preview</p>`;
     let storyDOM = [
       '<!DOCTYPE html><html><head></head><body>',
       '<p>This is a story. The html needs to be complete since it gets serialized</p>',
-      `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+      `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V8}</script>`,
       '<script>__STORYBOOK_STORY_STORE__ = { raw: () => ' + JSON.stringify([
         { id: '1', kind: 'foo', name: 'bar' },
         { id: '2', kind: 'foo', name: 'bar/baz', parameters: { percy: { enableJavaScript: true } } }
@@ -214,7 +249,9 @@ describe('percy storybook', () => {
     ].join('');
 
     // respond with the preview dom only for the first request
-    server.reply('/iframe.html', () => [200, 'text/html', i++ ? storyDOM : previewDOM]);
+    server.reply('/iframe.html', () => [200, 'text/html', previewDOM]);
+    server.reply('/iframe.html?id=1&viewMode=story', () => [200, 'text/html', storyDOM]);
+    server.reply('/iframe.html?id=2&viewMode=story', () => [200, 'text/html', storyDOM]);
 
     // eslint-disable-next-line import/no-extraneous-dependencies
     let { Percy } = await import('@percy/core');
@@ -511,13 +548,26 @@ describe('percy storybook', () => {
         name: 'test'
       }];
 
+      const FAKE_PREVIEW_V8 = `{ async extract() { return ${JSON.stringify(stories)} }, ` +
+      'channel: { emit() {}, on: (a, c) => a === "storyRendered" && c() }' +
+      ' }';
+
       server.reply('/iframe.html', req => {
         if (!auth.includes(req.headers.authorization)) {
           return [403, 'text/plain', 'Invalid auth'];
         }
-
         return [200, 'text/html', [
-          `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+          `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V8}</script>`,
+          `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(stories)} }</script>`
+        ].join('')];
+      });
+
+      server.reply('/iframe.html?id=test--test&viewMode=story', req => {
+        if (!auth.includes(req.headers.authorization)) {
+          return [403, 'text/plain', 'Invalid auth'];
+        }
+        return [200, 'text/html', [
+          `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V8}</script>`,
           `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(stories)} }</script>`
         ].join('')];
       });

@@ -10,12 +10,14 @@ describe('percy storybook:start', () => {
   beforeEach(async () => {
     start.packageInformation = { name: '@percy/storybook' };
     process.env.PERCY_TOKEN = '<<PERCY_TOKEN>>';
+    process.env.PERCY_CLIENT_ERROR_LOGS = false;
     await setupTest();
   });
 
   afterEach(() => {
     delete process.env.PERCY_ENABLE;
     delete process.env.PERCY_TOKEN;
+    delete process.env.PERCY_CLIENT_ERROR_LOGS;
   });
 
   it('starts storybook and snapshots stories', async () => {

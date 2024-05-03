@@ -4,14 +4,41 @@ import spawn from 'cross-spawn';
 // check storybook version
 export function checkStorybookVersion() {
   return new Promise((resolve, reject) => {
-    spawn('storybook', ['--version'])
-      .on('exit', (code) => { if (code === 0) resolve(7); })
-      .on('error', (err) => {
-        if (err.code === 'ENOENT') {
-          resolve(6);
+    const childProcess = spawn('storybook', ['--version']);
+
+    let stdout = '';
+    let stderr = '';
+
+    childProcess.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    childProcess.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    childProcess.on('exit', (code) => {
+      if (code === 0) {
+        // Successful execution
+        const versionMatch = stdout.match(/\d+/); // Match only major version
+        if (versionMatch) {
+          resolve(parseInt(versionMatch[0], 10)); // Parse as integer
+        } else {
+          reject(new Error('Unable to parse Storybook version'));
         }
-        reject(err);
-      });
+      } else {
+        // Non-zero exit code
+        reject(new Error(`Storybook command failed with exit code ${code}: ${stderr}`));
+      }
+    });
+
+    childProcess.on('error', (err) => {
+      if (err.code === 'ENOENT') {
+        resolve(6);
+      }
+      // Error occurred while spawning the child process
+      reject(err);
+    });
   });
 }
 
@@ -155,6 +182,7 @@ export async function* withPage(percy, url, callback, retry) {
       /\n\s+at\s.+?\(https?:/.test(error) ? '$1' : '$2'
     )));
   } finally {
+    // await new Promise(resolve => setTimeout(resolve, 3000000));
     // always clean up and close the page
     await page?.close();
   }
@@ -173,7 +201,7 @@ export function evalStorybookEnvironmentInfo({ waitForXPath }) {
 
 // Evaluate and return serialized Storybook stories to snapshot
 /* istanbul ignore next: no instrumenting injected code */
-export function evalStorybookStorySnapshots({ waitFor }) {
+export function evalStorybookStorySnapshots({ waitFor }, storybookVersion) {
   let serialize = (what, value, invalid) => {
     if (what === 'include' || what === 'exclude') {
       return [].concat(value).filter(Boolean).map(v => v.toString());
@@ -199,16 +227,26 @@ export function evalStorybookStorySnapshots({ waitFor }) {
   };
 
   return waitFor(async () => {
+    if(storybookVersion == 8) {
+      await window.__STORYBOOK_PREVIEW__?.cacheAllCSFFiles?.();
+      await window.__STORYBOOK_PREVIEW__?.ready?.();
+      const storiesObj = await (window.__STORYBOOK_PREVIEW__?.extract?.());
+      if(storiesObj) {
+        return Object.values(storiesObj)
+      }
+      throw new Error()
+    } else {
     // uncache stories, if cached via storyStorev7: true
-    await (window.__STORYBOOK_PREVIEW__?.cacheAllCSFFiles?.() ||
-      window.__STORYBOOK_STORY_STORE__?.cacheAllCSFFiles?.());
+      await (window.__STORYBOOK_PREVIEW__?.cacheAllCSFFiles?.() ||
+        window.__STORYBOOK_STORY_STORE__?.cacheAllCSFFiles?.());
     // use newer storybook APIs before old APIs
-    await (window.__STORYBOOK_PREVIEW__?.extract?.() ||
-           window.__STORYBOOK_STORY_STORE__?.extract?.());
-    return window.__STORYBOOK_STORY_STORE__.raw();
-  }, 5000).catch(() => Promise.reject(new Error(
+      await (window.__STORYBOOK_PREVIEW__?.extract?.() ||
+             window.__STORYBOOK_STORY_STORE__?.extract?.());
+      return window.__STORYBOOK_STORY_STORE__.raw();
+    }
+  }, 5000).catch((err) => Promise.reject(new Error(
     'Storybook object not found on the window. ' +
-      'Open Storybook and check the console for errors.'
+      'Open Storybook and check the console for errors.' + err
   ))).then(stories => {
     let invalid = new Map();
 
@@ -227,12 +265,17 @@ export function evalStorybookStorySnapshots({ waitFor }) {
 
 // Change the currently selected story within Storybook, decoding args and globals as necessary
 /* istanbul ignore next: no instrumenting injected code */
-export function evalSetCurrentStory({ waitFor }, story) {
-  return waitFor(() => (
+export function evalSetCurrentStory({ waitFor }, story, storybookVersion) {
+  return waitFor(() => {
     // get the correct channel depending on the storybook version
-    window.__STORYBOOK_PREVIEW__?.channel ||
-    window.__STORYBOOK_STORY_STORE__?._channel
-  ), 5000).catch(() => Promise.reject(new Error(
+    if(storybookVersion == 8){
+      return window.__STORYBOOK_PREVIEW__?.channel
+    } else {
+      return window.__STORYBOOK_PREVIEW__?.channel ||
+        window.__STORYBOOK_STORY_STORE__?._channel
+    }
+
+}, 5000).catch(() => Promise.reject(new Error(
     'Storybook object not found on the window. ' +
       'Open Storybook and check the console for errors.'
   ))).then(channel => {
