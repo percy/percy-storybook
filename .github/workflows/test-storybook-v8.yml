@@ -9,7 +9,7 @@ on:
         default: master
 jobs:
   test:
-    name: Test Storybook v7
+    name: Test Storybook v8
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -29,7 +29,6 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-      - run: ./prepare-storybook-tests.sh 7
       - uses: actions/cache@v3
         with:
           path: node_modules
@@ -55,4 +54,4 @@ jobs:
           yarn link `echo $PERCY_PACKAGES`
           npx percy --version
 
-      - run: yarn test
+      - run: yarn test:coverage

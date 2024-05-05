@@ -1,0 +1,87 @@
+{
+    "name": "@percy/storybook",
+    "version": "5.0.3",
+    "description": "Storybook addons for visual testing with Percy",
+    "keywords": [
+      "storybook",
+      "addon",
+      "visual",
+      "visual-testing",
+      "layout-testing",
+      "percy",
+      "image-testing",
+      "test"
+    ],
+    "license": "MIT",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/percy/percy-storybook.git"
+    },
+    "publishConfig": {
+      "access": "public",
+      "tag": "latest"
+    },
+    "engine": {
+      "node": ">=14"
+    },
+    "files": [
+      "bin",
+      "dist"
+    ],
+    "bin": {
+      "percy-storybook": "./bin/percy-storybook.cjs"
+    },
+    "main": "./dist/index.js",
+    "exports": "./dist/index.js",
+    "type": "module",
+    "scripts": {
+      "build": "babel src --out-dir dist",
+      "clean": "git clean -Xdf -e !node_modules -e !node_modules/**",
+      "lint": "eslint --ignore-path .gitignore .",
+      "readme": "percy-cli-readme",
+      "pretest": "storybook build --config-dir=./test/.storybook --output-dir=./test/.storybook-build --loglevel error",
+      "test": "yarn test:env jasmine --config=./test/jasmine.json",
+      "test:env": "cross-env NODE_ENV=test NODE_OPTIONS='--loader=./test/loader.js'",
+      "test:coverage": "nyc yarn test"
+    },
+    "storybook": {
+      "displayName": "Percy",
+      "icon": "https://avatars.githubusercontent.com/u/12260884"
+    },
+    "@percy/cli": {
+      "commands": [
+        "./dist/storybook.js"
+      ]
+    },
+    "dependencies": {
+      "@percy/cli-command": "^1.28.5",
+      "cross-spawn": "^7.0.3",
+      "qs": "^6.11.0"
+    },
+    "devDependencies": {
+      "@babel/cli": "^7.23.0",
+      "@babel/core": "^7.23.2",
+      "@babel/eslint-parser": "^7.19.1",
+      "@babel/eslint-plugin": "^7.19.1",
+      "@babel/preset-env": "^7.22.9",
+      "@storybook/react": "^7.5.0",
+      "@storybook/react-webpack5": "^7.5.0",
+      "babel-eslint": "^10.0.3",
+      "babel-plugin-istanbul": "^6.1.1",
+      "cross-env": "^7.0.3",
+      "eslint": "^8.51.0",
+      "eslint-config-standard": "^17.0.0",
+      "eslint-plugin-import": "^2.28.1",
+      "eslint-plugin-n": "^15.4.0",
+      "eslint-plugin-node": "^11.1.0",
+      "eslint-plugin-promise": "^6.1.1",
+      "jasmine": "^4.5.0",
+      "jasmine-spec-reporter": "^7.0.0",
+      "mock-require": "^3.0.3",
+      "nock": "^13.2.9",
+      "nyc": "^15.1.0",
+      "react": "^18.2.0",
+      "react-dom": "^18.2.0",
+      "storybook": "^7.5.0"
+    }
+  }

@@ -182,7 +182,6 @@ export async function* withPage(percy, url, callback, retry) {
       /\n\s+at\s.+?\(https?:/.test(error) ? '$1' : '$2'
     )));
   } finally {
-    // await new Promise(resolve => setTimeout(resolve, 3000000));
     // always clean up and close the page
     await page?.close();
   }
@@ -244,9 +243,9 @@ export function evalStorybookStorySnapshots({ waitFor }, storybookVersion) {
              window.__STORYBOOK_STORY_STORE__?.extract?.());
       return window.__STORYBOOK_STORY_STORE__.raw();
     }
-  }, 5000).catch((err) => Promise.reject(new Error(
+  }, 5000).catch(() => Promise.reject(new Error(
     'Storybook object not found on the window. ' +
-      'Open Storybook and check the console for errors.' + err
+      'Open Storybook and check the console for errors.'
   ))).then(stories => {
     let invalid = new Map();
 

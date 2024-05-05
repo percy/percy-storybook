@@ -199,7 +199,6 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     //   we dont reuse a page which is possibly in a weird state due to last exception
     // - so post exception we come out of inner loop and skip the story, create new page
     //   using outer loop and continue next stories again on a new page
-    console.log(snapshots)
     while (snapshots.length) {
       try {
         // use a single page to capture story snapshots without reloading

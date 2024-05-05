@@ -54,10 +54,7 @@
     ]
   },
   "dependencies": {
-    "@babel/preset-react": "^7.24.1",
-    "@percy/cli": "^1.28.5",
     "@percy/cli-command": "^1.28.5",
-    "@storybook/addon-webpack5-compiler-babel": "^3.0.3",
     "cross-spawn": "^7.0.3",
     "qs": "^6.11.0"
   },
@@ -67,8 +64,10 @@
     "@babel/eslint-parser": "^7.19.1",
     "@babel/eslint-plugin": "^7.19.1",
     "@babel/preset-env": "^7.22.9",
+    "@babel/preset-react": "^7.24.1",
     "@storybook/react": "^8.0.9",
     "@storybook/react-webpack5": "^8.0.9",
+    "@storybook/addon-webpack5-compiler-babel": "^3.0.3",
     "babel-eslint": "^10.0.3",
     "babel-plugin-istanbul": "^6.1.1",
     "cross-env": "^7.0.3",

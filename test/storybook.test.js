@@ -236,7 +236,13 @@ describe('percy storybook', () => {
     'channel: { emit() {}, on: (a, c) => a === "storyRendered" && c() }' +
     ' }';
 
-    let previewDOM = `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V8}</script> <p>This is the preview</p>`;
+    let previewDOM = [`<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V8}</script>`,
+    '<script>__STORYBOOK_STORY_STORE__ = { raw: () => ' + JSON.stringify([
+      { id: '1', kind: 'foo', name: 'bar' },
+      { id: '2', kind: 'foo', name: 'bar/baz', parameters: { percy: { enableJavaScript: true } } }
+    ]) + ' }</script>',
+    '<p>This is the preview</p>'
+    ].join('');
     let storyDOM = [
       '<!DOCTYPE html><html><head></head><body>',
       '<p>This is a story. The html needs to be complete since it gets serialized</p>',
@@ -251,7 +257,6 @@ describe('percy storybook', () => {
     // respond with the preview dom only for the first request
     server.reply('/iframe.html', () => [200, 'text/html', previewDOM]);
     server.reply('/iframe.html?id=1&viewMode=story', () => [200, 'text/html', storyDOM]);
-    server.reply('/iframe.html?id=2&viewMode=story', () => [200, 'text/html', storyDOM]);
 
     // eslint-disable-next-line import/no-extraneous-dependencies
     let { Percy } = await import('@percy/core');

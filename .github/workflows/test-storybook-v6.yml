@@ -29,7 +29,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-      - run: ./prepare-storybook-v6-tests.sh
+      - run: ./prepare-storybook-tests.sh 6
       - uses: actions/cache@v3
         with:
           path: node_modules
