@@ -54,7 +54,7 @@ describe('percy storybook', () => {
     delete process.env.PERCY_CLIENT_ERROR_LOGS;
   });
 
-  fit('snapshots live urls', async () => {
+  it('snapshots live urls', async () => {
     await storybook(['http://localhost:9000']);
 
     // if there are stderr logs ensure it is only an acceptable warning
