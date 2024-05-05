@@ -20,4 +20,5 @@ if [[ " ${versions[*]} " =~ " $storybook_version " ]]; then
     mv "./babel.config.old.cjs" "./babel.config.cjs"
 else
     echo "The value $storybook_version is not a supported version."
+    exit 1
 fi
