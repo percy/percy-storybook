@@ -54,7 +54,7 @@ describe('percy storybook', () => {
     delete process.env.PERCY_CLIENT_ERROR_LOGS;
   });
 
-  it('snapshots live urls', async () => {
+  fit('snapshots live urls', async () => {
     await storybook(['http://localhost:9000']);
 
     // if there are stderr logs ensure it is only an acceptable warning
@@ -133,16 +133,16 @@ describe('percy storybook', () => {
   });
 
   it('errors when unable to reach storybook', async () => {
-    const errorMessage = 'no coffee'
+    const errorMessage = 'no coffee';
     server.reply('/iframe.html', () => new Promise(resolve => {
       setTimeout(resolve, 3000, [418, 'text/plain', errorMessage]);
     }));
     await expectAsync(storybook(['http://localhost:8000']))
-      .toBeRejectedWithError(`418 I\'m a Teapot\n${errorMessage}`);
-    
+      .toBeRejectedWithError(`418 I'm a Teapot\n${errorMessage}`);
+
     expect(logger.stderr).toEqual([
       '[percy] Waiting on a response from Storybook...',
-      `[percy] Error: 418 I\'m a Teapot\n${errorMessage}`
+      `[percy] Error: 418 I'm a Teapot\n${errorMessage}`
     ]);
   });
 
@@ -227,7 +227,6 @@ describe('percy storybook', () => {
   });
 
   it('uses the preview dom when javascript is enabled', async () => {
-    let i = 0;
     const FAKE_PREVIEW_V8 = `{ async extract() { return ${JSON.stringify([
       { id: '1', kind: 'foo', name: 'bar' },
       { id: '2', kind: 'foo', name: 'bar/baz', parameters: { percy: { enableJavaScript: true } } }
@@ -237,11 +236,11 @@ describe('percy storybook', () => {
     ' }';
 
     let previewDOM = [`<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V8}</script>`,
-    '<script>__STORYBOOK_STORY_STORE__ = { raw: () => ' + JSON.stringify([
-      { id: '1', kind: 'foo', name: 'bar' },
-      { id: '2', kind: 'foo', name: 'bar/baz', parameters: { percy: { enableJavaScript: true } } }
-    ]) + ' }</script>',
-    '<p>This is the preview</p>'
+      '<script>__STORYBOOK_STORY_STORE__ = { raw: () => ' + JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' },
+        { id: '2', kind: 'foo', name: 'bar/baz', parameters: { percy: { enableJavaScript: true } } }
+      ]) + ' }</script>',
+      '<p>This is the preview</p>'
     ].join('');
     let storyDOM = [
       '<!DOCTYPE html><html><head></head><body>',

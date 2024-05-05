@@ -226,19 +226,19 @@ export function evalStorybookStorySnapshots({ waitFor }, storybookVersion) {
   };
 
   return waitFor(async () => {
-    if(storybookVersion == 8) {
+    if (storybookVersion === 8) {
       await window.__STORYBOOK_PREVIEW__?.cacheAllCSFFiles?.();
       await window.__STORYBOOK_PREVIEW__?.ready?.();
       const storiesObj = await (window.__STORYBOOK_PREVIEW__?.extract?.());
-      if(storiesObj) {
-        return Object.values(storiesObj)
+      if (storiesObj) {
+        return Object.values(storiesObj);
       }
-      throw new Error()
+      throw new Error();
     } else {
     // uncache stories, if cached via storyStorev7: true
       await (window.__STORYBOOK_PREVIEW__?.cacheAllCSFFiles?.() ||
         window.__STORYBOOK_STORY_STORE__?.cacheAllCSFFiles?.());
-    // use newer storybook APIs before old APIs
+      // use newer storybook APIs before old APIs
       await (window.__STORYBOOK_PREVIEW__?.extract?.() ||
              window.__STORYBOOK_STORY_STORE__?.extract?.());
       return window.__STORYBOOK_STORY_STORE__.raw();
@@ -267,14 +267,13 @@ export function evalStorybookStorySnapshots({ waitFor }, storybookVersion) {
 export function evalSetCurrentStory({ waitFor }, story, storybookVersion) {
   return waitFor(() => {
     // get the correct channel depending on the storybook version
-    if(storybookVersion == 8){
-      return window.__STORYBOOK_PREVIEW__?.channel
+    if (storybookVersion === 8) {
+      return window.__STORYBOOK_PREVIEW__?.channel;
     } else {
       return window.__STORYBOOK_PREVIEW__?.channel ||
-        window.__STORYBOOK_STORY_STORE__?._channel
+        window.__STORYBOOK_STORY_STORE__?._channel;
     }
-
-}, 5000).catch(() => Promise.reject(new Error(
+  }, 5000).catch(() => Promise.reject(new Error(
     'Storybook object not found on the window. ' +
       'Open Storybook and check the console for errors.'
   ))).then(channel => {
