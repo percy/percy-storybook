@@ -200,7 +200,7 @@ export function evalStorybookEnvironmentInfo({ waitForXPath }) {
 
 // Evaluate and return serialized Storybook stories to snapshot
 /* istanbul ignore next: no instrumenting injected code */
-export function evalStorybookStorySnapshots({ waitFor }, storybookVersion) {
+export function evalStorybookStorySnapshots({ waitFor }) {
   let serialize = (what, value, invalid) => {
     if (what === 'include' || what === 'exclude') {
       return [].concat(value).filter(Boolean).map(v => v.toString());
@@ -226,23 +226,18 @@ export function evalStorybookStorySnapshots({ waitFor }, storybookVersion) {
   };
 
   return waitFor(async () => {
-    if (storybookVersion === 8) {
-      await window.__STORYBOOK_PREVIEW__?.cacheAllCSFFiles?.();
-      await window.__STORYBOOK_PREVIEW__?.ready?.();
-      const storiesObj = await (window.__STORYBOOK_PREVIEW__?.extract?.());
-      if (storiesObj) {
-        return Object.values(storiesObj);
-      }
-      throw new Error();
-    } else {
+    await window.__STORYBOOK_PREVIEW__?.ready?.();
     // uncache stories, if cached via storyStorev7: true
-      await (window.__STORYBOOK_PREVIEW__?.cacheAllCSFFiles?.() ||
-        window.__STORYBOOK_STORY_STORE__?.cacheAllCSFFiles?.());
-      // use newer storybook APIs before old APIs
-      await (window.__STORYBOOK_PREVIEW__?.extract?.() ||
-             window.__STORYBOOK_STORY_STORE__?.extract?.());
-      return window.__STORYBOOK_STORY_STORE__.raw();
+    await (window.__STORYBOOK_PREVIEW__?.cacheAllCSFFiles?.() ||
+    window.__STORYBOOK_STORY_STORE__?.cacheAllCSFFiles?.());
+
+    const storiesObj = await (window.__STORYBOOK_PREVIEW__?.extract?.());
+    if (storiesObj && !Array.isArray(storiesObj)) {
+      return Object.values(storiesObj);
     }
+
+    await window.__STORYBOOK_STORY_STORE__?.extract?.();
+    return window.__STORYBOOK_STORY_STORE__.raw();
   }, 5000).catch(() => Promise.reject(new Error(
     'Storybook object not found on the window. ' +
       'Open Storybook and check the console for errors.'
@@ -264,15 +259,11 @@ export function evalStorybookStorySnapshots({ waitFor }, storybookVersion) {
 
 // Change the currently selected story within Storybook, decoding args and globals as necessary
 /* istanbul ignore next: no instrumenting injected code */
-export function evalSetCurrentStory({ waitFor }, story, storybookVersion) {
+export function evalSetCurrentStory({ waitFor }, story) {
   return waitFor(() => {
     // get the correct channel depending on the storybook version
-    if (storybookVersion === 8) {
-      return window.__STORYBOOK_PREVIEW__?.channel;
-    } else {
-      return window.__STORYBOOK_PREVIEW__?.channel ||
+    return window.__STORYBOOK_PREVIEW__?.channel ||
         window.__STORYBOOK_STORY_STORE__?._channel;
-    }
   }, 5000).catch(() => Promise.reject(new Error(
     'Storybook object not found on the window. ' +
       'Open Storybook and check the console for errors.'

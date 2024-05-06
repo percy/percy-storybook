@@ -2,7 +2,6 @@ import { logger, PercyConfig } from '@percy/cli-command';
 import { yieldAll } from '@percy/cli-command/utils';
 import qs from 'qs';
 import {
-  checkStorybookVersion,
   fetchStorybookPreviewResource,
   evalStorybookEnvironmentInfo,
   evalStorybookStorySnapshots,
@@ -162,8 +161,6 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     let lastCount;
 
     log.debug(`Requesting Storybook: ${baseUrl}`);
-    let storybookVersion = await checkStorybookVersion();
-    log.debug(`Storybook Version: ${storybookVersion}`);
     // start a timeout to show a log if storybook takes a few seconds to respond
     let logTimeout = setTimeout(log.warn, 3000, 'Waiting on a response from Storybook...');
     let previewResource = yield fetchStorybookPreviewResource(percy, previewUrl);
@@ -177,7 +174,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     // gather storybook data in parallel
     let [environmentInfo, stories] = yield* yieldAll([
       withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo)),
-      withPage(percy, previewUrl, p => p.eval(evalStorybookStorySnapshots, storybookVersion))
+      withPage(percy, previewUrl, p => p.eval(evalStorybookStorySnapshots))
     ]);
 
     // map stories to snapshot options
@@ -218,7 +215,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
             } else {
               log.debug(`Loading story: ${options.name}`);
               // when not dry-running and javascript is not enabled, capture the story dom
-              yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams }, storybookVersion);
+              yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
               /* istanbul ignore next: tested, but coverage is stripped */
               let { dom, domSnapshot = dom } = yield page.snapshot(options);
               options.domSnapshot = domSnapshot;
