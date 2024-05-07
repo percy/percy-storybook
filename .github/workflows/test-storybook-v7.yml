@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node: [16]
+        node: [18]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions-ecosystem/action-regex-match@9e6c4fb3d5e898f505be7a1fb6e7b0a278f6665b
@@ -29,6 +29,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
+      - run: ./prepare-storybook-tests.sh 7
       - uses: actions/cache@v3
         with:
           path: node_modules
@@ -54,4 +55,4 @@ jobs:
           yarn link `echo $PERCY_PACKAGES`
           npx percy --version
 
-      - run: yarn test:coverage
+      - run: yarn test

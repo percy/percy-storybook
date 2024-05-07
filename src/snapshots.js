@@ -1,7 +1,6 @@
 import { logger, PercyConfig } from '@percy/cli-command';
 import { yieldAll } from '@percy/cli-command/utils';
 import qs from 'qs';
-
 import {
   fetchStorybookPreviewResource,
   evalStorybookEnvironmentInfo,

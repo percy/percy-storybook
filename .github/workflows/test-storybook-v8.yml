@@ -9,7 +9,7 @@ on:
         default: master
 jobs:
   test:
-    name: Test Storybook v6
+    name: Test Storybook v8
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -25,11 +25,10 @@ jobs:
       - name: Break on invalid branch name
         run: exit 1
         if: ${{ github.event_name == 'workflow_dispatch' && steps.regex-match.outputs && steps.regex-match.outputs.match == '' }}
-      - uses: actions/checkout@8459bc0c7e3759cdf591f513d9f141a95fef0a8f
+      - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-      - run: ./prepare-storybook-tests.sh 6
       - uses: actions/cache@v3
         with:
           path: node_modules
@@ -55,4 +54,4 @@ jobs:
           yarn link `echo $PERCY_PACKAGES`
           npx percy --version
 
-      - run: yarn test
+      - run: yarn test:coverage

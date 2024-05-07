@@ -5,8 +5,7 @@ module.exports = {
       targets: {
         node: '18'
       }
-    }],
-    '@babel/preset-react'
+    }]
   ],
   env: {
     test: {
