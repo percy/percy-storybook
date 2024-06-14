@@ -236,7 +236,7 @@ options](https://www.browserstack.com/docs/percy/take-percy-snapshots/overview#p
 
 ## Percy config file options
 
-In addition to [common Percy config file options](https://docs.percy.io/docs/cli-configuration),
+In addition to [common Percy config file options](https://www.browserstack.com/docs/percy/take-percy-snapshots/overview),
 this SDK also adds the following Storybook specific options:
 
 ``` yaml
@@ -296,13 +296,13 @@ Most importantly, the command itself has changed and all previous arguments are 
   ```
 
 - The `--widths` flag is no longer accepted. Widths can be set using the respective `widths`
-  [Percy config file `snapshot` option](https://docs.percy.io/docs/cli-configuration#snapshot) or 
+  [Percy config file `snapshot` option](https://www.browserstack.com/docs/percy/take-percy-snapshots/overview#snapshot) or 
   `percy` Storybook parameter.
 
 - The `--minimum_height` flag is no longer accepted and therefore no longer defaults to
   800px. The default minimum height shared by all SDKs is 1024px. The minimum height can be 
   set using the respective `min-height` [Percy config file `snapshot`
-  option](https://docs.percy.io/docs/cli-configuration#snapshot) or `percy` Storybook parameter.
+  option](https://www.browserstack.com/docs/percy/take-percy-snapshots/overview#snapshot) or `percy` Storybook parameter.
 
 - The `--debug` flag is now `--verbose`, inherited from the CLI.
 
@@ -348,7 +348,7 @@ environment for Storybook to properly load. This is in contrast to all of our ot
 JavaScript is disabled by default to prevent flakey diffs caused by animations or other JavaScript
 running on the page. With the new SDK and real DOM snapshots, JS is disabled by default. If you
 upgrade and experience diffs due to the lack of JavaScript, it can be re-enabled using the matching
-Percy config file or per-snapshot option, [`enableJavaScript`](https://docs.percy.io/docs/cli-configuration#snapshot).
+Percy config file or per-snapshot option, [`enableJavaScript`](https://www.browserstack.com/docs/percy/take-percy-snapshots/overview#snapshot).
 
 ## Development
 - Current package.json and yarn.lock install storybook v7 as devDependency and hence require node 16 for development.
