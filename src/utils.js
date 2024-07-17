@@ -139,7 +139,7 @@ export function decodeStoryArgs(value) {
 
 // Borrows a percy discovery browser page to navigate to a URL and evaluate a function, returning
 // the results and normalizing any thrown errors.
-export async function* withPage(percy, url, callback, retry) {
+export async function* withPage(percy, url, callback, retry, args) {
   let log = logger('storybook:utils');
   let attempt = 0;
   let retries = 3;
@@ -195,9 +195,9 @@ export async function* withPage(percy, url, callback, retry) {
       attempt++;
       let shouldRetry = process.env.ENABLE_RETRY === 'true';
       if (!shouldRetry || attempt === retries) {
-          throw error;
+        throw error;
       }
-      log.warn(`Retrying Story: ${args.snapshotName}`)
+      log.warn(`Retrying Story: ${args.snapshotName}`);
     }
   }
 }
