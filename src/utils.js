@@ -1,4 +1,5 @@
 import { request, createRootResource, yieldTo } from '@percy/cli-command/utils';
+import { logger } from '@percy/cli-command';
 import spawn from 'cross-spawn';
 
 // check storybook version
@@ -139,51 +140,65 @@ export function decodeStoryArgs(value) {
 // Borrows a percy discovery browser page to navigate to a URL and evaluate a function, returning
 // the results and normalizing any thrown errors.
 export async function* withPage(percy, url, callback, retry) {
-  // provide discovery options that may impact how the page loads
-  let page = yield percy.browser.page({
-    networkIdleTimeout: percy.config.discovery.networkIdleTimeout,
-    requestHeaders: getAuthHeaders(percy.config.discovery),
-    captureMockedServiceWorker: percy.config.discovery.captureMockedServiceWorker,
-    userAgent: percy.config.discovery.userAgent
-  });
+  let log = logger('storybook:utils');
+  let attempt = 0;
+  let retries = 3;
+  while (attempt < retries) {
+    try {
+      // provide discovery options that may impact how the page loads
+      let page = yield percy.browser.page({
+        networkIdleTimeout: percy.config.discovery.networkIdleTimeout,
+        requestHeaders: getAuthHeaders(percy.config.discovery),
+        captureMockedServiceWorker: percy.config.discovery.captureMockedServiceWorker,
+        userAgent: percy.config.discovery.userAgent
+      });
 
-  // patch eval to include storybook specific helpers in the local scope
-  page.eval = (fn, ...args) => page.constructor.prototype.eval.call(page, (
-    typeof fn === 'string' ? fn : [
-      'function withPercyStorybookHelpers() {',
-      `  const VAL_REG = ${VAL_REG};`,
-      `  const NUM_REG = ${NUM_REG};`,
-      `  const HEX_REG = ${HEX_REG};`,
-      `  const COL_REG = ${COL_REG};`,
-      `  const VALID_REG = ${VALID_REG};`,
-      `  return (${fn})(...arguments);`,
-      `  ${isPlainObject}`,
-      `  ${validateStoryArgs}`,
-      `  ${encodeStoryArgs}`,
-      `  ${decodeStoryArgs}`,
-      '}'
-    ].join('\n')
-  ), ...args);
+      // patch eval to include storybook specific helpers in the local scope
+      page.eval = (fn, ...args) => page.constructor.prototype.eval.call(page, (
+        typeof fn === 'string' ? fn : [
+          'function withPercyStorybookHelpers() {',
+          `  const VAL_REG = ${VAL_REG};`,
+          `  const NUM_REG = ${NUM_REG};`,
+          `  const HEX_REG = ${HEX_REG};`,
+          `  const COL_REG = ${COL_REG};`,
+          `  const VALID_REG = ${VALID_REG};`,
+          `  return (${fn})(...arguments);`,
+          `  ${isPlainObject}`,
+          `  ${validateStoryArgs}`,
+          `  ${encodeStoryArgs}`,
+          `  ${decodeStoryArgs}`,
+          '}'
+        ].join('\n')
+      ), ...args);
 
-  try {
-    yield page.goto(url);
-    return yield* yieldTo(callback(page));
-  } catch (error) {
-    // if the page crashed and retry returns truthy, try again
-    if (error.message?.includes('crashed') && retry?.()) {
-      return yield* withPage(...arguments);
+      try {
+        yield page.goto(url);
+        return yield* yieldTo(callback(page));
+      } catch (error) {
+        // if the page crashed and retry returns truthy, try again
+        if (error.message?.includes('crashed') && retry?.()) {
+          return yield* withPage(...arguments);
+        }
+
+        /* istanbul ignore next: purposefully not handling real errors */
+        throw (typeof error !== 'string' ? error : new Error(error.replace(
+          // strip generic error names and confusing stack traces
+          /^Error:\s((.+?)\n\s+at\s.+)$/s,
+          // keep the stack trace if the error came from a client script
+          /\n\s+at\s.+?\(https?:/.test(error) ? '$1' : '$2'
+        )));
+      } finally {
+        // always clean up and close the page
+        await page?.close();
+      }
+    } catch (error) {
+      attempt++;
+      let shouldRetry = process.env.ENABLE_RETRY === 'true';
+      if (!shouldRetry || attempt === retries) {
+          throw error;
+      }
+      log.warn(`Retrying Story: ${args.snapshotName}`)
     }
-
-    /* istanbul ignore next: purposefully not handling real errors */
-    throw (typeof error !== 'string' ? error : new Error(error.replace(
-      // strip generic error names and confusing stack traces
-      /^Error:\s((.+?)\n\s+at\s.+)$/s,
-      // keep the stack trace if the error came from a client script
-      /\n\s+at\s.+?\(https?:/.test(error) ? '$1' : '$2'
-    )));
-  } finally {
-    // always clean up and close the page
-    await page?.close();
   }
 }
 
@@ -271,8 +286,8 @@ export function evalSetCurrentStory({ waitFor }, story) {
     let { id, queryParams, globals, args } = story;
 
     // emit a series of events to render the desired story
-    channel.emit('updateGlobals', { globals: {} });
     channel.emit('setCurrentStory', { storyId: id });
+    channel.emit('updateGlobals', { globals: {} });
     channel.emit('updateQueryParams', { ...queryParams });
     if (globals) channel.emit('updateGlobals', { globals: decodeStoryArgs(globals) });
     if (args) channel.emit('updateStoryArgs', { storyId: id, updatedArgs: decodeStoryArgs(args) });

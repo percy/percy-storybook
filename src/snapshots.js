@@ -232,7 +232,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
           log.debug(`Page crashed while loading story: ${snapshots[0].name}`);
           // return true to retry as long as the length decreases
           return lastCount > snapshots.length;
-        });
+        }, { snapshotName: snapshots[0].name });
       } catch (e) {
         if (process.env.PERCY_SKIP_STORY_ON_ERROR === 'true') {
           let { name } = snapshots[0];
