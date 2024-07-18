@@ -193,7 +193,7 @@ describe('percy storybook', () => {
       delete process.env.PERCY_RETRY_STORY_ON_ERROR;
     });
 
-    it('retries story logs the error but does not break build if skip is enabled', async () => {
+    it('skips the story and logs the error but does not break build', async () => {
       server.reply('/iframe.html', () => [200, 'text/html', [
         `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
           { id: '1', kind: 'foo', name: 'bar' }
@@ -241,7 +241,7 @@ describe('percy storybook', () => {
       delete process.env.PERCY_RETRY_STORY_ON_ERROR;
     });
 
-    it('skips the story and logs the error but does not break build', async () => {
+    it('retries story logs the error but does not break build if skip is enabled', async () => {
       server.reply('/iframe.html', () => [200, 'text/html', [
         `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
           { id: '1', kind: 'foo', name: 'bar' }
