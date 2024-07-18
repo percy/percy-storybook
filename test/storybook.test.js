@@ -107,6 +107,7 @@ describe('percy storybook', () => {
   });
 
   it('errors when the client api is missing', async () => {
+    process.env.PERCY_RETRY_STORY_ON_ERROR = false;
     await expectAsync(storybook(['http://localhost:8000'])).toBeRejected();
 
     expect(logger.stderr).toEqual([
@@ -147,6 +148,7 @@ describe('percy storybook', () => {
   });
 
   it('errors when the storybook page errors', async () => {
+    process.env.PERCY_RETRY_STORY_ON_ERROR = false;
     server.reply('/iframe.html', () => [200, 'text/html', [
       `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
         { id: '1', kind: 'foo', name: 'bar' }
@@ -183,10 +185,12 @@ describe('percy storybook', () => {
   describe('with PERCY_SKIP_STORY_ON_ERROR set to true', () => {
     beforeAll(() => {
       process.env.PERCY_SKIP_STORY_ON_ERROR = true;
+      process.env.PERCY_RETRY_STORY_ON_ERROR = false;
     });
 
     afterAll(() => {
       delete process.env.PERCY_SKIP_STORY_ON_ERROR;
+      delete process.env.PERCY_RETRY_STORY_ON_ERROR;
     });
 
     it('skips the story and logs the error but does not break build', async () => {
@@ -217,6 +221,56 @@ describe('percy storybook', () => {
 
       // contains logs of story error
       expect(logger.stderr).toEqual([
+        '[percy] Failed to capture story: foo: bar',
+        // error logs contain the client stack trace
+        jasmine.stringMatching(/^\[percy\] Error: Story Error\n.*\/iframe\.html.*$/s),
+        // does not create a build if all stories failed [ 1 in this case ]
+        '[percy] Build not created'
+      ]);
+    });
+  });
+
+  describe('with PERCY_RETRY_STORY_ON_ERROR set to true', () => {
+    beforeAll(() => {
+      process.env.PERCY_SKIP_STORY_ON_ERROR = true;
+      process.env.PERCY_RETRY_STORY_ON_ERROR = true;
+    });
+
+    afterAll(() => {
+      delete process.env.PERCY_SKIP_STORY_ON_ERROR;
+      delete process.env.PERCY_RETRY_STORY_ON_ERROR;
+    });
+
+    it('retries story logs the error but does not break build if skip is enabled', async () => {
+      server.reply('/iframe.html', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
+          { id: '1', kind: 'foo', name: 'bar' }
+        ])} }, ${
+          'channel: { emit() {}, on: (a, c) => a === "storyErrored" && c(new Error("Story Error")) }'
+        } }</script>`,
+        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+          { id: '1', kind: 'foo', name: 'bar' }
+        ])} }</script>`
+      ].join('')]);
+
+      server.reply('/iframe.html?id=1&viewMode=story', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
+          { id: '1', kind: 'foo', name: 'bar' }
+        ])} }, ${
+          'channel: { emit() {}, on: (a, c) => a === "storyErrored" && c(new Error("Story Error")) }'
+        } }</script>`,
+        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+          { id: '1', kind: 'foo', name: 'bar' }
+        ])} }</script>`
+      ].join('')]);
+
+      // does not reject
+      await storybook(['http://localhost:8000']);
+
+      // contains logs of story error
+      expect(logger.stderr).toEqual([
+        '[percy] Retrying Story: foo: bar',
+        '[percy] Retrying Story: foo: bar',
         '[percy] Failed to capture story: foo: bar',
         // error logs contain the client stack trace
         jasmine.stringMatching(/^\[percy\] Error: Story Error\n.*\/iframe\.html.*$/s),
@@ -514,6 +568,7 @@ describe('percy storybook', () => {
   });
 
   it('handles page crashes while taking snapshots', async () => {
+    process.env.PERCY_RETRY_STORY_ON_ERROR = false;
     // eslint-disable-next-line import/no-extraneous-dependencies
     let { Percy } = await import('@percy/core');
 
