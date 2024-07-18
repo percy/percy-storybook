@@ -221,8 +221,6 @@ describe('percy storybook', () => {
 
       // contains logs of story error
       expect(logger.stderr).toEqual([
-        '[percy] Retrying Story: foo: bar',
-        '[percy] Retrying Story: foo: bar',
         '[percy] Failed to capture story: foo: bar',
         // error logs contain the client stack trace
         jasmine.stringMatching(/^\[percy\] Error: Story Error\n.*\/iframe\.html.*$/s),
@@ -271,6 +269,8 @@ describe('percy storybook', () => {
 
       // contains logs of story error
       expect(logger.stderr).toEqual([
+        '[percy] Retrying Story: foo: bar',
+        '[percy] Retrying Story: foo: bar',
         '[percy] Failed to capture story: foo: bar',
         // error logs contain the client stack trace
         jasmine.stringMatching(/^\[percy\] Error: Story Error\n.*\/iframe\.html.*$/s),
