@@ -193,8 +193,8 @@ export async function* withPage(percy, url, callback, retry, args) {
       }
     } catch (error) {
       attempt++;
-      let shouldRetry = process.env.ENABLE_RETRY === 'true';
-      if (!shouldRetry || attempt === retries) {
+      let enableRetry = process.env.PERCY_RETRY_STORY_ON_ERROR || 'true';
+      if (!(enableRetry === 'true') || attempt === retries) {
         throw error;
       }
       log.warn(`Retrying Story: ${args.snapshotName}`);
