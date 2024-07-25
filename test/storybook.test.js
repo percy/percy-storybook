@@ -333,6 +333,24 @@ describe('percy storybook', () => {
     expect(callArgs[1][0].domSnapshot).toEqual(previewDOM);
   });
 
+  it('uses the preview dom when javascript is enabled', async () => {
+    fs.writeFileSync('.percy.yml', [
+      'version: 2',
+      'snapshot:',
+      '  enableJavaScript: true'
+    ].join('\n'));
+
+    // eslint-disable-next-line import/no-extraneous-dependencies
+    let { Percy } = await import('@percy/core');
+    spyOn(Percy.prototype, 'snapshot').and.callThrough();
+
+    await storybook(['http://localhost:9000', '--include=First', '--verbose']);
+
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
+      '[percy:storybook] Loading story: Snapshot: First'
+    ]));
+  });
+
   it('removes element when domTransformation is passed', async () => {
     // eslint-disable-next-line import/no-extraneous-dependencies
     let { Percy } = await import('@percy/core');

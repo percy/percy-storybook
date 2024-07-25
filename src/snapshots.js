@@ -208,7 +208,8 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
             // separate story and snapshot options
             let { id, args, globals, queryParams, ...options } = snapshots[0];
 
-            if (flags.dryRun || options.enableJavaScript || percy.config.snapshot.enableJavaScript) {
+            const enableJavaScript = options.enableJavaScript ?? percy.config.snapshot.enableJavaScript;
+            if (flags.dryRun || enableJavaScript) {
               log.debug(`Loading story via previewResource: ${options.name}`);
               // when dry-running or when javascript is enabled, use the preview dom
               options.domSnapshot = previewResource.content;
