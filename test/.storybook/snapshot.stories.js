@@ -18,7 +18,8 @@ export const First = () => (
 
 First.parameters = {
   percy: {
-    domTransformation: '(documentElement) => { documentElement.querySelectorAll(".removeMe").forEach(ele => ele.remove()); }'
+    domTransformation: '(documentElement) => { documentElement.querySelectorAll(".removeMe").forEach(ele => ele.remove()); }',
+    enableJavascript: false // this should be priotised over global config
   }
 }
 export const Second = () => (
