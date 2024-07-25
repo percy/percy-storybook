@@ -1,6 +1,6 @@
 {
   "name": "@percy/storybook",
-  "version": "6.0.1",
+  "version": "6.0.2-beta.0",
   "description": "Storybook addons for visual testing with Percy",
   "keywords": [
     "storybook",
@@ -19,7 +19,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "latest"
+    "tag": "beta"
   },
   "engine": {
     "node": ">=14"
@@ -65,9 +65,9 @@
     "@babel/eslint-plugin": "^7.19.1",
     "@babel/preset-env": "^7.22.9",
     "@babel/preset-react": "^7.24.1",
+    "@storybook/addon-webpack5-compiler-babel": "^3.0.3",
     "@storybook/react": "^8.0.9",
     "@storybook/react-webpack5": "^8.0.9",
-    "@storybook/addon-webpack5-compiler-babel": "^3.0.3",
     "babel-eslint": "^10.0.3",
     "babel-plugin-istanbul": "^6.1.1",
     "cross-env": "^7.0.3",
