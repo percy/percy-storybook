@@ -6,7 +6,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@8459bc0c7e3759cdf591f513d9f141a95fef0a8f
+    - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871
     - uses: actions/setup-node@v3
       with:
         node-version: 18
