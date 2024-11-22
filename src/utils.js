@@ -195,9 +195,14 @@ export async function* withPage(percy, url, callback, retry, args) {
       attempt++;
       let enableRetry = process.env.PERCY_RETRY_STORY_ON_ERROR || 'true';
       if (!(enableRetry === 'true') || attempt === retries) {
+        // Add snapshotName to the error message
+        const snapshotName = args?.snapshotName;
+        if (snapshotName) {
+          error.message = `${error.message} - Snapshot Name: ${snapshotName}`;
+        }
         throw error;
       }
-      log.warn(`Retrying Story: ${args.snapshotName}`);
+      log.warn(`Retrying Story: ${args?.snapshotName}`);
     }
   }
 }
