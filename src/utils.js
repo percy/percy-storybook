@@ -145,9 +145,6 @@ export async function* withPage(percy, url, callback, retry, args) {
   let retries = 3;
   while (attempt < retries) {
     try {
-      if (attempt > 0) {
-        log.warn(`Retrying Story: ${args?.snapshotName}, attempt: ${attempt}`);
-      }
       // provide discovery options that may impact how the page loads
       let page = yield percy.browser.page({
         networkIdleTimeout: percy.config.discovery.networkIdleTimeout,
@@ -199,10 +196,24 @@ export async function* withPage(percy, url, callback, retry, args) {
       if (!(enableRetry === 'true') || attempt === retries) {
         // Add snapshotName to the error message
         const snapshotName = args?.snapshotName;
+        const errorMessage = args?.errorMessage;
+        if (errorMessage) {
+          error.message = `${errorMessage}: \n${error.message}`;
+        }
         if (snapshotName) {
           error.message = `Snapshot Name: ${snapshotName}: \n${error.message}`;
         }
         throw error;
+      }
+
+      // only throw warning message on snapshot
+      if (args?.snapshotName) {
+        log.warn(`Retrying Story: ${args.snapshotName}, attempt: ${attempt}`);
+      }
+      if (args?.from) {
+        log.warn(
+          `Retrying because error occurred in: ${args.from}, attempt: ${attempt}`
+        );
       }
     }
   }
