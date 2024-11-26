@@ -202,7 +202,8 @@ export async function* withPage(percy, url, callback, retry, args) {
         }
         throw error;
       }
-      log.warn(`Retrying Story: ${args?.snapshotName}`);
+      const message = `Retrying Story: ${args?.snapshotName}`;
+      log.warn(message);
     }
   }
 }
