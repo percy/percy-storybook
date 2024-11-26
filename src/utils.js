@@ -145,6 +145,9 @@ export async function* withPage(percy, url, callback, retry, args) {
   let retries = 3;
   while (attempt < retries) {
     try {
+      if (attempt > 0) {
+        log.warn(`Retrying Story: ${args?.snapshotName}`);
+      }
       // provide discovery options that may impact how the page loads
       let page = yield percy.browser.page({
         networkIdleTimeout: percy.config.discovery.networkIdleTimeout,
@@ -170,7 +173,6 @@ export async function* withPage(percy, url, callback, retry, args) {
           '}'
         ].join('\n')
       ), ...args);
-
       try {
         yield page.goto(url);
         return yield* yieldTo(callback(page));
@@ -198,12 +200,10 @@ export async function* withPage(percy, url, callback, retry, args) {
         // Add snapshotName to the error message
         const snapshotName = args?.snapshotName;
         if (snapshotName) {
-          error.message = `${error.message} - Snapshot Name: ${snapshotName}`;
+          error.message = `Snapshot Name: ${snapshotName}: \n${error.message}`;
         }
         throw error;
       }
-      const message = `Retrying Story: ${args?.snapshotName}`;
-      log.warn(message);
     }
   }
 }
