@@ -146,7 +146,7 @@ export async function* withPage(percy, url, callback, retry, args) {
   while (attempt < retries) {
     try {
       if (attempt > 0) {
-        log.warn(`Retrying Story: ${args?.snapshotName}`);
+        log.warn(`Retrying Story: ${args?.snapshotName}, attempt: ${attempt}`);
       }
       // provide discovery options that may impact how the page loads
       let page = yield percy.browser.page({
