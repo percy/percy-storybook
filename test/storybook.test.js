@@ -112,7 +112,7 @@ describe('percy storybook', () => {
 
     expect(logger.stderr).toEqual([
       '[percy] Build not created',
-      '[percy] Error: Storybook object not found on the window. ' +
+      '[percy] Error: preview url: \nStorybook object not found on the window. ' +
         'Open Storybook and check the console for errors.'
     ]);
   });
