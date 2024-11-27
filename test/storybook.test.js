@@ -112,7 +112,7 @@ describe('percy storybook', () => {
 
     expect(logger.stderr).toEqual([
       '[percy] Build not created',
-      '[percy] Error: Storybook object not found on the window. ' +
+      '[percy] Error: preview url: \nStorybook object not found on the window. ' +
         'Open Storybook and check the console for errors.'
     ]);
   });
@@ -173,12 +173,15 @@ describe('percy storybook', () => {
 
     await expectAsync(storybook(['http://localhost:8000']))
     // message contains the client stack trace
-      .toBeRejectedWithError(/^Story Error\n.*\/iframe\.html.*$/s);
+      .toBeRejectedWithError(/Story Error\n.*\/iframe\.html.*$/s);
 
     expect(logger.stderr).toEqual([
       '[percy] Build not created',
       // message contains the client stack trace
-      jasmine.stringMatching(/^\[percy\] Error: Story Error\n.*\/iframe\.html.*$/s)
+      jasmine.stringMatching(
+        /^\[percy\] Error: Snapshot Name:/s
+      )
+
     ]);
   });
 
@@ -223,7 +226,9 @@ describe('percy storybook', () => {
       expect(logger.stderr).toEqual([
         '[percy] Failed to capture story: foo: bar',
         // error logs contain the client stack trace
-        jasmine.stringMatching(/^\[percy\] Error: Story Error\n.*\/iframe\.html.*$/s),
+        jasmine.stringMatching(
+          /^\[percy\] Error: Snapshot Name:/s
+        ),
         // does not create a build if all stories failed [ 1 in this case ]
         '[percy] Build not created'
       ]);
@@ -269,11 +274,14 @@ describe('percy storybook', () => {
 
       // contains logs of story error
       expect(logger.stderr).toEqual([
-        '[percy] Retrying Story: foo: bar',
-        '[percy] Retrying Story: foo: bar',
+        '[percy] Retrying Story: foo: bar, attempt: 1',
+        '[percy] Retrying Story: foo: bar, attempt: 2',
         '[percy] Failed to capture story: foo: bar',
         // error logs contain the client stack trace
-        jasmine.stringMatching(/^\[percy\] Error: Story Error\n.*\/iframe\.html.*$/s),
+        jasmine.stringMatching(
+          /^\[percy\] Error: Snapshot Name:/s
+        ),
+
         // does not create a build if all stories failed [ 1 in this case ]
         '[percy] Build not created'
       ]);
