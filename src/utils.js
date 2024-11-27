@@ -193,12 +193,12 @@ export async function* withPage(percy, url, callback, retry, args) {
     } catch (error) {
       attempt++;
       let enableRetry = process.env.PERCY_RETRY_STORY_ON_ERROR || 'true';
+      const from = args?.from;
       if (!(enableRetry === 'true') || attempt === retries) {
         // Add snapshotName to the error message
         const snapshotName = args?.snapshotName;
-        const errorMessage = args?.errorMessage;
-        if (errorMessage) {
-          error.message = `${errorMessage}: \n${error.message}`;
+        if (from) {
+          error.message = `${from}: \n${error.message}`;
         }
         if (snapshotName) {
           error.message = `Snapshot Name: ${snapshotName}: \n${error.message}`;
@@ -210,9 +210,9 @@ export async function* withPage(percy, url, callback, retry, args) {
       if (args?.snapshotName) {
         log.warn(`Retrying Story: ${args.snapshotName}, attempt: ${attempt}`);
       }
-      if (args?.from) {
+      if (from) {
         log.warn(
-          `Retrying because error occurred in: ${args.from}, attempt: ${attempt}`
+          `Retrying because error occurred in: ${from}, attempt: ${attempt}`
         );
       }
     }

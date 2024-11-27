@@ -173,8 +173,8 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
 
     // gather storybook data in parallel
     let [environmentInfo, stories] = yield* yieldAll([
-      withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo), undefined, { from: 'about url', errorMessage: 'Unable to load about url' }),
-      withPage(percy, previewUrl, p => p.eval(evalStorybookStorySnapshots), undefined, { from: 'preview url', errorMessage: 'Unable to load preview url' })
+      withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo), undefined, { from: 'about url' }),
+      withPage(percy, previewUrl, p => p.eval(evalStorybookStorySnapshots), undefined, { from: 'preview url' })
     ]);
 
     // map stories to snapshot options
