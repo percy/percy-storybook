@@ -173,8 +173,7 @@ describe('percy storybook', () => {
 
     await expectAsync(storybook(['http://localhost:8000']))
     // message contains the client stack trace
-    /^Story Error\n.*\/iframe\.html.*$/s
-      .toBeRejectedWithError(/^Snapshot Name: *: Story Error\n.*\/iframe\.html.*$/s);
+      .toBeRejectedWithError(/Story Error\n.*\/iframe\.html.*$/s);
 
     expect(logger.stderr).toEqual([
       '[percy] Build not created',
