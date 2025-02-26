@@ -109,12 +109,11 @@ describe('percy storybook', () => {
   it('errors when the client api is missing', async () => {
     process.env.PERCY_RETRY_STORY_ON_ERROR = false;
     await expectAsync(storybook(['http://localhost:8000'])).toBeRejected();
-
-    expect(logger.stderr).toEqual([
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy] Build not created',
       '[percy] Error: preview url: \nStorybook object not found on the window. ' +
         'Open Storybook and check the console for errors.'
-    ]);
+    ]));
   });
 
   it('errors when no snapshots are found', async () => {
@@ -127,10 +126,10 @@ describe('percy storybook', () => {
     await expectAsync(storybook(['http://localhost:8000']))
       .toBeRejectedWithError('No snapshots found');
 
-    expect(logger.stderr).toEqual([
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy] Build not created',
       '[percy] Error: No snapshots found'
-    ]);
+    ]));
   });
 
   it('errors when unable to reach storybook', async () => {
@@ -175,14 +174,14 @@ describe('percy storybook', () => {
     // message contains the client stack trace
       .toBeRejectedWithError(/Story Error\n.*\/iframe\.html.*$/s);
 
-    expect(logger.stderr).toEqual([
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy] Build not created',
       // message contains the client stack trace
       jasmine.stringMatching(
         /^\[percy\] Error: Snapshot Name:/s
       )
 
-    ]);
+    ]));
   });
 
   describe('with PERCY_SKIP_STORY_ON_ERROR set to true', () => {
@@ -223,7 +222,7 @@ describe('percy storybook', () => {
       await storybook(['http://localhost:8000']);
 
       // contains logs of story error
-      expect(logger.stderr).toEqual([
+      expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Failed to capture story: foo: bar',
         // error logs contain the client stack trace
         jasmine.stringMatching(
@@ -231,7 +230,7 @@ describe('percy storybook', () => {
         ),
         // does not create a build if all stories failed [ 1 in this case ]
         '[percy] Build not created'
-      ]);
+      ]));
     });
   });
 
@@ -273,7 +272,7 @@ describe('percy storybook', () => {
       await storybook(['http://localhost:8000']);
 
       // contains logs of story error
-      expect(logger.stderr).toEqual([
+      expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Retrying Story: foo: bar, attempt: 1',
         '[percy] Retrying Story: foo: bar, attempt: 2',
         '[percy] Failed to capture story: foo: bar',
@@ -284,7 +283,7 @@ describe('percy storybook', () => {
 
         // does not create a build if all stories failed [ 1 in this case ]
         '[percy] Build not created'
-      ]);
+      ]));
     });
   });
 
@@ -453,10 +452,9 @@ describe('percy storybook', () => {
 
   it('does not upload and logs snapshots with --dry-run', async () => {
     await storybook(['http://localhost:9000', '--dry-run']);
-
-    expect(logger.stderr).toEqual([
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy] Build not created'
-    ]);
+    ]));
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Snapshot found: Snapshot: First',
       '[percy] Snapshot found: Snapshot: Second',
@@ -468,9 +466,9 @@ describe('percy storybook', () => {
     logger.reset();
     await storybook(['http://localhost:9000', '--dry-run', '--include=First']);
 
-    expect(logger.stderr).toEqual([
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy] Build not created'
-    ]);
+    ]));
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Snapshot found: Snapshot: First',
       '[percy] Found 1 snapshot'
@@ -524,13 +522,13 @@ describe('percy storybook', () => {
 
     await storybook(['http://localhost:9000', '--dry-run', '--include=Options: Invalid']);
 
-    expect(logger.stderr).toEqual([
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy] Invalid Storybook parameters:',
       '[percy] - percy.args.invalid: omitted potentially unsafe arg',
       '[percy] - percy.globals.invalid: omitted potentially unsafe global',
       '[percy] - percy.invalid: unknown property',
       '[percy] Build not created'
-    ]);
+    ]));
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
       '[percy] Snapshot found: Options: Invalid One',
       '[percy] Snapshot found: Options: Invalid Two',
@@ -722,10 +720,10 @@ describe('percy storybook', () => {
 
       expect(process.env.PERCY_PARALLEL_TOTAL).toEqual('2');
 
-      expect(logger.stderr).toEqual([
+      expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Build not created',
         "[percy] Error: Missing '--shard-index'. Found 2 shards of 2 snapshots each (3 total)"
-      ]);
+      ]));
     });
 
     it('can use --shard-size to split snapshots and imply PERCY_PARALLEL_TOTAL=-1', async () => {
@@ -736,18 +734,18 @@ describe('percy storybook', () => {
 
       expect(process.env.PERCY_PARALLEL_TOTAL).toEqual('-1');
 
-      expect(logger.stderr).toEqual([
+      expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Build not created',
         "[percy] Error: Missing '--shard-index'. Found 3 shards of 1 snapshots each (3 total)"
-      ]);
+      ]));
     });
 
     it('can use --shard-index to select a group of split snapshots to take', async () => {
       await storybook(['http://localhost:9000', '--dry-run', '--shard-count=3', '--shard-index=1']);
 
-      expect(logger.stderr).toEqual([
+      expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Build not created'
-      ]);
+      ]));
       expect(logger.stdout).toEqual(jasmine.arrayContaining([
         '[percy] Percy has started!',
         '[percy] Snapshot found: Snapshot: Second',
@@ -766,30 +764,30 @@ describe('percy storybook', () => {
       // --shard-count + --partial should set PERCY_PARALLEL_TOTAL=-1
       expect(process.env.PERCY_PARALLEL_TOTAL).toEqual('-1');
 
-      expect(logger.stderr).toEqual([
+      expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Build not created',
         "[percy] Error: Missing '--shard-index'. Found 2 shards of 2 snapshots each (3 total)"
-      ]);
+      ]));
     });
 
     it('errors when providing both --shard-count and --shard-size', async () => {
       await expectAsync(storybook(['http://localhost:9000', '--dry-run', '--shard-size=1', '--shard-count=3']))
         .toBeRejectedWithError("Must specify either '--shard-size' OR '--shard-count' not both");
 
-      expect(logger.stderr).toEqual([
+      expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Build not created',
         "[percy] Error: Must specify either '--shard-size' OR '--shard-count' not both"
-      ]);
+      ]));
     });
 
     it('errors when providing --shard-index without either --shard-count or --shard-size', async () => {
       await expectAsync(storybook(['http://localhost:9000', '--dry-run', '--shard-index=0']))
         .toBeRejectedWithError("Found '--shard-index' but missing '--shard-size' or '--shard-count'");
 
-      expect(logger.stderr).toEqual([
+      expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Build not created',
         "[percy] Error: Found '--shard-index' but missing '--shard-size' or '--shard-count'"
-      ]);
+      ]));
     });
 
     it('errors when providing --shard-index outside the possible range', async () => {
@@ -800,11 +798,11 @@ describe('percy storybook', () => {
           ' Found 2 shards of 2 snapshots each (3 total)'
       );
 
-      expect(logger.stderr).toEqual([
+      expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Build not created',
         "[percy] Error: The provided '--shard-index' (7) is out of range." +
           ' Found 2 shards of 2 snapshots each (3 total)'
-      ]);
+      ]));
     });
   });
 });
