@@ -109,10 +109,17 @@ describe('percy storybook', () => {
   it('errors when the client api is missing', async () => {
     process.env.PERCY_RETRY_STORY_ON_ERROR = false;
     await expectAsync(storybook(['http://localhost:8000'])).toBeRejected();
+
     expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy] Build not created',
-      '[percy] Error: preview url: \nStorybook object not found on the window. ' +
-        'Open Storybook and check the console for errors.'
+      '[percy] Detected error for percy build',
+      '[percy] Failure: Snapshot command was not called',
+      '[percy] Failure Reason: Snapshot Command was not called. please check your CI for errors',
+      '[percy] Suggestion: Try using percy snapshot command to take snapshots',
+      '[percy] Refer to the below Doc Links for the same',
+      '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/',
+      '[percy] Error: preview url: \n' +
+    'Storybook object not found on the window. Open Storybook and check the console for errors.'
     ]));
   });
 
@@ -128,6 +135,12 @@ describe('percy storybook', () => {
 
     expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy] Build not created',
+      '[percy] Detected error for percy build',
+      '[percy] Failure: Snapshot command was not called',
+      '[percy] Failure Reason: Snapshot Command was not called. please check your CI for errors',
+      '[percy] Suggestion: Try using percy snapshot command to take snapshots',
+      '[percy] Refer to the below Doc Links for the same',
+      '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/',
       '[percy] Error: No snapshots found'
     ]));
   });
@@ -176,6 +189,12 @@ describe('percy storybook', () => {
 
     expect(logger.stderr).toEqual(jasmine.arrayContaining([
       '[percy] Build not created',
+      '[percy] Detected error for percy build',
+      '[percy] Failure: Snapshot command was not called',
+      '[percy] Failure Reason: Snapshot Command was not called. please check your CI for errors',
+      '[percy] Suggestion: Try using percy snapshot command to take snapshots',
+      '[percy] Refer to the below Doc Links for the same',
+      '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/',
       // message contains the client stack trace
       jasmine.stringMatching(
         /^\[percy\] Error: Snapshot Name:/s
@@ -270,12 +289,17 @@ describe('percy storybook', () => {
 
       // does not reject
       await storybook(['http://localhost:8000']);
-
       // contains logs of story error
       expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Retrying Story: foo: bar, attempt: 1',
         '[percy] Retrying Story: foo: bar, attempt: 2',
         '[percy] Failed to capture story: foo: bar',
+        '[percy] Detected error for percy build',
+        '[percy] Failure: Snapshot command was not called',
+        '[percy] Failure Reason: Snapshot Command was not called. please check your CI for errors',
+        '[percy] Suggestion: Try using percy snapshot command to take snapshots',
+        '[percy] Refer to the below Doc Links for the same',
+        '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/',
         // error logs contain the client stack trace
         jasmine.stringMatching(
           /^\[percy\] Error: Snapshot Name:/s
@@ -467,11 +491,19 @@ describe('percy storybook', () => {
     await storybook(['http://localhost:9000', '--dry-run', '--include=First']);
 
     expect(logger.stderr).toEqual(jasmine.arrayContaining([
-      '[percy] Build not created'
+      '[percy] Build not created',
+      '[percy] Detected error for percy build',
+      '[percy] Failure: Snapshot command was not called',
+      '[percy] Failure Reason: Snapshot Command was not called. please check your CI for errors',
+      '[percy] Suggestion: Try using percy snapshot command to take snapshots',
+      '[percy] Refer to the below Doc Links for the same',
+      '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/'
     ]));
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
+      '[percy] Percy has started!',
       '[percy] Snapshot found: Snapshot: First',
-      '[percy] Found 1 snapshot'
+      '[percy] Found 1 snapshot',
+      "[percy] Build's CLI logs sent successfully. Please share this log ID with Percy team in case of any issues - random_sha"
     ]));
   });
 
@@ -527,13 +559,21 @@ describe('percy storybook', () => {
       '[percy] - percy.args.invalid: omitted potentially unsafe arg',
       '[percy] - percy.globals.invalid: omitted potentially unsafe global',
       '[percy] - percy.invalid: unknown property',
-      '[percy] Build not created'
+      '[percy] Build not created',
+      '[percy] Detected error for percy build',
+      '[percy] Failure: Snapshot command was not called',
+      '[percy] Failure Reason: Snapshot Command was not called. please check your CI for errors',
+      '[percy] Suggestion: Try using percy snapshot command to take snapshots',
+      '[percy] Refer to the below Doc Links for the same',
+      '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/'
     ]));
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
+      '[percy] Percy has started!',
       '[percy] Snapshot found: Options: Invalid One',
       '[percy] Snapshot found: Options: Invalid Two',
       '[percy] Snapshot found: Options: Invalid Two (2)',
-      '[percy] Found 3 snapshots'
+      '[percy] Found 3 snapshots',
+      "[percy] Build's CLI logs sent successfully. Please share this log ID with Percy team in case of any issues - random_sha"
     ]));
   });
 
@@ -722,6 +762,12 @@ describe('percy storybook', () => {
 
       expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Build not created',
+        '[percy] Detected error for percy build',
+        '[percy] Failure: Snapshot command was not called',
+        '[percy] Failure Reason: Snapshot Command was not called. please check your CI for errors',
+        '[percy] Suggestion: Try using percy snapshot command to take snapshots',
+        '[percy] Refer to the below Doc Links for the same',
+        '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/',
         "[percy] Error: Missing '--shard-index'. Found 2 shards of 2 snapshots each (3 total)"
       ]));
     });
@@ -736,6 +782,12 @@ describe('percy storybook', () => {
 
       expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Build not created',
+        '[percy] Detected error for percy build',
+        '[percy] Failure: Snapshot command was not called',
+        '[percy] Failure Reason: Snapshot Command was not called. please check your CI for errors',
+        '[percy] Suggestion: Try using percy snapshot command to take snapshots',
+        '[percy] Refer to the below Doc Links for the same',
+        '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/',
         "[percy] Error: Missing '--shard-index'. Found 3 shards of 1 snapshots each (3 total)"
       ]));
     });
@@ -744,7 +796,13 @@ describe('percy storybook', () => {
       await storybook(['http://localhost:9000', '--dry-run', '--shard-count=3', '--shard-index=1']);
 
       expect(logger.stderr).toEqual(jasmine.arrayContaining([
-        '[percy] Build not created'
+        '[percy] Build not created',
+        '[percy] Detected error for percy build',
+        '[percy] Failure: Snapshot command was not called',
+        '[percy] Failure Reason: Snapshot Command was not called. please check your CI for errors',
+        '[percy] Suggestion: Try using percy snapshot command to take snapshots',
+        '[percy] Refer to the below Doc Links for the same',
+        '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/'
       ]));
       expect(logger.stdout).toEqual(jasmine.arrayContaining([
         '[percy] Percy has started!',
@@ -766,6 +824,12 @@ describe('percy storybook', () => {
 
       expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Build not created',
+        '[percy] Detected error for percy build',
+        '[percy] Failure: Snapshot command was not called',
+        '[percy] Failure Reason: Snapshot Command was not called. please check your CI for errors',
+        '[percy] Suggestion: Try using percy snapshot command to take snapshots',
+        '[percy] Refer to the below Doc Links for the same',
+        '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/',
         "[percy] Error: Missing '--shard-index'. Found 2 shards of 2 snapshots each (3 total)"
       ]));
     });
@@ -776,6 +840,12 @@ describe('percy storybook', () => {
 
       expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Build not created',
+        '[percy] Detected error for percy build',
+        '[percy] Failure: Snapshot command was not called',
+        '[percy] Failure Reason: Snapshot Command was not called. please check your CI for errors',
+        '[percy] Suggestion: Try using percy snapshot command to take snapshots',
+        '[percy] Refer to the below Doc Links for the same',
+        '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/',
         "[percy] Error: Must specify either '--shard-size' OR '--shard-count' not both"
       ]));
     });
@@ -786,6 +856,12 @@ describe('percy storybook', () => {
 
       expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Build not created',
+        '[percy] Detected error for percy build',
+        '[percy] Failure: Snapshot command was not called',
+        '[percy] Failure Reason: Snapshot Command was not called. please check your CI for errors',
+        '[percy] Suggestion: Try using percy snapshot command to take snapshots',
+        '[percy] Refer to the below Doc Links for the same',
+        '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/',
         "[percy] Error: Found '--shard-index' but missing '--shard-size' or '--shard-count'"
       ]));
     });
@@ -800,8 +876,13 @@ describe('percy storybook', () => {
 
       expect(logger.stderr).toEqual(jasmine.arrayContaining([
         '[percy] Build not created',
-        "[percy] Error: The provided '--shard-index' (7) is out of range." +
-          ' Found 2 shards of 2 snapshots each (3 total)'
+        '[percy] Detected error for percy build',
+        '[percy] Failure: Snapshot command was not called',
+        '[percy] Failure Reason: Snapshot Command was not called. please check your CI for errors',
+        '[percy] Suggestion: Try using percy snapshot command to take snapshots',
+        '[percy] Refer to the below Doc Links for the same',
+        '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/',
+        "[percy] Error: The provided '--shard-index' (7) is out of range. Found 2 shards of 2 snapshots each (3 total)"
       ]));
     });
   });
