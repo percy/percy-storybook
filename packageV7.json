@@ -19,7 +19,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "latest"
+    "tag": "beta"
   },
   "engine": {
     "node": ">=14"
