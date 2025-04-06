@@ -886,4 +886,74 @@ describe('percy storybook', () => {
       ]));
     });
   });
+
+  describe('error and retry messages', () => {
+    beforeAll(() => {
+      process.env.PERCY_SKIP_STORY_ON_ERROR = true;
+      process.env.PERCY_RETRY_STORY_ON_ERROR = true;
+    });
+
+    afterAll(() => {
+      delete process.env.PERCY_SKIP_STORY_ON_ERROR;
+      delete process.env.PERCY_RETRY_STORY_ON_ERROR;
+    });
+
+    const STORIES = [
+      { id: '1', kind: 'foo', name: 'story1' },
+      { id: '2', kind: 'foo', name: 'story2' },
+    ];
+
+    STORIES.forEach((story) => {
+      const failedSnapshotName = `${story.kind}: ${story.name}`;
+      it(`outputs with current snapshot name (failed snapshot: ${failedSnapshotName})`, async () => {
+        const { id: failedStoryId } = story;
+
+        const response = `
+        <script>
+        let currentStoryId = ''
+        __STORYBOOK_PREVIEW__ = {
+          async extract() {
+            return ${JSON.stringify(STORIES)}
+          },
+          channel: {
+            emit(_, params) {
+              if (params.storyId) {
+                currentStoryId = params.storyId
+              }
+            },
+            on: (a, c) => {
+              if (a === 'storyRendered' && currentStoryId != '${failedStoryId}') {
+                c()
+              }
+              if (a === 'storyErrored' && currentStoryId == '${failedStoryId}') {
+                c(new Error())
+              }
+            }
+          }
+        }
+        </script>
+        <script>
+        __STORYBOOK_STORY_STORE__ = {
+          raw: () => ${JSON.stringify(STORIES)}
+        }
+        </script>
+        `;
+
+        ['/iframe.html', ...STORIES.map(({ id }) => `/iframe.html?id=${id}&viewMode=story`)].forEach((endpoint) => {
+          server.reply(endpoint, () => [200, 'text/html', response]);
+        });
+
+        await storybook(['http://localhost:8000']);
+
+        expect(logger.stderr).toEqual(
+          jasmine.arrayContaining([
+            `[percy] Retrying Story: ${failedSnapshotName}, attempt: 1`,
+            `[percy] Retrying Story: ${failedSnapshotName}, attempt: 2`,
+            `[percy] Failed to capture story: ${failedSnapshotName}`,
+            jasmine.stringMatching(new RegExp(`^\\[percy\\] Error: Snapshot Name: ${failedSnapshotName}: `, 's')),
+          ]),
+        );
+      });
+    });
+  });
 });
