@@ -78,7 +78,7 @@
     "jasmine": "^4.5.0",
     "jasmine-spec-reporter": "^7.0.0",
     "mock-require": "^3.0.3",
-    "nock": "^13.2.9",
+    "nock": "^14.0.3",
     "nyc": "^15.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
