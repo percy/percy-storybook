@@ -312,11 +312,6 @@ export function evalSetCurrentStory({ waitFor }, story) {
 
     // resolve when rendered, reject on any other renderer event
     return new Promise((resolve, reject) => {
-      channel.on('storyMissing', (err) => reject(err || new Error('Story Missing')));
-      channel.on('storyErrored', (err) => reject(err || new Error('Story Errored')));
-      channel.on('storyThrewException', (err) => reject(err || new Error('Story Threw Exception')));
-
-      // Handle story rendered, but also check for loaders
       channel.on('storyRendered', () => {
         // After the story is rendered, add a small delay before checking loaders
         // This helps ensure that any post-render loader state changes have time to occur
@@ -325,6 +320,10 @@ export function evalSetCurrentStory({ waitFor }, story) {
           waitForLoadersToDisappear().then(resolve).catch(reject);
         }, 100);
       });
+      
+      channel.on('storyMissing', (err) => reject(err || new Error('Story Missing')));
+      channel.on('storyErrored', (err) => reject(err || new Error('Story Errored')));
+      channel.on('storyThrewException', (err) => reject(err || new Error('Story Threw Exception')));
     });
 
     // Helper function to wait for all loaders to disappear
