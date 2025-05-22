@@ -329,6 +329,9 @@ export function evalSetCurrentStory({ waitFor }, story) {
 
     // Helper function to wait for all loaders to disappear
     function waitForLoadersToDisappear() {
+      // Get the logger instance
+      let log = logger('storybook:utils');
+
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           // Collect information about loaders that are still visible for debugging
@@ -343,7 +346,9 @@ export function evalSetCurrentStory({ waitFor }, story) {
           if (preparingDocs) loaderInfo.preparingDocs = !!window.getComputedStyle(preparingDocs).display !== 'none';
           loaderInfo.bodyClasses = bodyClasses;
 
-          reject(new Error(`Timed out waiting for Storybook loaders to disappear: ${JSON.stringify(loaderInfo)}`));
+          log.warn('Timed out waiting for Storybook loaders to disappear');
+          // Proceed with the snapshot anyway
+          resolve();
         }, 15000); // 15 second timeout
 
         // Track consecutive checks where loaders are gone to ensure stability
