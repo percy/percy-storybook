@@ -315,7 +315,7 @@ export function evalSetCurrentStory({ waitFor }, story) {
       channel.on('storyMissing', (err) => reject(err || new Error('Story Missing')));
       channel.on('storyErrored', (err) => reject(err || new Error('Story Errored')));
       channel.on('storyThrewException', (err) => reject(err || new Error('Story Threw Exception')));
-      
+
       // Handle story rendered, but also check for loaders
       channel.on('storyRendered', () => {
         // After the story is rendered, add a small delay before checking loaders
@@ -336,39 +336,39 @@ export function evalSetCurrentStory({ waitFor }, story) {
           const preparingStory = document.querySelector('.sb-preparing-story');
           const preparingDocs = document.querySelector('.sb-preparing-docs');
           const bodyClasses = document.body.classList.toString();
-          
+
           let loaderInfo = {};
           if (initialLoader) loaderInfo.initialLoader = true;
           if (preparingStory) loaderInfo.preparingStory = !!window.getComputedStyle(preparingStory).display !== 'none';
           if (preparingDocs) loaderInfo.preparingDocs = !!window.getComputedStyle(preparingDocs).display !== 'none';
           loaderInfo.bodyClasses = bodyClasses;
-          
+
           reject(new Error(`Timed out waiting for Storybook loaders to disappear: ${JSON.stringify(loaderInfo)}`));
         }, 15000); // 15 second timeout
 
         // Track consecutive checks where loaders are gone to ensure stability
         let stableCheckCount = 0;
         const requiredStableChecks = 3; // Require multiple consecutive checks with loaders gone
-        
+
         const checkLoaders = () => {
           // Check for the initial page loader
           const initialLoader = document.getElementById('preview-loader');
-          
+
           // Direct DOM checks for preparing story and docs elements - more reliable than just class checks
           const preparingStoryElement = document.querySelector('.sb-preparing-story');
           const preparingDocsElement = document.querySelector('.sb-preparing-docs');
-          
+
           // Check if these elements exist and are visible
-          const isPreparingStoryVisible = preparingStoryElement && 
+          const isPreparingStoryVisible = preparingStoryElement &&
             window.getComputedStyle(preparingStoryElement).display !== 'none';
-          
-          const isPreparingDocsVisible = preparingDocsElement && 
+
+          const isPreparingDocsVisible = preparingDocsElement &&
             window.getComputedStyle(preparingDocsElement).display !== 'none';
-          
+
           // Backup check via body class to cover all bases
           const hasPreparingStoryClass = document.body.classList.contains('sb-show-preparing-story');
           const hasPreparingDocsClass = document.body.classList.contains('sb-show-preparing-docs');
-          
+
           // Check any standalone loaders that might be visible outside the main containers
           const allLoaders = document.querySelectorAll('.sb-loader');
           const visibleStandaloneLoaders = Array.from(allLoaders).filter(loader => {
@@ -376,7 +376,7 @@ export function evalSetCurrentStory({ waitFor }, story) {
             if (loader.closest('.sb-preparing-story') || loader.closest('.sb-preparing-docs')) {
               return false;
             }
-            
+
             // Check visibility of loader and its parent chain
             let element = loader;
             while (element) {
@@ -388,18 +388,17 @@ export function evalSetCurrentStory({ waitFor }, story) {
             }
             return true;
           });
-          
+
           // Consider loaders gone when all conditions are met
-          if (!initialLoader && 
-              !isPreparingStoryVisible && 
-              !isPreparingDocsVisible && 
-              !hasPreparingStoryClass && 
-              !hasPreparingDocsClass && 
+          if (!initialLoader &&
+              !isPreparingStoryVisible &&
+              !isPreparingDocsVisible &&
+              !hasPreparingStoryClass &&
+              !hasPreparingDocsClass &&
               visibleStandaloneLoaders.length === 0) {
-            
             // Loaders appear to be gone, increment the stable count
             stableCheckCount++;
-            
+
             // Only consider loaders truly gone after multiple stable checks
             if (stableCheckCount >= requiredStableChecks) {
               clearTimeout(timeout);
