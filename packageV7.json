@@ -1,6 +1,6 @@
 {
   "name": "@percy/storybook",
-  "version": "6.0.4-alpha.0",
+  "version": "6.0.4-alpha.1",
   "description": "Storybook addons for visual testing with Percy",
   "keywords": [
     "storybook",
