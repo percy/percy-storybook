@@ -320,7 +320,7 @@ export function evalSetCurrentStory({ waitFor }, story) {
           waitForLoadersToDisappear().then(resolve).catch(reject);
         }, 100);
       });
-      
+
       channel.on('storyMissing', (err) => reject(err || new Error('Story Missing')));
       channel.on('storyErrored', (err) => reject(err || new Error('Story Errored')));
       channel.on('storyThrewException', (err) => reject(err || new Error('Story Threw Exception')));
