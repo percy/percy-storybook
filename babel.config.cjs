@@ -3,7 +3,7 @@ module.exports = {
     ['@babel/env', {
       modules: false,
       targets: {
-        node: '18'
+        node: '20'
       }
     }],
     '@babel/preset-react'
