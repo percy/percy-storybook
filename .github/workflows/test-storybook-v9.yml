@@ -9,7 +9,7 @@ on:
         default: master
 jobs:
   test:
-    name: Test Storybook v6
+    name: Test Storybook v9
     strategy:
       matrix:
         os: [ubuntu-latest]
@@ -29,7 +29,6 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-      - run: ./prepare-storybook-tests.sh 6
       - uses: actions/cache@v3
         with:
           path: node_modules
@@ -39,6 +38,10 @@ jobs:
         env:
           PERCY_POSTINSTALL_BROWSER: true
       - run: yarn build
+      - name: Debug npm info storybook
+        run: |
+          echo "Running npx storybook --version..."
+          npx storybook --version
       - name: Set up @percy/cli from git
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
