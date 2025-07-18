@@ -77,7 +77,7 @@
     "eslint-plugin-n": "^15.4.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.1.1",
-    "jasmine": "^4.5.0",
+    "jasmine": "^5.8.0",
     "jasmine-spec-reporter": "^7.0.0",
     "mock-require": "^3.0.3",
     "nock": "^13.2.9",
