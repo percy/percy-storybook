@@ -16,11 +16,11 @@ import {
 
 // Capture single DOM snapshot
 async function* captureSerializedDOM(page, story, options, flags, enableJavaScript, previewResource, log) {
-  if (flags.dryRun || enableJavaScript) {
+  if (flags.dryRun) {
     log.debug(`Loading story via previewResource (dry-run): ${options.name}`);
     return previewResource.content;
   } else {
-    log.debug(`Loading story (real capture): ${options.name}`);
+    log.debug(`Loading story: ${options.name}`);
 
     yield page.eval(evalSetCurrentStory, story);
     let { dom, domSnapshot = dom } = yield page.snapshot(options);
@@ -36,7 +36,7 @@ async function* captureResponsiveDOM(page, story, options, flags, enableJavaScri
     percy.percy?.widths
   );
 
-  if (flags.dryRun || enableJavaScript) {
+  if (flags.dryRun) {
     return widths.map(width => ({
       width,
       html: previewResource.content.html || previewResource.content,
