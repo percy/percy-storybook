@@ -210,7 +210,7 @@ export async function* withPage(percy, url, callback, retry, args) {
 
       // throw warning message with snapshot name if it is present.
       if (args?.snapshotName) {
-        log.warn('Retrying Story:', args.snapshotName, 'attempt:', attempt);
+        log.warn(`Retrying Story: ${args.snapshotName}, attempt: ${attempt}`);
       }
       // throw warning message with from where it is called if from in present.
       if (from) {
