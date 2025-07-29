@@ -49,7 +49,7 @@ export const storybookSchema = {
         },
         widths: {
           type: 'array',
-          items: { 
+          items: {
             type: 'integer',
             minimum: 1
           },
