@@ -16,8 +16,9 @@ import {
 
 // Capture single DOM snapshot
 async function* captureSerializedDOM(page, story, options, flags, enableJavaScript, previewResource, log) {
-  if (flags.dryRun) {
-    log.debug(`Loading story via previewResource (dry-run): ${options.name}`);
+  if (flags.dryRun || enableJavaScript) {
+    log.debug(`Loading story via previewResource: ${options.name}`);
+    // when dry-running or when javascript is enabled, use the preview dom
     return previewResource.content;
   } else {
     log.debug(`Loading story: ${options.name}`);
@@ -36,7 +37,7 @@ async function* captureResponsiveDOM(page, story, options, flags, enableJavaScri
     percy.percy?.widths
   );
 
-  if (flags.dryRun) {
+  if (flags.dryRun || enableJavaScript) {
     return widths.map(width => ({
       width,
       html: previewResource.content.html || previewResource.content,
