@@ -423,25 +423,21 @@ export function evalSetCurrentStory({ waitFor }, story) {
 // Utility functions for responsive snapshot capture
 
 // Process widths for responsive DOM capture with proper hierarchy
-export function getWidthsForResponsiveCapture(userPassedWidths, configWidths, percyWidths) {
-  let selectedWidths = [];
+export function getWidthsForResponsiveCapture(userPassedWidths, configWidths) {
+  let allWidths = [];
 
   if (userPassedWidths && userPassedWidths.length) {
-    selectedWidths = userPassedWidths;
-  } else if (configWidths && configWidths.length) {
-    selectedWidths = configWidths;
-  } else if (percyWidths?.config?.length) {
-    selectedWidths = percyWidths.config;
+    allWidths = userPassedWidths;
   } else {
-    selectedWidths = [375, 768, 1280];
+    allWidths = configWidths;
   }
 
   // Remove duplicates and invalid values
-  return [...new Set(selectedWidths)].filter(w => w && typeof w === 'number' && w > 0);
+  return [...new Set(allWidths)].filter(w => w && typeof w === 'number' && w > 0);
 }
 
 // Check if responsive snapshot capture is enabled with proper hierarchy
-export function isResponsiveSnapshotCaptureEnabled(options, config, flags) {
+export function isResponsiveSnapshotCaptureEnabled(options, config) {
   // Always disable if defer uploads is enabled
   if (config?.percy?.deferUploads) {
     return false;
@@ -454,11 +450,6 @@ export function isResponsiveSnapshotCaptureEnabled(options, config, flags) {
 
   if (config?.snapshot && 'responsiveSnapshotCapture' in config.snapshot) {
     const value = !!(config.snapshot.responsiveSnapshotCapture);
-    return value;
-  }
-
-  if (flags && 'responsiveSnapshotCapture' in flags) {
-    const value = !!(flags.responsiveSnapshotCapture);
     return value;
   }
 
@@ -630,7 +621,7 @@ async function captureSerializedDOM(page, options) {
 }
 
 // Capture responsive DOM snapshots across different widths
-export async function* captureResponsiveStoryDOM(page, story, widths, options, log) {
+export async function* captureResponsiveStoryDOM(page, story, options, log) {
   const domSnapshots = [];
   let currentWidth, currentHeight;
 
@@ -650,7 +641,7 @@ export async function* captureResponsiveStoryDOM(page, story, widths, options, l
     // Setup the resizeCount listener
     yield page.eval(() => {
       if (typeof window.PercyDOM !== 'undefined' && window.PercyDOM.waitForResize) {
-        window.PercyDOM.waitForResize();
+          window.PercyDOM.waitForResize();
       }
       window.resizeCount = window.resizeCount || 0;
     });
@@ -662,7 +653,7 @@ export async function* captureResponsiveStoryDOM(page, story, widths, options, l
       }, options?.minHeight || 600);
     }
 
-    for (let width of widths) {
+    for (let width of options?.widths) {
       try {
         if (lastWindowWidth !== width) {
           resizeCount++;

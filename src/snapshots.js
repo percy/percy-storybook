@@ -24,21 +24,16 @@ async function* captureSerializedDOM(page, story, options, flags, enableJavaScri
     log.debug(`Loading story: ${options.name}`);
 
     yield page.eval(evalSetCurrentStory, story);
-    let { dom, domSnapshot = dom } = yield page.snapshot(options);
+    let { domSnapshot } = yield page.snapshot(options);
     return domSnapshot;
   }
 }
 
 // Capture responsive DOM snapshots
-async function* captureResponsiveDOM(page, story, options, flags, enableJavaScript, previewResource, log, percy) {
-  const widths = getWidthsForResponsiveCapture(
-    options.widths || flags.widths,
-    percy.config.snapshot?.widths,
-    percy.percy?.widths
-  );
+async function* captureResponsiveDOM(page, story, options, flags, enableJavaScript, previewResource, log) {
 
   if (flags.dryRun || enableJavaScript) {
-    return widths.map(width => ({
+    return options?.widths?.map(width => ({
       width,
       html: previewResource.content.html || previewResource.content,
       cookies: [],
@@ -53,7 +48,6 @@ async function* captureResponsiveDOM(page, story, options, flags, enableJavaScri
     return yield* captureResponsiveStoryDOM(
       page,
       { name: options.name, id: story.id },
-      widths,
       options,
       log
     );
@@ -64,32 +58,22 @@ async function* captureResponsiveDOM(page, story, options, flags, enableJavaScri
 async function* captureDOM(page, story, options, flags, enableJavaScript, previewResource, log, percy) {
   const responsiveSnapshotCapture = isResponsiveSnapshotCaptureEnabled(
     options,
-    percy.config,
-    flags
+    percy.config
   );
 
   // Get widths regardless of responsive capture mode
   const widths = getWidthsForResponsiveCapture(
-    options.widths || flags.widths,
-    percy.config.snapshot?.widths,
-    percy.percy?.widths
+    options.widths,
+    percy.config.snapshot?.widths
   );
 
-  if (responsiveSnapshotCapture && widths.length > 0) {
-    // Responsive DOM capture: Array of DOMs, one per width
+  if (responsiveSnapshotCapture) {
     const responsiveOptions = { ...options, responsiveSnapshotCapture: true, widths };
-    return yield* captureResponsiveDOM(page, story, responsiveOptions, flags, enableJavaScript, previewResource, log, percy);
-  }
-
-  // Single DOM capture (but preserve widths for Percy backend rendering)
-  if (widths.length > 0) {
+    return yield* captureResponsiveDOM(page, story, responsiveOptions, flags, enableJavaScript, previewResource, log);
+  } else {
     const singleDOMOptions = { ...options, widths };
-
     return yield* captureSerializedDOM(page, story, singleDOMOptions, flags, enableJavaScript, previewResource, log);
   }
-
-  // Fallback case (no widths specified)
-  return yield* captureSerializedDOM(page, story, options, flags, enableJavaScript, previewResource, log);
 }
 
 // Returns true or false if the provided story should be skipped by matching against include and
