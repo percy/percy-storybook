@@ -2,6 +2,8 @@ import { request, createRootResource, yieldTo } from '@percy/cli-command/utils';
 import { logger } from '@percy/cli-command';
 import spawn from 'cross-spawn';
 
+const log = logger('storybook:utils');
+
 // check storybook version
 export function checkStorybookVersion() {
   return new Promise((resolve, reject) => {
@@ -208,12 +210,12 @@ export async function* withPage(percy, url, callback, retry, args) {
 
       // throw warning message with snapshot name if it is present.
       if (args?.snapshotName) {
-        log.warn(`Retrying Story: ${args.snapshotName}, attempt: ${attempt}`);
+        log.warn('Retrying Story:', args.snapshotName, 'attempt:', attempt);
       }
       // throw warning message with from where it is called if from in present.
       if (from) {
         log.warn(
-          `Retrying because error occurred in: ${from}, attempt: ${attempt}`
+          'Retrying because error occurred in:', from, 'attempt:', attempt
         );
       }
     }
@@ -473,7 +475,7 @@ async function changeViewportDimensionAndWait(page, width, height, resizeCount) 
       mobile: false
     });
   } catch (e) {
-    console.debug(`Resizing using CDP failed, falling back to page eval for width ${width}`, e);
+    log.debug('Resizing using CDP failed, falling back to page eval for width', width, e);
     // Fallback to JavaScript execution
     await page.eval(({ width, height }) => {
       try {
@@ -532,7 +534,7 @@ async function changeViewportDimensionAndWait(page, width, height, resizeCount) 
       });
     }, { resizeCount });
   } catch (e) {
-    console.debug(`Timed out waiting for window resize event for width ${width}`, e);
+    log.debug('Timed out waiting for window resize event for width', width, e);
   }
 }
 
@@ -615,14 +617,14 @@ async function captureSerializedDOM(page, options) {
           }).filter(cookie => cookie.name);
         }) || [];
       } catch (cookieError) {
-        console.warn('Failed to capture cookies:', cookieError);
+        log.warn('Failed to capture cookies:', cookieError);
         domSnapshot.cookies = [];
       }
     }
 
     return domSnapshot;
   } catch (error) {
-    console.error('Error in captureSerializedDOM:', error);
+    log.error('Error in captureSerializedDOM:', error);
     throw new Error(`Failed to capture DOM snapshot: ${error.message}`);
   }
 }
@@ -704,8 +706,8 @@ export async function* captureResponsiveStoryDOM(page, story, widths, options, l
 
         domSnapshots.push(responsiveSnapshot);
       } catch (error) {
-        console.error(`Error capturing width ${width}px:`, error);
-        log.error(`Failed to capture width ${width}px: ${error.message}`);
+        log.error('Error capturing width:', width + 'px', error);
+        log.error('Failed to capture width:', width + 'px', error.message);
         // Continue with other widths instead of failing completely
       }
     }
@@ -719,12 +721,12 @@ export async function* captureResponsiveStoryDOM(page, story, widths, options, l
         }, { resizeCount });
         await changeViewportDimensionAndWait(page, currentWidth, currentHeight, resizeCount);
       } catch (resetError) {
-        console.warn('Failed to reset viewport size:', resetError);
+        log.warn('Failed to reset viewport size:', resetError);
       }
     }
   } catch (error) {
-    console.error('RESPONSIVE DOM CAPTURE FAILED:', error);
-    log.error(`Responsive capture failed: ${error.message}`);
+    log.error('RESPONSIVE DOM CAPTURE FAILED:', error);
+    log.error('Responsive capture failed:', error.message);
     throw error;
   }
 
