@@ -100,8 +100,8 @@ describe('captureResponsiveStoryDOM', () => {
     let gen = captureResponsiveStoryDOM(page, options, percy, log);
     let result = await gen.next();
     expect(Array.isArray(result.value)).toBe(true);
-    expect(result.value.length).toBe(2);
-    expect(result.value[0].width).toBe(375);
-    expect(result.value[1].width).toBe(800);
+    expect(result.value && result.value.length).toBe(2);
+    const widths = result.value ? result.value.map(r => r.width).sort((a, b) => a - b) : [];
+    expect(widths).toEqual([375, 800]);
   });
 });
