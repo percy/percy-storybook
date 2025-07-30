@@ -7,7 +7,7 @@ describe('captureDOM', () => {
     page = { eval: jasmine.createSpy('eval'), snapshot: jasmine.createSpy('snapshot') };
     percy = {
       config: { snapshot: { enableJavaScript: false, widths: [800], responsiveSnapshotCapture: false } },
-      client: { getDeviceDetails: jasmine.createSpy('getDeviceDetails').and.returnValue(Promise.resolve([])) },
+      client: { getDeviceDetails: jasmine.createSpy('getDeviceDetails').and.returnValue(Promise.resolve([{ width: 800 }])) },
       build: { id: 'buildid' }
     };
     log = { debug: jasmine.createSpy('debug'), warn: jasmine.createSpy('warn'), error: jasmine.createSpy('error') };
@@ -39,11 +39,12 @@ describe('captureDOM', () => {
     let options = { name: 'story', widths: [800], responsiveSnapshotCapture: false };
     percy.config.snapshot.responsiveSnapshotCapture = false;
     let gen = captureDOM(page, { id: 'id' }, options, flags, false, previewResource, percy, log);
+    await gen.next(); // run to yield percy.client.getDeviceDetails
     await gen.next(); // run to yield page.eval
     let result = await gen.next(); // run to yield page.snapshot
     expect(page.eval).toHaveBeenCalled();
     expect(page.snapshot).toHaveBeenCalled();
-    expect(result.value).toEqual({ domSnapshot: '<html>real</html>' });
+    expect(result.value).toBe('<html>real</html>');
   });
 
   it('returns array of doms in dryRun (responsive)', async function() {
@@ -111,6 +112,6 @@ describe('captureSerializedDOM', () => {
     let result = await gen.next(); // run to yield page.snapshot
     expect(page.eval).toHaveBeenCalled();
     expect(page.snapshot).toHaveBeenCalled();
-    expect(result.value).toBe('<html>real</html>');
+    expect(result.value).toEqual({ domSnapshot: '<html>real</html>' });
   });
 });
