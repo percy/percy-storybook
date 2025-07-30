@@ -80,7 +80,7 @@ describe('storybookSchema responsiveSnapshotCapture and widths', () => {
 
 describe('captureResponsiveStoryDOM', () => {
   it('captures DOM for each width and resets viewport', async function() {
-    let page = {
+    var page = {
       eval: jasmine.createSpy('eval')
         .and.callFake(function() {
           if (!page.eval.calls.count()) {
@@ -93,15 +93,15 @@ describe('captureResponsiveStoryDOM', () => {
       resize: jasmine.createSpy('resize').and.returnValue(Promise.resolve()),
       goto: jasmine.createSpy('goto').and.returnValue(Promise.resolve())
     };
-    let options = { widths: [375, 800] };
-    let percy = { config: { snapshot: {} } };
-    let log = { debug: jasmine.createSpy('debug'), warn: jasmine.createSpy('warn'), error: jasmine.createSpy('error') };
+    var options = { widths: [375, 800] };
+    var percy = { config: { snapshot: {} } };
+    var log = { debug: jasmine.createSpy('debug'), warn: jasmine.createSpy('warn'), error: jasmine.createSpy('error') };
 
-    let gen = captureResponsiveStoryDOM(page, options, percy, log);
-    let result = await gen.next();
+    var gen = captureResponsiveStoryDOM(page, options, percy, log);
+    var result = await gen.next();
     expect(Array.isArray(result.value)).toBe(true);
     expect(result.value.length).toBe(2);
-    expect(result.value[0]).toHaveProperty('width', 375);
-    expect(result.value[1]).toHaveProperty('width', 800);
+    expect(result.value[0].width).toBe(375);
+    expect(result.value[1].width).toBe(800);
   });
 });
