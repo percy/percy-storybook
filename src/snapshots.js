@@ -328,3 +328,5 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     await callback();
   }
 }
+
+export { captureDOM, captureResponsiveDOM, captureSerializedDOM };
