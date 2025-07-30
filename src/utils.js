@@ -1,8 +1,10 @@
 import { request, createRootResource, yieldTo } from '@percy/cli-command/utils';
 import { logger } from '@percy/cli-command';
 import spawn from 'cross-spawn';
+// Maximum pixel height for screenshots to prevent excessive memory usage.
+// This limit is set to 25,000 pixels based on practical browser and system constraints.
 const CS_MAX_SCREENSHOT_LIMIT = 25000;
-const SCROLL_DEFAULT_SLEEP_TIME = 0.45;
+const SCROLL_DEFAULT_SLEEP_TIME = 0.45; // 450ms
 
 // check storybook version
 export function checkStorybookVersion() {
