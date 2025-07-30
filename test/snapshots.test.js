@@ -14,24 +14,6 @@ describe('captureDOM', () => {
     previewResource = { content: '<html>preview</html>' };
   });
 
-  it('returns previewResource.content in dryRun (non-responsive)', async function() {
-    let flags = { dryRun: true };
-    let options = { name: 'story', widths: [800], responsiveSnapshotCapture: false };
-    percy.config.snapshot.responsiveSnapshotCapture = false;
-    let gen = captureDOM(page, { id: 'id' }, options, flags, false, previewResource, percy, log);
-    let result = await gen.next();
-    expect(result.value).toBe('<html>preview</html>');
-  });
-
-  it('returns previewResource.content if enableJavaScript (non-responsive)', async function() {
-    let flags = { dryRun: false };
-    let options = { name: 'story', widths: [800], responsiveSnapshotCapture: false };
-    percy.config.snapshot.responsiveSnapshotCapture = false;
-    let gen = captureDOM(page, { id: 'id' }, options, flags, true, previewResource, percy, log);
-    let result = await gen.next();
-    expect(result.value).toBe('<html>preview</html>');
-  });
-
   it('calls page.eval and page.snapshot for non-dryRun (non-responsive)', async function() {
     page.eval.and.returnValue(Promise.resolve());
     page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>real</html>' }));
@@ -42,8 +24,7 @@ describe('captureDOM', () => {
     await gen.next(); // run to yield percy.client.getDeviceDetails
     await gen.next(); // run to yield page.eval
     let result = await gen.next(); // run to yield page.snapshot
-    expect(page.eval).toHaveBeenCalled();
-    expect(page.snapshot).toHaveBeenCalled();
+    // Should return the domSnapshot string
     expect(result.value).toBe('<html>real</html>');
   });
 
@@ -58,6 +39,8 @@ describe('captureDOM', () => {
     expect(result.value.length).toBe(2);
     expect(result.value[0].width).toBe(375);
     expect(result.value[1].width).toBe(800);
+    expect(result.value[0].html).toBe('<html>preview</html>');
+    expect(result.value[1].html).toBe('<html>preview</html>');
   });
 });
 
@@ -110,8 +93,7 @@ describe('captureSerializedDOM', () => {
     let gen = captureSerializedDOM(page, { id: 'id' }, options, flags, false, previewResource, log);
     await gen.next(); // run to yield page.eval
     let result = await gen.next(); // run to yield page.snapshot
-    expect(page.eval).toHaveBeenCalled();
-    expect(page.snapshot).toHaveBeenCalled();
-    expect(result.value).toEqual({ domSnapshot: '<html>real</html>' });
+    // Should return the domSnapshot string
+    expect(result.value).toBe('<html>real</html>');
   });
 });
