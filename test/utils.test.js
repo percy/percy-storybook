@@ -1,4 +1,4 @@
-import { getWidthsForResponsiveCapture, isResponsiveSnapshotCaptureEnabled, captureResponsiveStoryDOM } from '../src/utils.js';
+import { getWidthsForResponsiveCapture, isResponsiveSnapshotCaptureEnabled } from '../src/utils.js';
 
 describe('getWidthsForResponsiveCapture', () => {
   it('combines mobile, user, and config widths and dedupes', () => {
