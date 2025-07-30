@@ -215,7 +215,7 @@ export async function* withPage(percy, url, callback, retry, args) {
       // throw warning message with from where it is called if from in present.
       if (from) {
         log.warn(
-          'Retrying because error occurred in:', from, 'attempt:', attempt
+          `Retrying because error occurred in: ${from}, attempt: ${attempt}`
         );
       }
     }
@@ -426,7 +426,7 @@ export function evalSetCurrentStory({ waitFor }, story) {
 export function getWidthsForResponsiveCapture(userPassedWidths, eligibleWidths) {
   let allWidths = [];
 
-  if(eligibleWidths?.mobile?.length !== 0) {
+  if (eligibleWidths?.mobile?.length !== 0) {
     allWidths = allWidths.concat(eligibleWidths?.mobile);
   }
   if (userPassedWidths && userPassedWidths.length) {
