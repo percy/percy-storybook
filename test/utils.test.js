@@ -98,10 +98,11 @@ describe('captureResponsiveStoryDOM', () => {
     let log = { debug: jasmine.createSpy('debug'), warn: jasmine.createSpy('warn'), error: jasmine.createSpy('error') };
 
     let gen = captureResponsiveStoryDOM(page, options, percy, log);
+    await gen.next();
     let result = await gen.next();
     expect(Array.isArray(result.value)).toBe(true);
-    expect(result.value && result.value.length).toBe(2);
-    const widths = result.value ? result.value.map(r => r.width).sort((a, b) => a - b) : [];
+    expect(result.value.length).toBe(2);
+    const widths = result.value.map(r => r.width).sort((a, b) => a - b);
     expect(widths).toEqual([375, 800]);
   });
 });
