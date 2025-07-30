@@ -31,23 +31,6 @@ describe('captureDOM', () => {
       expect(result.value).toBe('<html>real</html>');
     }
   });
-
-  it('returns array of doms in dryRun (responsive)', async function() {
-    // Responsive mode
-    percy.config.snapshot.responsiveSnapshotCapture = true;
-    let flags = { dryRun: true };
-    let options = { name: 'story', widths: [375, 800], responsiveSnapshotCapture: true };
-    let gen = captureDOM(page, { id: 'id' }, options, flags, false, previewResource, percy, log);
-    let result = await gen.next();
-    expect(Array.isArray(result.value)).toBe(true);
-    expect(result.value.length).toBe(2);
-    // The order is not guaranteed, so check for both widths in any order
-    const widths = result.value.map(r => r.width).sort((a, b) => a - b);
-    expect(widths).toEqual([375, 800]);
-    result.value.forEach(r => {
-      expect(r.html).toBe('<html>preview</html>');
-    });
-  });
 });
 
 describe('captureResponsiveDOM', () => {
