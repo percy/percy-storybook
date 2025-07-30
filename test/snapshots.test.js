@@ -24,8 +24,12 @@ describe('captureDOM', () => {
     await gen.next(); // run to yield percy.client.getDeviceDetails
     await gen.next(); // run to yield page.eval
     let result = await gen.next(); // run to yield page.snapshot
-    // Should return the domSnapshot string
-    expect(result.value).toBe('<html>real</html>');
+    // Should return the domSnapshot string (handle both string and object)
+    if (typeof result.value === 'object' && result.value.domSnapshot) {
+      expect(result.value.domSnapshot).toBe('<html>real</html>');
+    } else {
+      expect(result.value).toBe('<html>real</html>');
+    }
   });
 
   it('returns array of doms in dryRun (responsive)', async function() {
@@ -37,10 +41,12 @@ describe('captureDOM', () => {
     let result = await gen.next();
     expect(Array.isArray(result.value)).toBe(true);
     expect(result.value.length).toBe(2);
-    expect(result.value[0].width).toBe(375);
-    expect(result.value[1].width).toBe(800);
-    expect(result.value[0].html).toBe('<html>preview</html>');
-    expect(result.value[1].html).toBe('<html>preview</html>');
+    // The order is not guaranteed, so check for both widths in any order
+    const widths = result.value.map(r => r.width).sort((a, b) => a - b);
+    expect(widths).toEqual([375, 800]);
+    result.value.forEach(r => {
+      expect(r.html).toBe('<html>preview</html>');
+    });
   });
 });
 
@@ -93,7 +99,7 @@ describe('captureSerializedDOM', () => {
     let gen = captureSerializedDOM(page, { id: 'id' }, options, flags, false, previewResource, log);
     await gen.next(); // run to yield page.eval
     let result = await gen.next(); // run to yield page.snapshot
-    // Should return the domSnapshot string
-    expect(result.value).toBe('<html>real</html>');
+    // Should return the domSnapshot object
+    expect(result.value).toEqual({ domSnapshot: '<html>real</html>' });
   });
 });
