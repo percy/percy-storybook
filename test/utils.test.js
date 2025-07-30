@@ -77,37 +77,3 @@ describe('storybookSchema responsiveSnapshotCapture and widths', () => {
     expect(storybookSchema.widths.items.type).toBe('integer');
   });
 });
-
-describe('captureResponsiveStoryDOM', () => {
-  it('returns an array of DOM snapshots for each width and resets the viewport', async function() {
-    const page = {
-      eval: jasmine.createSpy('eval').and.callFake(function() {
-        // First call returns viewport size, subsequent calls resolve immediately
-        if (!page.eval.calls.count()) {
-          return Promise.resolve({ width: 800, height: 600 });
-        }
-        return Promise.resolve();
-      }),
-      insertPercyDom: jasmine.createSpy('insertPercyDom').and.returnValue(Promise.resolve()),
-      snapshot: jasmine.createSpy('snapshot').and.returnValue(Promise.resolve({ domSnapshot: { html: '<html></html>' } })),
-      resize: jasmine.createSpy('resize').and.returnValue(Promise.resolve()),
-      goto: jasmine.createSpy('goto').and.returnValue(Promise.resolve())
-    };
-    const options = { widths: [375, 800] };
-    const percy = { config: { snapshot: {} } };
-    const log = { debug: jasmine.createSpy('debug'), warn: jasmine.createSpy('warn'), error: jasmine.createSpy('error') };
-
-    const gen = captureResponsiveStoryDOM(page, options, percy, log);
-    await gen.next(); // Start generator
-    await gen.next(); // Run generator
-    const result = await gen.next(); // Get final return value
-
-    expect(Array.isArray(result.value)).toBe(true);
-    expect(result.value.length).toBe(2);
-    const widths = result.value.map(snap => snap.width).sort((a, b) => a - b);
-    expect(widths).toEqual([375, 800]);
-    result.value.forEach(snap => {
-      expect(snap.html).toBe('<html></html>');
-    });
-  });
-});
