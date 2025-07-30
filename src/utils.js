@@ -426,7 +426,7 @@ export function evalSetCurrentStory({ waitFor }, story) {
 export function getWidthsForResponsiveCapture(userPassedWidths, eligibleWidths) {
   let allWidths = [];
 
-  if (eligibleWidths?.mobile?.length !== 0) {
+  if (eligibleWidths?.mobile?.length > 0) {
     allWidths = allWidths.concat(eligibleWidths?.mobile);
   }
   if (userPassedWidths && userPassedWidths.length) {
