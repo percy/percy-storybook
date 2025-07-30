@@ -1,8 +1,8 @@
 import { request, createRootResource, yieldTo } from '@percy/cli-command/utils';
 import { logger } from '@percy/cli-command';
 import spawn from 'cross-spawn';
-
-const log = logger('storybook:utils');
+const CS_MAX_SCREENSHOT_LIMIT = 25000;
+const SCROLL_DEFAULT_SLEEP_TIME = 0.45;
 
 // check storybook version
 export function checkStorybookVersion() {
@@ -423,17 +423,20 @@ export function evalSetCurrentStory({ waitFor }, story) {
 // Utility functions for responsive snapshot capture
 
 // Process widths for responsive DOM capture with proper hierarchy
-export function getWidthsForResponsiveCapture(userPassedWidths, configWidths) {
+export function getWidthsForResponsiveCapture(userPassedWidths, eligibleWidths) {
   let allWidths = [];
 
+  if(eligibleWidths?.mobile?.length !== 0) {
+    allWidths = allWidths.concat(eligibleWidths?.mobile);
+  }
   if (userPassedWidths && userPassedWidths.length) {
-    allWidths = userPassedWidths;
+    allWidths = allWidths.concat(userPassedWidths);
   } else {
-    allWidths = configWidths;
+    allWidths = allWidths.concat(eligibleWidths.config);
   }
 
-  // Remove duplicates and invalid values
-  return [...new Set(allWidths)].filter(w => w && typeof w === 'number' && w > 0);
+  // Remove duplicates
+  return [...new Set(allWidths)].filter(e => e);
 }
 
 // Check if responsive snapshot capture is enabled with proper hierarchy
@@ -456,7 +459,7 @@ export function isResponsiveSnapshotCaptureEnabled(options, config) {
   return false;
 }
 
-async function changeViewportDimensionAndWait(page, width, height, resizeCount) {
+async function changeViewportDimensionAndWait(page, width, height, resizeCount, log) {
   try {
     // Use Percy's CDP-based resize method
     await page.resize({
@@ -469,39 +472,7 @@ async function changeViewportDimensionAndWait(page, width, height, resizeCount) 
     log.debug('Resizing using CDP failed, falling back to page eval for width', width, e);
     // Fallback to JavaScript execution
     await page.eval(({ width, height }) => {
-      try {
-        window.resizeTo(width, height);
-      } catch (resizeError) {
-        // Fallback methods for constrained environments
-        let viewport = document.querySelector('meta[name="viewport"]');
-        if (viewport) {
-          viewport.setAttribute('content', `width=${width}, initial-scale=1`);
-        } else {
-          viewport = document.createElement('meta');
-          viewport.name = 'viewport';
-          viewport.content = `width=${width}, initial-scale=1`;
-          document.head.appendChild(viewport);
-        }
-
-        // Inject CSS override
-        let styleId = 'percy-responsive-override';
-        let existingStyle = document.getElementById(styleId);
-        if (existingStyle) {
-          existingStyle.remove();
-        }
-
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.textContent = `
-          html, body {
-            width: ${width}px !important;
-            max-width: ${width}px !important;
-            min-width: ${width}px !important;
-          }
-        `;
-        document.head.appendChild(style);
-      }
-
+      window.resizeTo(width, height);
       // Trigger resize events and force layout
       window.dispatchEvent(new Event('resize'));
       document.body.offsetHeight;
@@ -529,12 +500,10 @@ async function changeViewportDimensionAndWait(page, width, height, resizeCount) 
   }
 }
 
-async function slowScrollToBottom(page, scrollSleep = 0.45) {
+async function slowScrollToBottom(page, scrollSleep = SCROLL_DEFAULT_SLEEP_TIME) {
   if (process.env.PERCY_LAZY_LOAD_SCROLL_TIME) {
     scrollSleep = parseFloat(process.env.PERCY_LAZY_LOAD_SCROLL_TIME);
   }
-
-  const CS_MAX_SCREENSHOT_LIMIT = 25000;
 
   const scrollHeightCommand = () => {
     return Math.max(
@@ -580,7 +549,7 @@ async function slowScrollToBottom(page, scrollSleep = 0.45) {
   await new Promise(resolve => setTimeout(resolve, sleepAfterScroll * 1000));
 }
 
-async function captureSerializedDOM(page, options) {
+async function captureSerializedDOM(page, options, log) {
   try {
     const snapshotResult = await page.snapshot(options);
 
@@ -621,105 +590,73 @@ async function captureSerializedDOM(page, options) {
 }
 
 // Capture responsive DOM snapshots across different widths
-export async function* captureResponsiveStoryDOM(page, story, options, log) {
+export async function* captureResponsiveStoryDOM(page, options, percy, log) {
   const domSnapshots = [];
   let currentWidth, currentHeight;
 
-  try {
-    // Get current viewport size
-    const viewportSize = yield page.eval(() => ({
-      width: window.innerWidth,
-      height: window.innerHeight
-    }));
+  // Get current viewport size
+  const viewportSize = yield page.eval(() => ({
+    width: window.innerWidth,
+    height: window.innerHeight
+  }));
 
-    currentWidth = viewportSize.width;
-    currentHeight = viewportSize.height;
+  currentWidth = viewportSize.width;
+  currentHeight = viewportSize.height;
 
-    let lastWindowWidth = currentWidth;
-    let resizeCount = 0;
+  let lastWindowWidth = currentWidth;
+  let resizeCount = 0;
 
-    // Setup the resizeCount listener
-    yield page.eval(() => {
-      if (typeof window.PercyDOM !== 'undefined' && window.PercyDOM.waitForResize) {
-          window.PercyDOM.waitForResize();
-      }
-      window.resizeCount = window.resizeCount || 0;
-    });
+  // Ensure PercyDOM is available before starting
+  yield page.insertPercyDom();
 
-    let height = currentHeight;
-    if (process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT) {
-      height = yield page.eval((minHeight) => {
-        return window.outerHeight - window.innerHeight + minHeight;
-      }, options?.minHeight || 600);
+  // Setup the resizeCount listener
+  yield page.eval(() => {
+    if (typeof window.PercyDOM !== 'undefined' && window.PercyDOM.waitForResize) {
+      window.PercyDOM.waitForResize();
     }
+    window.resizeCount = window.resizeCount || 0;
+  });
 
-    for (let width of options?.widths) {
-      try {
-        if (lastWindowWidth !== width) {
-          resizeCount++;
-          yield page.eval(({ resizeCount }) => {
-            window.resizeCount = resizeCount;
-          }, { resizeCount });
-          await changeViewportDimensionAndWait(page, width, height, resizeCount);
-          lastWindowWidth = width;
-        }
-
-        if (process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE) {
-          const currentUrl = yield page.eval(() => window.location.href);
-          yield page.goto(currentUrl, { forceReload: true });
-
-          // Re-inject PercyDOM if needed
-          yield page.insertPercyDom();
-        }
-
-        if (process.env.RESPONSIVE_CAPTURE_SLEEP_TIME) {
-          await new Promise(resolve => setTimeout(resolve, parseInt(process.env.RESPONSIVE_CAPTURE_SLEEP_TIME) * 1000));
-        }
-
-        if (process.env.PERCY_ENABLE_LAZY_LOADING_SCROLL) {
-          await slowScrollToBottom(page);
-        }
-
-        // Capture DOM snapshot
-        let domSnapshot = await captureSerializedDOM(page, options);
-
-        // Ensure the snapshot has the expected structure for Percy
-        const responsiveSnapshot = {
-          width,
-          html: domSnapshot.html || domSnapshot.domSnapshot?.html || domSnapshot,
-          cookies: domSnapshot.cookies || [],
-          resources: domSnapshot.resources || [],
-          hints: domSnapshot.hints || [],
-          userAgent: domSnapshot.userAgent || 'percy-storybook',
-          warnings: domSnapshot.warnings || [],
-          url: domSnapshot.url || options.url || ''
-        };
-
-        domSnapshots.push(responsiveSnapshot);
-      } catch (error) {
-        log.error('Error capturing width:', width + 'px', error);
-        log.error('Failed to capture width:', width + 'px', error.message);
-        // Continue with other widths instead of failing completely
-      }
-    }
-
-    // Reset viewport size back to original dimensions
-    if (currentWidth && currentHeight) {
-      try {
-        resizeCount++;
-        yield page.eval(({ resizeCount }) => {
-          window.resizeCount = resizeCount;
-        }, { resizeCount });
-        await changeViewportDimensionAndWait(page, currentWidth, currentHeight, resizeCount);
-      } catch (resetError) {
-        log.warn('Failed to reset viewport size:', resetError);
-      }
-    }
-  } catch (error) {
-    log.error('RESPONSIVE DOM CAPTURE FAILED:', error);
-    log.error('Responsive capture failed:', error.message);
-    throw error;
+  let height = currentHeight;
+  if (process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT) {
+    height = yield page.eval((configMinHeight) => {
+      return window.outerHeight - window.innerHeight + configMinHeight;
+    }, percy?.config?.snapshot?.minHeight || 600);
   }
 
+  for (let width of options?.widths) {
+    if (lastWindowWidth !== width) {
+      resizeCount++;
+      yield page.eval(({ resizeCount }) => {
+        window.resizeCount = resizeCount;
+      }, { resizeCount });
+      await changeViewportDimensionAndWait(page, width, height, resizeCount, log);
+      lastWindowWidth = width;
+    }
+
+    if (process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE) {
+      const currentUrl = yield page.eval(() => window.location.href);
+      yield page.goto(currentUrl, { forceReload: true });
+
+      // Re-inject PercyDOM if needed
+      yield page.insertPercyDom();
+    }
+
+    if (process.env.RESPONSIVE_CAPTURE_SLEEP_TIME) {
+      await new Promise(resolve => setTimeout(resolve, parseInt(process.env.RESPONSIVE_CAPTURE_SLEEP_TIME) * 1000));
+    }
+
+    if (process.env.PERCY_ENABLE_LAZY_LOADING_SCROLL) {
+      await slowScrollToBottom(page);
+    }
+
+    // Capture DOM snapshot
+    let domSnapshot = await captureSerializedDOM(page, options, log);
+    domSnapshot.width = width;
+    domSnapshots.push(domSnapshot);
+  }
+
+  // Reset viewport size back to original dimensions
+  await changeViewportDimensionAndWait(page, currentWidth, currentHeight, resizeCount + 1, log);
   return domSnapshots;
 }

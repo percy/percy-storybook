@@ -30,8 +30,7 @@ async function* captureSerializedDOM(page, story, options, flags, enableJavaScri
 }
 
 // Capture responsive DOM snapshots
-async function* captureResponsiveDOM(page, story, options, flags, enableJavaScript, previewResource, log) {
-
+async function* captureResponsiveDOM(page, story, options, flags, enableJavaScript, previewResource, percy, log) {
   if (flags.dryRun || enableJavaScript) {
     return options?.widths?.map(width => ({
       width,
@@ -47,29 +46,36 @@ async function* captureResponsiveDOM(page, story, options, flags, enableJavaScri
     yield page.eval(evalSetCurrentStory, story);
     return yield* captureResponsiveStoryDOM(
       page,
-      { name: options.name, id: story.id },
       options,
+      percy,
       log
     );
   }
 }
 
 // Main capture function
-async function* captureDOM(page, story, options, flags, enableJavaScript, previewResource, log, percy) {
+async function* captureDOM(page, story, options, flags, enableJavaScript, previewResource, percy, log) {
   const responsiveSnapshotCapture = isResponsiveSnapshotCaptureEnabled(
     options,
     percy.config
   );
 
+  const deviceDetails = yield percy.client.getDeviceDetails(percy.build?.id);
+
+  const eligibleWidths = {
+    mobile: Array.isArray(deviceDetails) ? deviceDetails.map(d => d.width).filter(Boolean) : [],
+    config: percy.config.snapshot?.widths || []
+  };
+
   // Get widths regardless of responsive capture mode
   const widths = getWidthsForResponsiveCapture(
     options.widths,
-    percy.config.snapshot?.widths
+    eligibleWidths
   );
 
   if (responsiveSnapshotCapture) {
     const responsiveOptions = { ...options, responsiveSnapshotCapture: true, widths };
-    return yield* captureResponsiveDOM(page, story, responsiveOptions, flags, enableJavaScript, previewResource, log);
+    return yield* captureResponsiveDOM(page, story, responsiveOptions, flags, enableJavaScript, previewResource, percy, log);
   } else {
     const singleDOMOptions = { ...options, widths };
     return yield* captureSerializedDOM(page, story, singleDOMOptions, flags, enableJavaScript, previewResource, log);
@@ -283,8 +289,8 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
               flags,
               enableJavaScript,
               previewResource,
-              log,
-              percy
+              percy,
+              log
             );
 
             // validate without logging to prune all other options
