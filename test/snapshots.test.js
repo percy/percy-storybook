@@ -1,6 +1,6 @@
 import { captureDOM } from '../src/snapshots.js';
 
-describe('captureDOM', () => {
+describe('captureDOM function', () => {
   let page, percy, log, previewResource;
 
   beforeEach(() => {
@@ -34,47 +34,46 @@ describe('captureDOM', () => {
     previewResource = { content: '<html>preview</html>' };
   });
 
-  describe('enableJavaScript and responsiveSnapshotCapture combinations', () => {
+  describe('Different JavaScript and responsiveness settings', () => {
     beforeEach(() => {
       page.eval.and.returnValue(Promise.resolve());
       page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>combo</html>' }));
     });
 
-    const combos = [
-      { enableJavaScript: true, responsiveSnapshotCapture: true },
-      { enableJavaScript: true, responsiveSnapshotCapture: false },
-      { enableJavaScript: false, responsiveSnapshotCapture: true },
-      { enableJavaScript: false, responsiveSnapshotCapture: false }
+    const scenarios = [
+      { js: true, responsive: true },
+      { js: true, responsive: false },
+      { js: false, responsive: true },
+      { js: false, responsive: false }
     ];
 
-    combos.forEach(({ enableJavaScript, responsiveSnapshotCapture }) => {
-      it(`returns correct result for enableJavaScript=${enableJavaScript}, responsiveSnapshotCapture=${responsiveSnapshotCapture}`, async () => {
-        // Arrange
-        percy.config.snapshot.enableJavaScript = enableJavaScript;
-        percy.config.snapshot.responsiveSnapshotCapture = responsiveSnapshotCapture;
+    scenarios.forEach(({ js, responsive }) => {
+      it(`produces the right snapshot when JavaScript is ${js ? 'on' : 'off'} and responsive is ${responsive ? 'on' : 'off'}`, async () => {
+        percy.config.snapshot.enableJavaScript = js;
+        percy.config.snapshot.responsiveSnapshotCapture = responsive;
         const options = {
           name: 'story',
           widths: [375, 800],
-          responsiveSnapshotCapture,
+          responsiveSnapshotCapture: responsive,
           domSnapshot: previewResource.content
         };
 
-        // Act
         const result = await captureDOM(page, options, percy, log);
 
-        // Assert
-        if (responsiveSnapshotCapture) {
+        if (responsive) {
+          // when responsive capture is enabled, we expect an array of snapshots
           expect(Array.isArray(result)).toBe(true);
           expect(result.length).toBeGreaterThan(0);
           expect(result[0].domSnapshot || result[0]).toBe('<html>combo</html>');
         } else {
+          // when responsive capture is off, we expect a single snapshot
           expect(result.domSnapshot || result).toBe('<html>combo</html>');
         }
       });
     });
   });
 
-  it('delegates to responsive logic when responsiveSnapshotCapture is true', async () => {
+  it('uses the responsive path when responsiveness is turned on', async () => {
     page.eval.and.returnValue(Promise.resolve());
     page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>responsive</html>' }));
     percy.config.snapshot.responsiveSnapshotCapture = true;
@@ -92,9 +91,9 @@ describe('captureDOM', () => {
     expect(result[0].domSnapshot || result[0]).toBe('<html>responsive</html>');
   });
 
-  it('delegates to non-responsive logic when responsiveSnapshotCapture is false', async () => {
+  it('uses the simple path when responsiveness is turned off', async () => {
     page.eval.and.returnValue(Promise.resolve());
-    page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>nonresponsive</html>' }));
+    page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>plain</html>' }));
     percy.config.snapshot.responsiveSnapshotCapture = false;
 
     const options = {
@@ -106,12 +105,12 @@ describe('captureDOM', () => {
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(result.domSnapshot || result).toBe('<html>nonresponsive</html>');
+    expect(result.domSnapshot || result).toBe('<html>plain</html>');
   });
 
-  it('calls page.eval and page.snapshot for non-dryRun (non-responsive)', async () => {
+  it('captures the live DOM when running normally', async () => {
     page.eval.and.returnValue(Promise.resolve());
-    page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>real</html>' }));
+    page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>live</html>' }));
     percy.config.snapshot.responsiveSnapshotCapture = false;
 
     const options = {
@@ -123,7 +122,6 @@ describe('captureDOM', () => {
 
     const result = await captureDOM(page, options, percy, log);
 
-    // Since captureSerializedDOM returns the raw object, we check its domSnapshot
-    expect(result.domSnapshot || result).toBe('<html>real</html>');
+    expect(result.domSnapshot || result).toBe('<html>live</html>');
   });
 });
