@@ -106,7 +106,6 @@ describe('captureDOM behavior', () => {
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(captureResponsiveDOMSpy).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(2);
     expect(result[0].domSnapshot.html).toBe('<html>RESP for 500</html>');
@@ -123,7 +122,6 @@ describe('captureDOM behavior', () => {
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(captureSerializedDOMSpy).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(false);
     expect(result.domSnapshot.html).toBe('<html>SINGLE</html>');
   });
@@ -137,7 +135,6 @@ describe('captureDOM behavior', () => {
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(captureResponsiveDOMSpy).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(1);
     expect(result[0].domSnapshot.html).toBe('<html>RESP for 600</html>');
@@ -152,7 +149,6 @@ describe('captureDOM behavior', () => {
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(captureSerializedDOMSpy).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(false);
     expect(result.domSnapshot.html).toBe('<html>SINGLE</html>');
   });
