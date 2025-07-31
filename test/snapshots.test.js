@@ -1,28 +1,25 @@
 import * as utils from '../src/utils.js';
 import { captureDOM } from '../src/snapshots.js';
 
-// Mock utility functions before tests
-beforeAll(() => {
-  spyOn(utils, 'captureSerializedDOM').and.callFake(() => {
-    return Promise.resolve({ domSnapshot: { html: '<html>SINGLE</html>' } });
-  });
-  spyOn(utils, 'captureResponsiveDOM').and.callFake((page, options) => {
-    // options.widths can be [500, 600], etc.
-    const widths = options && Array.isArray(options.widths) ? options.widths : [];
-    return Promise.resolve(widths.map(width => ({
-      domSnapshot: { html: `<html>RESP for ${width}</html>`, width }
-    })));
-  });
-  spyOn(utils, 'getWidthsForResponsiveCapture').and.callFake((input, extras) => {
-    if (Array.isArray(input)) return input;
-    return [111, 222];
-  });
-});
-
+// Mock utility functions before each test
 describe('captureDOM behavior', () => {
   let page, percy, log, previewResource;
 
   beforeEach(() => {
+    spyOn(utils, 'captureSerializedDOM').and.callFake(() => {
+      return Promise.resolve({ domSnapshot: { html: '<html>SINGLE</html>' } });
+    });
+    spyOn(utils, 'captureResponsiveDOM').and.callFake((page, options) => {
+      const widths = options && Array.isArray(options.widths) ? options.widths : [];
+      return Promise.resolve(widths.map(width => ({
+        domSnapshot: { html: `<html>RESP for ${width}</html>`, width }
+      })));
+    });
+    spyOn(utils, 'getWidthsForResponsiveCapture').and.callFake((input, extras) => {
+      if (Array.isArray(input)) return input;
+      return [111, 222];
+    });
+
     page = {
       eval: jasmine.createSpy('eval'),
       snapshot: jasmine.createSpy('snapshot').and.returnValue(
@@ -56,11 +53,6 @@ describe('captureDOM behavior', () => {
     };
 
     previewResource = { content: '<html>preview</html>' };
-
-    // Reset spies on each test
-    utils.captureSerializedDOM.calls.reset();
-    utils.captureResponsiveDOM.calls.reset();
-    utils.getWidthsForResponsiveCapture.calls.reset();
   });
 
   it('shows multiple snapshots when the responsive feature is turned on by options', async () => {
