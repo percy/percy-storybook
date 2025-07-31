@@ -1,10 +1,6 @@
 import { request, createRootResource, yieldTo } from '@percy/cli-command/utils';
 import { logger } from '@percy/cli-command';
 import spawn from 'cross-spawn';
-// Maximum pixel height for screenshots to prevent excessive memory usage.
-// This limit is set to 25,000 pixels based on practical browser and system constraints.
-const CS_MAX_SCREENSHOT_LIMIT = 25000;
-const SCROLL_DEFAULT_SLEEP_TIME = 0.45; // 450ms
 
 // check storybook version
 export function checkStorybookVersion() {
@@ -443,11 +439,6 @@ export function getWidthsForResponsiveCapture(userPassedWidths, eligibleWidths) 
 
 // Check if responsive snapshot capture is enabled with proper hierarchy
 export function isResponsiveSnapshotCaptureEnabled(options, config) {
-  // Always disable if defer uploads is enabled
-  if (config?.percy?.deferUploads) {
-    return false;
-  }
-
   if (options && 'responsiveSnapshotCapture' in options) {
     const value = !!(options.responsiveSnapshotCapture);
     return value;
@@ -473,12 +464,17 @@ async function changeViewportDimensionAndWait(page, width, height, resizeCount, 
   } catch (e) {
     log.debug('Resizing using CDP failed, falling back to page eval for width', width, e);
     // Fallback to JavaScript execution
-    await page.eval(({ width, height }) => {
-      window.resizeTo(width, height);
-      // Trigger resize events and force layout
-      window.dispatchEvent(new Event('resize'));
-      document.body.offsetHeight;
-    }, { width, height });
+    try {
+      await page.eval(({ width, height }) => {
+        window.resizeTo(width, height);
+        // Trigger resize events and force layout
+        window.dispatchEvent(new Event('resize'));
+        document.body.offsetHeight;
+      }, { width, height });
+    } catch (fallbackError) {
+      log.error('Fallback resize using page.eval failed', fallbackError);
+      throw new Error(`Failed to resize viewport using both CDP and page.eval: ${fallbackError.message}`);
+    }
   }
 
   try {
@@ -486,15 +482,12 @@ async function changeViewportDimensionAndWait(page, width, height, resizeCount, 
     await page.eval(({ resizeCount }) => {
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error('Timeout')), 1000);
-        const checkResize = () => {
+        (function check() {
           if (window.resizeCount === resizeCount) {
             clearTimeout(timeout);
             resolve();
-          } else {
-            setTimeout(checkResize, 50);
           }
-        };
-        checkResize();
+        })();
       });
     }, { resizeCount });
   } catch (e) {
@@ -502,88 +495,9 @@ async function changeViewportDimensionAndWait(page, width, height, resizeCount, 
   }
 }
 
-async function slowScrollToBottom(page, scrollSleep = SCROLL_DEFAULT_SLEEP_TIME) {
-  if (process.env.PERCY_LAZY_LOAD_SCROLL_TIME) {
-    scrollSleep = parseFloat(process.env.PERCY_LAZY_LOAD_SCROLL_TIME);
-  }
-
-  const scrollHeightCommand = () => {
-    return Math.max(
-      document.body.scrollHeight,
-      document.body.clientHeight,
-      document.body.offsetHeight,
-      document.documentElement.scrollHeight,
-      document.documentElement.clientHeight,
-      document.documentElement.offsetHeight
-    );
-  };
-
-  let scrollHeight = Math.min(await page.eval(scrollHeightCommand), CS_MAX_SCREENSHOT_LIMIT);
-  const clientHeight = await page.eval(() => document.documentElement.clientHeight);
-  let current = 0;
-
-  let pageNum = 1;
-  // Break the loop if maximum scroll height 25000px is reached
-  while (scrollHeight > current && current < CS_MAX_SCREENSHOT_LIMIT) {
-    current = clientHeight * pageNum;
-    pageNum += 1;
-
-    // Scroll to position
-    await page.eval((scrollPosition) => {
-      window.scrollTo(0, scrollPosition);
-    }, current);
-
-    await new Promise(resolve => setTimeout(resolve, scrollSleep * 1000));
-
-    // Recalculate scroll height for dynamically loaded pages
-    scrollHeight = await page.eval(scrollHeightCommand);
-  }
-
-  // Get back to top
-  await page.eval(() => {
-    window.scrollTo(0, 0);
-  });
-
-  let sleepAfterScroll = 1;
-  if (process.env.PERCY_SLEEP_AFTER_LAZY_LOAD_COMPLETE) {
-    sleepAfterScroll = parseFloat(process.env.PERCY_SLEEP_AFTER_LAZY_LOAD_COMPLETE);
-  }
-  await new Promise(resolve => setTimeout(resolve, sleepAfterScroll * 1000));
-}
-
-async function captureSerializedDOM(page, options, log) {
+export async function captureSerializedDOM(page, options, log) {
   try {
-    const snapshotResult = await page.snapshot(options);
-
-    // Extract the actual DOM snapshot from the result
-    let domSnapshot;
-    if (snapshotResult && snapshotResult.domSnapshot) {
-      domSnapshot = snapshotResult.domSnapshot;
-    } else {
-      throw new Error('No domSnapshot found in page.snapshot result');
-    }
-
-    // Ensure we have a valid snapshot object with HTML
-    if (!domSnapshot || typeof domSnapshot !== 'object' || !domSnapshot.html) {
-      throw new Error('Invalid DOM snapshot structure - missing html content');
-    }
-
-    // Add cookies if not already present
-    if (!domSnapshot.cookies) {
-      try {
-        domSnapshot.cookies = await page.eval(() => {
-          if (!document.cookie) return [];
-          return document.cookie.split(';').map(cookie => {
-            const [name, value] = cookie.split('=').map(s => s.trim());
-            return { name, value };
-          }).filter(cookie => cookie.name);
-        }) || [];
-      } catch (cookieError) {
-        log.warn('Failed to capture cookies:', cookieError);
-        domSnapshot.cookies = [];
-      }
-    }
-
+    let { dom, domSnapshot = dom } = await page.snapshot(options);
     return domSnapshot;
   } catch (error) {
     log.error('Error in captureSerializedDOM:', error);
@@ -592,12 +506,12 @@ async function captureSerializedDOM(page, options, log) {
 }
 
 // Capture responsive DOM snapshots across different widths
-export async function* captureResponsiveStoryDOM(page, options, percy, log) {
+export async function captureResponsiveDOM(page, options, percy, log) {
   const domSnapshots = [];
   let currentWidth, currentHeight;
 
   // Get current viewport size
-  const viewportSize = yield page.eval(() => ({
+  const viewportSize = await page.eval(() => ({
     width: window.innerWidth,
     height: window.innerHeight
   }));
@@ -608,11 +522,8 @@ export async function* captureResponsiveStoryDOM(page, options, percy, log) {
   let lastWindowWidth = currentWidth;
   let resizeCount = 0;
 
-  // Ensure PercyDOM is available before starting
-  yield page.insertPercyDom();
-
   // Setup the resizeCount listener
-  yield page.eval(() => {
+  await page.eval(() => {
     if (typeof window.PercyDOM !== 'undefined' && window.PercyDOM.waitForResize) {
       window.PercyDOM.waitForResize();
     }
@@ -621,7 +532,7 @@ export async function* captureResponsiveStoryDOM(page, options, percy, log) {
 
   let height = currentHeight;
   if (process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT) {
-    height = yield page.eval((configMinHeight) => {
+    height = await page.eval((configMinHeight) => {
       return window.outerHeight - window.innerHeight + configMinHeight;
     }, percy?.config?.snapshot?.minHeight || 600);
   }
@@ -629,7 +540,7 @@ export async function* captureResponsiveStoryDOM(page, options, percy, log) {
   for (let width of options?.widths) {
     if (lastWindowWidth !== width) {
       resizeCount++;
-      yield page.eval(({ resizeCount }) => {
+      await page.eval(({ resizeCount }) => {
         window.resizeCount = resizeCount;
       }, { resizeCount });
       await changeViewportDimensionAndWait(page, width, height, resizeCount, log);
@@ -637,19 +548,15 @@ export async function* captureResponsiveStoryDOM(page, options, percy, log) {
     }
 
     if (process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE) {
-      const currentUrl = yield page.eval(() => window.location.href);
-      yield page.goto(currentUrl, { forceReload: true });
+      const currentUrl = await page.eval(() => window.location.href);
+      await page.goto(currentUrl, { forceReload: true });
 
       // Re-inject PercyDOM if needed
-      yield page.insertPercyDom();
+      await page.insertPercyDom();
     }
 
     if (process.env.RESPONSIVE_CAPTURE_SLEEP_TIME) {
-      await new Promise(resolve => setTimeout(resolve, parseInt(process.env.RESPONSIVE_CAPTURE_SLEEP_TIME) * 1000));
-    }
-
-    if (process.env.PERCY_ENABLE_LAZY_LOADING_SCROLL) {
-      await slowScrollToBottom(page);
+      await new Promise(resolve => setTimeout(resolve, parseInt(process.env.RESPONSIVE_CAPTURE_SLEEP_TIME, 10) * 1000));
     }
 
     // Capture DOM snapshot

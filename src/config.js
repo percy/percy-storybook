@@ -53,7 +53,7 @@ export const storybookSchema = {
             type: 'integer',
             minimum: 1
           },
-          default: []
+          default: [375, 1280]
         }
       }
     },

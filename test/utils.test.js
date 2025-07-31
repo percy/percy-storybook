@@ -24,10 +24,6 @@ describe('getWidthsForResponsiveCapture', () => {
 });
 
 describe('isResponsiveSnapshotCaptureEnabled', () => {
-  it('returns false if deferUploads is true', () => {
-    expect(isResponsiveSnapshotCaptureEnabled({}, { percy: { deferUploads: true } })).toBe(false);
-  });
-
   it('returns true if options.responsiveSnapshotCapture is true', () => {
     expect(isResponsiveSnapshotCaptureEnabled({ responsiveSnapshotCapture: true }, {})).toBe(true);
   });
@@ -47,6 +43,11 @@ describe('isResponsiveSnapshotCaptureEnabled', () => {
   it('returns false if nothing is set', () => {
     expect(isResponsiveSnapshotCaptureEnabled({}, {})).toBe(false);
   });
+
+  it('snapshot option takes precedence over global config for responsiveSnapshotCapture', () => {
+    expect(isResponsiveSnapshotCaptureEnabled({ responsiveSnapshotCapture: false }, { snapshot: { responsiveSnapshotCapture: true } })).toBe(false);
+    expect(isResponsiveSnapshotCaptureEnabled({ responsiveSnapshotCapture: true }, { snapshot: { responsiveSnapshotCapture: false } })).toBe(true);
+  });
 });
 
 describe('flag parser for widths', () => {
@@ -63,8 +64,59 @@ describe('flag parser for widths', () => {
   });
 });
 
+// --- DOM capture utilities ---
+describe('captureSerializedDOM and captureResponsiveDOM', () => {
+  let mockDom, mockPage, mockLog, mockPercy;
+
+  beforeEach(() => {
+    mockDom = { html: '<html></html>' };
+    mockPage = {
+      snapshot: jasmine.createSpy('snapshot').and.callFake(async () => ({ dom: mockDom })),
+      eval: jasmine.createSpy('eval').and.callFake(async () => ({ width: 800, height: 600 })),
+      goto: jasmine.createSpy('goto').and.callFake(async () => {}),
+      insertPercyDom: jasmine.createSpy('insertPercyDom').and.callFake(async () => {}),
+      resize: jasmine.createSpy('resize').and.callFake(async () => {})
+    };
+    mockLog = { error: jasmine.createSpy('error'), debug: jasmine.createSpy('debug') };
+    mockPercy = { config: { snapshot: { minHeight: 600 } } };
+  });
+
+  it('captureSerializedDOM returns domSnapshot', async (done) => {
+    const { captureSerializedDOM } = await import('../src/utils.js');
+    captureSerializedDOM(mockPage, {}, mockLog).then(result => {
+      expect(result).toBe(mockDom);
+      expect(mockPage.snapshot).toHaveBeenCalled();
+      done();
+    });
+  });
+
+  it('captureSerializedDOM logs and throws on error', async (done) => {
+    const { captureSerializedDOM } = await import('../src/utils.js');
+    mockPage.snapshot.and.callFake(async () => { throw new Error('fail'); });
+    captureSerializedDOM(mockPage, {}, mockLog).catch(e => {
+      expect(e.message).toContain('Failed to capture DOM snapshot');
+      expect(mockLog.error).toHaveBeenCalled();
+      done();
+    });
+  });
+
+  it('captureResponsiveDOM returns array of domSnapshots with widths', async (done) => {
+    const { captureResponsiveDOM } = await import('../src/utils.js');
+    // Patch captureSerializedDOM to avoid recursion
+    spyOn((await import('../src/utils.js')), 'captureSerializedDOM').and.callFake(async () => ({ html: '<html></html>' }));
+    const options = { widths: [800, 1024] };
+    captureResponsiveDOM(mockPage, options, mockPercy, mockLog).then(result => {
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBe(2);
+      expect(result[0].width).toBe(800);
+      expect(result[1].width).toBe(1024);
+      done();
+    });
+  });
+});
+
+// This is a config shape test, not a runtime test, but we can check the defaults
 describe('storybookSchema responsiveSnapshotCapture and widths', () => {
-  // This is a config shape test, not a runtime test, but we can check the defaults
   const storybookSchema = {
     responsiveSnapshotCapture: { type: 'boolean', default: false },
     widths: { type: 'array', items: { type: 'integer', minimum: 1 }, default: [] }

@@ -11,74 +11,46 @@ import {
   withPage,
   getWidthsForResponsiveCapture,
   isResponsiveSnapshotCaptureEnabled,
-  captureResponsiveStoryDOM
+  captureSerializedDOM,
+  captureResponsiveDOM
 } from './utils.js';
 
-// Capture single DOM snapshot
-async function* captureSerializedDOM(page, story, options, flags, enableJavaScript, previewResource, log) {
-  if (flags.dryRun || enableJavaScript) {
-    log.debug(`Loading story via previewResource: ${options.name}`);
-    // when dry-running or when javascript is enabled, use the preview dom
-    return previewResource.content;
-  } else {
-    log.debug(`Loading story: ${options.name}`);
-
-    yield page.eval(evalSetCurrentStory, story);
-    let { domSnapshot } = yield page.snapshot(options);
-    return domSnapshot;
-  }
-}
-
-// Capture responsive DOM snapshots
-async function* captureResponsiveDOM(page, story, options, flags, enableJavaScript, previewResource, percy, log) {
-  if (flags.dryRun || enableJavaScript) {
-    return options?.widths?.map(width => ({
-      width,
-      html: previewResource.content.html || previewResource.content,
-      cookies: [],
-      resources: [],
-      hints: [],
-      userAgent: 'percy-storybook',
-      warnings: []
-    }));
-  } else {
-    // Always do actual responsive capture when not in dry-run mode
-    yield page.eval(evalSetCurrentStory, story);
-    return yield* captureResponsiveStoryDOM(
-      page,
-      options,
-      percy,
-      log
-    );
-  }
-}
-
 // Main capture function
-async function* captureDOM(page, story, options, flags, enableJavaScript, previewResource, percy, log) {
+async function captureDOM(page, options, percy, log) {
   const responsiveSnapshotCapture = isResponsiveSnapshotCaptureEnabled(
     options,
     percy.config
   );
 
-  const deviceDetails = yield percy.client.getDeviceDetails(percy.build?.id);
-
-  const eligibleWidths = {
-    mobile: Array.isArray(deviceDetails) ? deviceDetails.map(d => d.width).filter(Boolean) : [],
-    config: percy.config.snapshot?.widths || []
-  };
-
-  // Get widths regardless of responsive capture mode
-  const widths = getWidthsForResponsiveCapture(
-    options.widths,
-    eligibleWidths
-  );
-
+  let widths;
   if (responsiveSnapshotCapture) {
+    const deviceDetails = await percy.client.getDeviceDetails(percy.build?.id);
+    const eligibleWidths = {
+      mobile: Array.isArray(deviceDetails) ? deviceDetails.map(d => d.width).filter(Boolean) : [],
+      config: percy.config.snapshot?.widths || []
+    };
+    widths = getWidthsForResponsiveCapture(
+      options.widths,
+      eligibleWidths
+    );
+
     const responsiveOptions = { ...options, responsiveSnapshotCapture: true, widths };
-    return yield* captureResponsiveDOM(page, story, responsiveOptions, flags, enableJavaScript, previewResource, percy, log);
+    log.debug('captureDOM: Using responsive snapshot capture', { responsiveOptions });
+    return await captureResponsiveDOM(page, responsiveOptions, percy, log);
   } else {
+    const eligibleWidths = {
+      config: percy.config.snapshot?.widths || []
+    };
+    widths = getWidthsForResponsiveCapture(
+      options.widths,
+      eligibleWidths
+    );
+
     const singleDOMOptions = { ...options, widths };
-    return yield* captureSerializedDOM(page, story, singleDOMOptions, flags, enableJavaScript, previewResource, log);
+    log.debug('captureDOM: Using single snapshot capture', {
+      singleDOMOptions
+    });
+    return await captureSerializedDOM(page, singleDOMOptions, log);
   }
 }
 
@@ -280,18 +252,16 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
             let { id, args, globals, queryParams, ...options } = snapshots[0];
 
             const enableJavaScript = options.enableJavaScript ?? percy.config.snapshot.enableJavaScript;
-
-            // Capture DOM using the main capture function
-            options.domSnapshot = yield* captureDOM(
-              page,
-              { id, args, globals, queryParams },
-              options,
-              flags,
-              enableJavaScript,
-              previewResource,
-              percy,
-              log
-            );
+            if (flags.dryRun || enableJavaScript) {
+              log.debug(`Loading story via previewResource: ${options.name}`);
+              // when dry-running or when javascript is enabled, use the preview dom
+              options.domSnapshot = previewResource.content;
+            } else {
+              log.debug(`Loading story: ${options.name}`);
+              // when not dry-running and javascript is not enabled, capture the story dom
+              yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
+              options.domSnapshot = await captureDOM(page, options, percy, log);
+            }
 
             // validate without logging to prune all other options
             PercyConfig.validate(options, '/snapshot/dom');
@@ -328,5 +298,3 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     await callback();
   }
 }
-
-export { captureDOM, captureResponsiveDOM, captureSerializedDOM };
