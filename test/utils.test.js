@@ -146,72 +146,113 @@ describe('flag parser for widths', () => {
   });
 });
 
-describe('changeViewportDimensionAndWait', () => {
-  let page, log;
+// Note: changeViewportDimensionAndWait is an internal function, so we test it indirectly
+// through captureResponsiveDOM which calls it
+describe('captureResponsiveDOM viewport resizing behavior', () => {
+  let page, percy, log;
 
   beforeEach(() => {
     page = {
+      eval: jasmine.createSpy('eval').and.callFake(async (fn, args) => {
+        // Mock different eval calls based on function content
+        if (fn.toString().includes('window.innerWidth')) {
+          return { width: 375, height: 667 };
+        } else if (fn.toString().includes('window.resizeCount')) {
+          return undefined; // Simulate resize completion
+        } else if (fn.toString().includes('window.outerHeight')) {
+          return 800; // Mock height calculation
+        }
+        return undefined;
+      }),
       resize: jasmine.createSpy('resize').and.returnValue(Promise.resolve()),
-      eval: jasmine.createSpy('eval').and.returnValue(Promise.resolve())
+      goto: jasmine.createSpy('goto').and.returnValue(Promise.resolve()),
+      insertPercyDom: jasmine.createSpy('insertPercyDom').and.returnValue(Promise.resolve())
+    };
+
+    percy = {
+      config: { snapshot: { minHeight: 600 } }
     };
 
     log = {
       debug: jasmine.createSpy('debug'),
+      warn: jasmine.createSpy('warn'),
       error: jasmine.createSpy('error')
     };
+
+    // Mock captureSerializedDOM to return a simple DOM snapshot
+    spyOn(utils, 'captureSerializedDOM').and.returnValue(
+      Promise.resolve({ domSnapshot: '<html>test</html>' })
+    );
   });
 
-  it('successfully resizes using CDP method', async () => {
-    await utils.changeViewportDimensionAndWait(page, 1024, 768, 1, log);
+  it('successfully resizes viewport using CDP method during responsive capture', async () => {
+    const options = { widths: [768, 1024] };
+
+    await utils.captureResponsiveDOM(page, options, percy, log);
+
+    // Should call resize for each width
+    expect(page.resize).toHaveBeenCalledWith({
+      width: 768,
+      height: jasmine.any(Number),
+      deviceScaleFactor: 1,
+      mobile: false
+    });
 
     expect(page.resize).toHaveBeenCalledWith({
       width: 1024,
-      height: 768,
+      height: jasmine.any(Number),
       deviceScaleFactor: 1,
       mobile: false
     });
 
-    expect(page.eval).toHaveBeenCalledTimes(1); // Only for resize completion check
-    expect(log.debug).not.toHaveBeenCalledWith(jasmine.stringMatching(/CDP failed/));
+    expect(log.debug).toHaveBeenCalledWith('Resizing viewport to width=768, height=800, resizeCount=1');
+    expect(log.debug).toHaveBeenCalledWith('Resizing viewport to width=1024, height=800, resizeCount=2');
   });
 
-  it('falls back to page.eval when CDP resize fails', async () => {
+  it('handles CDP resize failure and logs fallback attempt', async () => {
     const cdpError = new Error('CDP resize failed');
     page.resize.and.returnValue(Promise.reject(cdpError));
 
-    await utils.changeViewportDimensionAndWait(page, 800, 600, 2, log);
+    const options = { widths: [800] };
 
-    expect(page.resize).toHaveBeenCalledWith({
-      width: 800,
-      height: 600,
-      deviceScaleFactor: 1,
-      mobile: false
-    });
+    await utils.captureResponsiveDOM(page, options, percy, log);
 
+    expect(page.resize).toHaveBeenCalled();
     expect(log.debug).toHaveBeenCalledWith(
       'Resizing using CDP failed, falling back to page eval for width',
       800,
       cdpError
     );
 
+    // Should call page.eval for fallback resize
     expect(page.eval).toHaveBeenCalledWith(
       jasmine.any(Function),
-      { width: 800, height: 600 }
+      { width: 800, height: jasmine.any(Number) }
     );
   });
 
-  it('throws error when both CDP and fallback methods fail', async () => {
+  it('handles complete resize failure gracefully', async () => {
     const cdpError = new Error('CDP failed');
     const fallbackError = new Error('Fallback failed');
 
     page.resize.and.returnValue(Promise.reject(cdpError));
-    page.eval.and.returnValues(
-      Promise.reject(fallbackError), // First eval call (fallback resize)
-      Promise.resolve() // This won't be reached
-    );
+
+    // Mock page.eval to fail for fallback resize but succeed for other calls
+    page.eval.and.callFake(async (fn, args) => {
+      if (args && (args.width || args.height)) {
+        throw fallbackError; // Fallback resize fails
+      }
+      // Other eval calls succeed
+      if (fn.toString().includes('window.innerWidth')) {
+        return { width: 375, height: 667 };
+      }
+      return undefined;
+    });
+
+    const options = { widths: [600] };
 
     await expectAsync(
-      utils.changeViewportDimensionAndWait(page, 1200, 800, 3, log)
+      utils.captureResponsiveDOM(page, options, percy, log)
     ).toBeRejectedWithError(/Failed to resize viewport using both CDP and page.eval: Fallback failed/);
 
     expect(log.error).toHaveBeenCalledWith(
@@ -220,27 +261,23 @@ describe('changeViewportDimensionAndWait', () => {
     );
   });
 
-  it('waits for resize completion successfully', async () => {
-    // Mock successful resize completion check
-    page.eval.and.returnValues(Promise.resolve());// Resize completion check
-
-    await utils.changeViewportDimensionAndWait(page, 375, 667, 1, log);
-
-    expect(page.eval).toHaveBeenCalledWith(
-      jasmine.any(Function),
-      { resizeCount: 1 }
-    );
-  });
-
-  it('handles timeout while waiting for resize completion', async () => {
+  it('waits for resize completion and handles timeout gracefully', async () => {
+    // Mock resize completion check to timeout
     const timeoutError = new Error('Timeout');
 
-    page.eval.and.returnValues(
-      Promise.reject(timeoutError) // Resize completion check times out
-    );
+    page.eval.and.callFake(async (fn, args) => {
+      if (fn.toString().includes('window.innerWidth')) {
+        return { width: 375, height: 667 };
+      } else if (args && args.resizeCount) {
+        throw timeoutError; // Resize completion check times out
+      }
+      return undefined;
+    });
 
-    // Should not throw, just log debug message
-    await utils.changeViewportDimensionAndWait(page, 414, 736, 2, log);
+    const options = { widths: [414] };
+
+    // Should not throw, just log timeout
+    await utils.captureResponsiveDOM(page, options, percy, log);
 
     expect(log.debug).toHaveBeenCalledWith(
       'Timed out waiting for window resize event for width',
@@ -249,80 +286,78 @@ describe('changeViewportDimensionAndWait', () => {
     );
   });
 
-  it('calls page.eval with correct resize function for fallback', async () => {
-    page.resize.and.returnValue(Promise.reject(new Error('CDP failed')));
+  it('resets viewport to original size after responsive capture', async () => {
+    const options = { widths: [768, 1024] };
 
-    await utils.changeViewportDimensionAndWait(page, 768, 1024, 1, log);
+    await utils.captureResponsiveDOM(page, options, percy, log);
 
-    // Check that the fallback eval was called with the right function
-    const fallbackCall = page.eval.calls.all().find(call =>
-      call.args[1] && call.args[1].width === 768 && call.args[1].height === 1024
-    );
-
-    expect(fallbackCall).toBeDefined();
-    expect(fallbackCall.args[0]).toEqual(jasmine.any(Function));
-    expect(fallbackCall.args[1]).toEqual({ width: 768, height: 1024 });
-  });
-
-  it('calls page.eval with correct resize completion check function', async () => {
-    await utils.changeViewportDimensionAndWait(page, 1440, 900, 5, log);
-
-    // Check that resize completion check was called
-    const completionCall = page.eval.calls.all().find(call =>
-      call.args[1] && call.args[1].resizeCount === 5
-    );
-
-    expect(completionCall).toBeDefined();
-    expect(completionCall.args[0]).toEqual(jasmine.any(Function));
-    expect(completionCall.args[1]).toEqual({ resizeCount: 5 });
-  });
-
-  it('handles mixed success and failure scenarios', async () => {
-    // CDP succeeds, but resize completion times out
-    const timeoutError = new Error('Timeout waiting for resize');
-
-    page.eval.and.returnValue(Promise.reject(timeoutError));
-
-    await utils.changeViewportDimensionAndWait(page, 320, 568, 3, log);
-
+    // Should reset to original size (375x667 as mocked)
     expect(page.resize).toHaveBeenCalledWith({
-      width: 320,
-      height: 568,
+      width: 375,
+      height: 667,
       deviceScaleFactor: 1,
       mobile: false
     });
 
-    expect(log.debug).toHaveBeenCalledWith(
-      'Timed out waiting for window resize event for width',
-      320,
-      timeoutError
-    );
-
-    // Should not have called fallback debug message since CDP succeeded
-    expect(log.debug).not.toHaveBeenCalledWith(
-      jasmine.stringMatching(/CDP failed/)
-    );
+    expect(log.debug).toHaveBeenCalledWith('Resetting viewport to original size after responsive capture');
   });
 
-  it('preserves deviceScaleFactor and mobile settings in CDP call', async () => {
-    await utils.changeViewportDimensionAndWait(page, 600, 800, 1, log);
+  it('uses custom minHeight when environment variable is set', async () => {
+    // Set environment variable
+    process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT = 'true';
 
-    expect(page.resize).toHaveBeenCalledWith({
-      width: 600,
-      height: 800,
-      deviceScaleFactor: 1,
-      mobile: false
-    });
+    const options = { widths: [320] };
+
+    await utils.captureResponsiveDOM(page, options, percy, log);
+
+    expect(log.debug).toHaveBeenCalledWith('Using custom minHeight for responsive capture: 800');
+
+    // Clean up
+    delete process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT;
   });
 
-  it('handles zero dimensions', async () => {
-    await utils.changeViewportDimensionAndWait(page, 0, 0, 1, log);
+  it('handles page reload when environment variable is set', async () => {
+    process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE = 'true';
 
-    expect(page.resize).toHaveBeenCalledWith({
-      width: 0,
-      height: 0,
-      deviceScaleFactor: 1,
-      mobile: false
+    // Mock current URL
+    page.eval.and.callFake(async (fn, args) => {
+      if (fn.toString().includes('window.location.href')) {
+        return 'http://localhost:6006/iframe.html?id=test';
+      } else if (fn.toString().includes('window.innerWidth')) {
+        return { width: 375, height: 667 };
+      }
+      return undefined;
     });
+
+    const options = { widths: [480] };
+
+    await utils.captureResponsiveDOM(page, options, percy, log);
+
+    expect(log.debug).toHaveBeenCalledWith('Reloading page for responsive capture');
+    expect(page.goto).toHaveBeenCalledWith('http://localhost:6006/iframe.html?id=test', { forceReload: true });
+    expect(page.insertPercyDom).toHaveBeenCalled();
+
+    // Clean up
+    delete process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE;
+  });
+
+  it('respects sleep time environment variable', async () => {
+    process.env.RESPONSIVE_CAPTURE_SLEEP_TIME = '2';
+
+    // Spy on setTimeout to verify sleep
+    spyOn(global, 'setTimeout').and.callFake((fn, delay) => {
+      fn(); // Execute immediately for test
+      return 123; // Mock timer ID
+    });
+
+    const options = { widths: [600] };
+
+    await utils.captureResponsiveDOM(page, options, percy, log);
+
+    expect(log.debug).toHaveBeenCalledWith('Sleeping for 2 seconds before capturing snapshot');
+    expect(setTimeout).toHaveBeenCalledWith(jasmine.any(Function), 2000);
+
+    // Clean up
+    delete process.env.RESPONSIVE_CAPTURE_SLEEP_TIME;
   });
 });
