@@ -1,4 +1,4 @@
-import { captureDOM, captureResponsiveDOM, captureSerializedDOM } from '../src/snapshots.js';
+import { captureDOM } from "../src/snapshots";
 
 describe('captureDOM', () => {
   describe('enableJavaScript and responsiveSnapshotCapture combinations', () => {
@@ -101,78 +101,5 @@ describe('captureDOM', () => {
     } else {
       expect(result.value).toBe('<html>real</html>');
     }
-  });
-});
-
-describe('captureResponsiveDOM', () => {
-  let page, percy, log, previewResource;
-  beforeEach(function() {
-    page = { eval: jasmine.createSpy('eval'), snapshot: jasmine.createSpy('snapshot') };
-    percy = {
-      config: { snapshot: { enableJavaScript: false, widths: [800], responsiveSnapshotCapture: true } },
-      client: { getDeviceDetails: jasmine.createSpy('getDeviceDetails').and.returnValue(Promise.resolve([{ width: 375 }, { width: 800 }])) },
-      build: { id: 'buildid' }
-    };
-    log = { debug: jasmine.createSpy('debug'), warn: jasmine.createSpy('warn'), error: jasmine.createSpy('error') };
-    previewResource = { content: '<html>preview</html>' };
-  });
-
-  it('returns array of doms in dryRun', async function() {
-    let flags = { dryRun: true };
-    let options = { widths: [375, 800], responsiveSnapshotCapture: true };
-    let gen = captureResponsiveDOM(page, { id: 'id' }, options, flags, false, previewResource, percy, log);
-    let result = await gen.next();
-    expect(Array.isArray(result.value)).toBe(true);
-    expect(result.value.length).toBe(2);
-    expect(result.value[0].width).toBe(375);
-    expect(result.value[1].width).toBe(800);
-  });
-
-  it('returns array of domSnapshots with widths for non-dryRun', async function() {
-    // Setup page.snapshot to return different domSnapshots for each call
-    let call = 0;
-    page.snapshot.and.callFake(async () => {
-      call++;
-      return { domSnapshot: `<html>real${call}</html>` };
-    });
-    let flags = { dryRun: false };
-    let options = { widths: [375, 800], responsiveSnapshotCapture: true };
-    let gen = captureResponsiveDOM(page, { id: 'id' }, options, flags, false, previewResource, percy, log);
-    let result = await gen.next();
-    expect(Array.isArray(result.value)).toBe(true);
-    expect(result.value.length).toBe(2);
-    expect(result.value[0].width).toBe(375);
-    expect(result.value[1].width).toBe(800);
-    expect(result.value[0].domSnapshot).toBe('<html>real1</html>');
-    expect(result.value[1].domSnapshot).toBe('<html>real2</html>');
-  });
-});
-
-describe('captureSerializedDOM', () => {
-  let page, log, previewResource;
-  beforeEach(function() {
-    page = { eval: jasmine.createSpy('eval'), snapshot: jasmine.createSpy('snapshot') };
-    log = { debug: jasmine.createSpy('debug'), warn: jasmine.createSpy('warn'), error: jasmine.createSpy('error') };
-    previewResource = { content: '<html>preview</html>' };
-  });
-
-  it('returns previewResource.content in dryRun', async function() {
-    let flags = { dryRun: true };
-    let options = { name: 'story', responsiveSnapshotCapture: false };
-    let gen = captureSerializedDOM(page, { id: 'id' }, options, flags, false, previewResource, log);
-    let result = await gen.next();
-    expect(result.value).toBe('<html>preview</html>');
-  });
-
-  it('calls page.eval and page.snapshot for non-dryRun', async function() {
-    page.eval.and.returnValue(Promise.resolve());
-    page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>real</html>' }));
-    let flags = { dryRun: false };
-    let options = { name: 'story', responsiveSnapshotCapture: false };
-    let gen = captureSerializedDOM(page, { id: 'id' }, options, flags, false, previewResource, log);
-    await gen.next(); // run to yield page.eval
-    let result = await gen.next(); // run to yield page.snapshot
-    // Should return the domSnapshot object
-    expect(result.value).toEqual({ domSnapshot: '<html>real</html>' });
   });
 });

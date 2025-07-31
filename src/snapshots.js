@@ -16,7 +16,7 @@ import {
 } from './utils.js';
 
 // Main capture function
-async function captureDOM(page, options, percy, log) {
+export async function captureDOM(page, options, percy, log) {
   const responsiveSnapshotCapture = isResponsiveSnapshotCaptureEnabled(
     options,
     percy.config
