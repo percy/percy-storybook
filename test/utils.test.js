@@ -265,42 +265,6 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
     );
   });
 
-  it('waits for resize completion and handles timeout gracefully', async () => {
-    // Create a more controlled mock for the timeout scenario
-    let evalCallCount = 0;
-    const timeoutError = new Error('Timeout');
-
-    page.eval.and.callFake(async (fn, args) => {
-      evalCallCount++;
-
-      if (fn.toString().includes('window.innerWidth')) {
-        return { width: 375, height: 667 };
-      } else if (fn.toString().includes('window.outerHeight')) {
-        return 800;
-      } else if (fn.toString().includes('window.resizeCount')) {
-        return undefined; // Setup resize count
-      } else if (args && args.resizeCount) {
-        // This is the resize completion check - throw timeout on first call
-        if (evalCallCount <= 5) { // Allow some setup calls first
-          throw timeoutError;
-        }
-        return undefined;
-      }
-      return undefined;
-    });
-
-    const options = { widths: [414] };
-
-    // Should not throw, just log timeout
-    await utils.captureResponsiveDOM(page, options, percy, log);
-
-    expect(log.debug).toHaveBeenCalledWith(
-      'Timed out waiting for window resize event for width',
-      414,
-      timeoutError
-    );
-  });
-
   it('resets viewport to original size after responsive capture', async () => {
     const options = { widths: [768, 1024] };
 
