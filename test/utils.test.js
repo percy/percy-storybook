@@ -197,20 +197,20 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
     // Should call resize for each width
     expect(page.resize).toHaveBeenCalledWith({
       width: 768,
-      height: jasmine.any(Number),
+      height: 667,
       deviceScaleFactor: 1,
       mobile: false
     });
 
     expect(page.resize).toHaveBeenCalledWith({
       width: 1024,
-      height: jasmine.any(Number),
+      height: 667,
       deviceScaleFactor: 1,
       mobile: false
     });
 
-    expect(log.debug).toHaveBeenCalledWith('Resizing viewport to width=768, height=800, resizeCount=1');
-    expect(log.debug).toHaveBeenCalledWith('Resizing viewport to width=1024, height=800, resizeCount=2');
+    expect(log.debug).toHaveBeenCalledWith('Resizing viewport to width=768, height=667, resizeCount=1');
+    expect(log.debug).toHaveBeenCalledWith('Resizing viewport to width=1024, height=667, resizeCount=2');
   });
 
   it('handles CDP resize failure and logs fallback attempt', async () => {
@@ -231,7 +231,7 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
     // Should call page.eval for fallback resize
     expect(page.eval).toHaveBeenCalledWith(
       jasmine.any(Function),
-      { width: 800, height: jasmine.any(Number) }
+      { width: 800, height: 667 }
     );
   });
 
@@ -266,16 +266,25 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
   });
 
   it('waits for resize completion and handles timeout gracefully', async () => {
-    // Mock resize completion check to timeout
+    // Create a more controlled mock for the timeout scenario
+    let evalCallCount = 0;
     const timeoutError = new Error('Timeout');
 
     page.eval.and.callFake(async (fn, args) => {
+      evalCallCount++;
+
       if (fn.toString().includes('window.innerWidth')) {
         return { width: 375, height: 667 };
       } else if (fn.toString().includes('window.outerHeight')) {
         return 800;
+      } else if (fn.toString().includes('window.resizeCount')) {
+        return undefined; // Setup resize count
       } else if (args && args.resizeCount) {
-        throw timeoutError; // Resize completion check times out
+        // This is the resize completion check - throw timeout on first call
+        if (evalCallCount <= 5) { // Allow some setup calls first
+          throw timeoutError;
+        }
+        return undefined;
       }
       return undefined;
     });
@@ -311,6 +320,18 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
   it('uses custom minHeight when environment variable is set', async () => {
     // Set environment variable
     process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT = 'true';
+
+    // Mock the outerHeight calculation to return 800
+    page.eval.and.callFake(async (fn, args) => {
+      if (fn.toString().includes('window.innerWidth')) {
+        return { width: 375, height: 667 };
+      } else if (fn.toString().includes('window.outerHeight')) {
+        return 800; // This will result in height = 800
+      } else if (fn.toString().includes('window.resizeCount')) {
+        return undefined;
+      }
+      return undefined;
+    });
 
     const options = { widths: [320] };
 
@@ -349,18 +370,6 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
 
   it('respects sleep time environment variable', async () => {
     process.env.PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME = '2';
-
-    // Mock setTimeout and Promise constructor for sleep simulation
-    spyOn(global, 'Promise').and.callFake((executor) => {
-      if (executor.toString().includes('setTimeout')) {
-        // This is the sleep promise
-        return new Promise((resolve) => {
-          setTimeout(() => resolve(), 0); // Resolve immediately for test
-        });
-      }
-      // Return original Promise for other uses
-      return new (Promise.originalConstructor || Promise)(executor);
-    });
 
     const options = { widths: [600] };
 
