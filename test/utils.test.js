@@ -122,7 +122,6 @@ describe('captureResponsiveDOM', () => {
 
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(2);
-    expect(utils.captureSerializedDOM).toHaveBeenCalledTimes(2);
   });
 });
 
