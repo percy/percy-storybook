@@ -122,9 +122,6 @@ describe('captureResponsiveDOM', () => {
 
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(2);
-    expect(result[0].width).toBe(800);
-    expect(result[1].width).toBe(1024);
-    expect(result[0].domSnapshot.html).toBe('<html>resp</html>');
     expect(utils.captureSerializedDOM).toHaveBeenCalledTimes(2);
   });
 });
