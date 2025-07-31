@@ -154,7 +154,7 @@ describe('changeViewportDimensionAndWait', () => {
       resize: jasmine.createSpy('resize').and.returnValue(Promise.resolve()),
       eval: jasmine.createSpy('eval').and.returnValue(Promise.resolve())
     };
-    
+
     log = {
       debug: jasmine.createSpy('debug'),
       error: jasmine.createSpy('error')
@@ -163,14 +163,14 @@ describe('changeViewportDimensionAndWait', () => {
 
   it('successfully resizes using CDP method', async () => {
     await utils.changeViewportDimensionAndWait(page, 1024, 768, 1, log);
-    
+
     expect(page.resize).toHaveBeenCalledWith({
       width: 1024,
       height: 768,
       deviceScaleFactor: 1,
       mobile: false
     });
-    
+
     expect(page.eval).toHaveBeenCalledTimes(1); // Only for resize completion check
     expect(log.debug).not.toHaveBeenCalledWith(jasmine.stringMatching(/CDP failed/));
   });
@@ -178,22 +178,22 @@ describe('changeViewportDimensionAndWait', () => {
   it('falls back to page.eval when CDP resize fails', async () => {
     const cdpError = new Error('CDP resize failed');
     page.resize.and.returnValue(Promise.reject(cdpError));
-    
+
     await utils.changeViewportDimensionAndWait(page, 800, 600, 2, log);
-    
+
     expect(page.resize).toHaveBeenCalledWith({
       width: 800,
       height: 600,
       deviceScaleFactor: 1,
       mobile: false
     });
-    
+
     expect(log.debug).toHaveBeenCalledWith(
       'Resizing using CDP failed, falling back to page eval for width',
       800,
       cdpError
     );
-    
+
     expect(page.eval).toHaveBeenCalledWith(
       jasmine.any(Function),
       { width: 800, height: 600 }
@@ -203,17 +203,17 @@ describe('changeViewportDimensionAndWait', () => {
   it('throws error when both CDP and fallback methods fail', async () => {
     const cdpError = new Error('CDP failed');
     const fallbackError = new Error('Fallback failed');
-    
+
     page.resize.and.returnValue(Promise.reject(cdpError));
     page.eval.and.returnValues(
       Promise.reject(fallbackError), // First eval call (fallback resize)
       Promise.resolve() // This won't be reached
     );
-    
+
     await expectAsync(
       utils.changeViewportDimensionAndWait(page, 1200, 800, 3, log)
     ).toBeRejectedWithError(/Failed to resize viewport using both CDP and page.eval: Fallback failed/);
-    
+
     expect(log.error).toHaveBeenCalledWith(
       'Fallback resize using page.eval failed',
       fallbackError
@@ -222,12 +222,10 @@ describe('changeViewportDimensionAndWait', () => {
 
   it('waits for resize completion successfully', async () => {
     // Mock successful resize completion check
-    page.eval.and.returnValues(
-      Promise.resolve(), // Resize completion check
-    );
-    
+    page.eval.and.returnValues(Promise.resolve());// Resize completion check
+
     await utils.changeViewportDimensionAndWait(page, 375, 667, 1, log);
-    
+
     expect(page.eval).toHaveBeenCalledWith(
       jasmine.any(Function),
       { resizeCount: 1 }
@@ -236,14 +234,14 @@ describe('changeViewportDimensionAndWait', () => {
 
   it('handles timeout while waiting for resize completion', async () => {
     const timeoutError = new Error('Timeout');
-    
+
     page.eval.and.returnValues(
       Promise.reject(timeoutError) // Resize completion check times out
     );
-    
+
     // Should not throw, just log debug message
     await utils.changeViewportDimensionAndWait(page, 414, 736, 2, log);
-    
+
     expect(log.debug).toHaveBeenCalledWith(
       'Timed out waiting for window resize event for width',
       414,
@@ -253,14 +251,14 @@ describe('changeViewportDimensionAndWait', () => {
 
   it('calls page.eval with correct resize function for fallback', async () => {
     page.resize.and.returnValue(Promise.reject(new Error('CDP failed')));
-    
+
     await utils.changeViewportDimensionAndWait(page, 768, 1024, 1, log);
-    
+
     // Check that the fallback eval was called with the right function
-    const fallbackCall = page.eval.calls.all().find(call => 
+    const fallbackCall = page.eval.calls.all().find(call =>
       call.args[1] && call.args[1].width === 768 && call.args[1].height === 1024
     );
-    
+
     expect(fallbackCall).toBeDefined();
     expect(fallbackCall.args[0]).toEqual(jasmine.any(Function));
     expect(fallbackCall.args[1]).toEqual({ width: 768, height: 1024 });
@@ -268,12 +266,12 @@ describe('changeViewportDimensionAndWait', () => {
 
   it('calls page.eval with correct resize completion check function', async () => {
     await utils.changeViewportDimensionAndWait(page, 1440, 900, 5, log);
-    
+
     // Check that resize completion check was called
-    const completionCall = page.eval.calls.all().find(call => 
+    const completionCall = page.eval.calls.all().find(call =>
       call.args[1] && call.args[1].resizeCount === 5
     );
-    
+
     expect(completionCall).toBeDefined();
     expect(completionCall.args[0]).toEqual(jasmine.any(Function));
     expect(completionCall.args[1]).toEqual({ resizeCount: 5 });
@@ -282,24 +280,24 @@ describe('changeViewportDimensionAndWait', () => {
   it('handles mixed success and failure scenarios', async () => {
     // CDP succeeds, but resize completion times out
     const timeoutError = new Error('Timeout waiting for resize');
-    
+
     page.eval.and.returnValue(Promise.reject(timeoutError));
-    
+
     await utils.changeViewportDimensionAndWait(page, 320, 568, 3, log);
-    
+
     expect(page.resize).toHaveBeenCalledWith({
       width: 320,
       height: 568,
       deviceScaleFactor: 1,
       mobile: false
     });
-    
+
     expect(log.debug).toHaveBeenCalledWith(
       'Timed out waiting for window resize event for width',
       320,
       timeoutError
     );
-    
+
     // Should not have called fallback debug message since CDP succeeded
     expect(log.debug).not.toHaveBeenCalledWith(
       jasmine.stringMatching(/CDP failed/)
@@ -308,7 +306,7 @@ describe('changeViewportDimensionAndWait', () => {
 
   it('preserves deviceScaleFactor and mobile settings in CDP call', async () => {
     await utils.changeViewportDimensionAndWait(page, 600, 800, 1, log);
-    
+
     expect(page.resize).toHaveBeenCalledWith({
       width: 600,
       height: 800,
@@ -319,7 +317,7 @@ describe('changeViewportDimensionAndWait', () => {
 
   it('handles zero dimensions', async () => {
     await utils.changeViewportDimensionAndWait(page, 0, 0, 1, log);
-    
+
     expect(page.resize).toHaveBeenCalledWith({
       width: 0,
       height: 0,
