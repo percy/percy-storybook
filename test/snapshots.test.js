@@ -1,8 +1,41 @@
 import { captureDOM } from '../src/snapshots.js';
 
 describe('captureDOM', () => {
+  let page, percy, log, previewResource;
+
+  beforeEach(() => {
+    page = {
+      eval: jasmine.createSpy('eval'),
+      snapshot: jasmine.createSpy('snapshot'),
+      goto: jasmine.createSpy('goto'),
+      insertPercyDom: jasmine.createSpy('insertPercyDom'),
+      resize: jasmine.createSpy('resize')
+    };
+    percy = {
+      config: {
+        snapshot: {
+          enableJavaScript: false,
+          widths: [800],
+          responsiveSnapshotCapture: false
+        }
+      },
+      client: {
+        getDeviceDetails: jasmine
+          .createSpy('getDeviceDetails')
+          .and.returnValue(Promise.resolve([{ width: 800 }]))
+      },
+      build: { id: 'buildid' }
+    };
+    log = {
+      debug: jasmine.createSpy('debug'),
+      warn: jasmine.createSpy('warn'),
+      error: jasmine.createSpy('error')
+    };
+    previewResource = { content: '<html>preview</html>' };
+  });
+
   describe('enableJavaScript and responsiveSnapshotCapture combinations', () => {
-    beforeEach(function() {
+    beforeEach(() => {
       page.eval.and.returnValue(Promise.resolve());
       page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>combo</html>' }));
     });
@@ -15,91 +48,82 @@ describe('captureDOM', () => {
     ];
 
     combos.forEach(({ enableJavaScript, responsiveSnapshotCapture }) => {
-      it(`returns correct result for enableJavaScript=${enableJavaScript}, responsiveSnapshotCapture=${responsiveSnapshotCapture}`, async function() {
+      it(`returns correct result for enableJavaScript=${enableJavaScript}, responsiveSnapshotCapture=${responsiveSnapshotCapture}`, async () => {
+        // Arrange
         percy.config.snapshot.enableJavaScript = enableJavaScript;
         percy.config.snapshot.responsiveSnapshotCapture = responsiveSnapshotCapture;
-        let flags = { dryRun: false };
-        let options = { name: 'story', widths: [375, 800], responsiveSnapshotCapture };
-        let gen = captureDOM(page, { id: 'id' }, options, flags, false, previewResource, percy, log);
-        await gen.next(); // getDeviceDetails
-        await gen.next(); // page.eval
-        let result = await gen.next(); // page.snapshot
+        const options = {
+          name: 'story',
+          widths: [375, 800],
+          responsiveSnapshotCapture,
+          domSnapshot: previewResource.content
+        };
+
+        // Act
+        const result = await captureDOM(page, options, percy, log);
+
+        // Assert
         if (responsiveSnapshotCapture) {
-          // Should be array or object with widths
-          if (Array.isArray(result.value)) {
-            expect(result.value.length).toBeGreaterThan(0);
-            expect(result.value[0].domSnapshot || result.value[0]).toBe('<html>combo</html>');
-          } else {
-            expect(result.value.domSnapshot || result.value).toBe('<html>combo</html>');
-          }
+          expect(Array.isArray(result)).toBe(true);
+          expect(result.length).toBeGreaterThan(0);
+          expect(result[0].domSnapshot || result[0]).toBe('<html>combo</html>');
         } else {
-          expect(result.value.domSnapshot || result.value).toBe('<html>combo</html>');
+          expect(result.domSnapshot || result).toBe('<html>combo</html>');
         }
       });
     });
   });
 
-  it('delegates to responsive logic when responsiveSnapshotCapture is true', async function() {
+  it('delegates to responsive logic when responsiveSnapshotCapture is true', async () => {
     page.eval.and.returnValue(Promise.resolve());
     page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>responsive</html>' }));
-    let flags = { dryRun: false };
-    let options = { name: 'story', widths: [375, 800], responsiveSnapshotCapture: true };
     percy.config.snapshot.responsiveSnapshotCapture = true;
-    // Should yield an array of domSnapshots (simulate responsive)
-    let gen = captureDOM(page, { id: 'id' }, options, flags, false, previewResource, percy, log);
-    await gen.next(); // getDeviceDetails
-    await gen.next(); // page.eval
-    let result = await gen.next(); // page.snapshot
-    // Should return an array or object with widths
-    if (Array.isArray(result.value)) {
-      expect(result.value.length).toBeGreaterThan(0);
-      expect(result.value[0].domSnapshot || result.value[0]).toBe('<html>responsive</html>');
-    } else {
-      expect(result.value.domSnapshot || result.value).toBe('<html>responsive</html>');
-    }
+
+    const options = {
+      name: 'story',
+      widths: [375, 800],
+      responsiveSnapshotCapture: true,
+      domSnapshot: previewResource.content
+    };
+
+    const result = await captureDOM(page, options, percy, log);
+
+    expect(Array.isArray(result)).toBe(true);
+    expect(result[0].domSnapshot || result[0]).toBe('<html>responsive</html>');
   });
 
-  it('delegates to non-responsive logic when responsiveSnapshotCapture is false', async function() {
+  it('delegates to non-responsive logic when responsiveSnapshotCapture is false', async () => {
     page.eval.and.returnValue(Promise.resolve());
     page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>nonresponsive</html>' }));
-    let flags = { dryRun: false };
-    let options = { name: 'story', widths: [800], responsiveSnapshotCapture: false };
     percy.config.snapshot.responsiveSnapshotCapture = false;
-    let gen = captureDOM(page, { id: 'id' }, options, flags, false, previewResource, percy, log);
-    await gen.next(); // getDeviceDetails
-    await gen.next(); // page.eval
-    let result = await gen.next(); // page.snapshot
-    expect(result.value.domSnapshot || result.value).toBe('<html>nonresponsive</html>');
-  });
 
-  let page, percy, log, previewResource;
-
-  beforeEach(function() {
-    page = { eval: jasmine.createSpy('eval'), snapshot: jasmine.createSpy('snapshot') };
-    percy = {
-      config: { snapshot: { enableJavaScript: false, widths: [800], responsiveSnapshotCapture: false } },
-      client: { getDeviceDetails: jasmine.createSpy('getDeviceDetails').and.returnValue(Promise.resolve([{ width: 800 }])) },
-      build: { id: 'buildid' }
+    const options = {
+      name: 'story',
+      widths: [800],
+      responsiveSnapshotCapture: false,
+      domSnapshot: previewResource.content
     };
-    log = { debug: jasmine.createSpy('debug'), warn: jasmine.createSpy('warn'), error: jasmine.createSpy('error') };
-    previewResource = { content: '<html>preview</html>' };
+
+    const result = await captureDOM(page, options, percy, log);
+
+    expect(result.domSnapshot || result).toBe('<html>nonresponsive</html>');
   });
 
-  it('calls page.eval and page.snapshot for non-dryRun (non-responsive)', async function() {
+  it('calls page.eval and page.snapshot for non-dryRun (non-responsive)', async () => {
     page.eval.and.returnValue(Promise.resolve());
     page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>real</html>' }));
-    let flags = { dryRun: false };
-    let options = { name: 'story', widths: [800], responsiveSnapshotCapture: false };
     percy.config.snapshot.responsiveSnapshotCapture = false;
-    let gen = captureDOM(page, { id: 'id' }, options, flags, false, previewResource, percy, log);
-    await gen.next(); // run to yield percy.client.getDeviceDetails
-    await gen.next(); // run to yield page.eval
-    let result = await gen.next(); // run to yield page.snapshot
-    // Should return the domSnapshot string (handle both string and object)
-    if (typeof result.value === 'object' && result.value.domSnapshot) {
-      expect(result.value.domSnapshot).toBe('<html>real</html>');
-    } else {
-      expect(result.value).toBe('<html>real</html>');
-    }
+
+    const options = {
+      name: 'story',
+      widths: [800],
+      responsiveSnapshotCapture: false,
+      domSnapshot: previewResource.content
+    };
+
+    const result = await captureDOM(page, options, percy, log);
+
+    // Since captureSerializedDOM returns the raw object, we check its domSnapshot
+    expect(result.domSnapshot || result).toBe('<html>real</html>');
   });
 });
