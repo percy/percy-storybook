@@ -41,8 +41,8 @@
     "readme": "percy-cli-readme",
     "pretest": "storybook build --config-dir=./test/.storybook --output-dir=./test/.storybook-build --loglevel error",
     "test": "yarn test:env jasmine --config=./test/jasmine.json",
-    "test:env": "cross-env NODE_ENV=test NODE_OPTIONS='--loader=./test/loader.js'",
-    "test:coverage": "nyc yarn test"
+    "test:env": "cross-env NODE_ENV=test",
+    "test:coverage": "nyc --check-coverage yarn test:env jasmine --config=./test/jasmine.json"
   },
   "storybook": {
     "displayName": "Percy",
@@ -65,6 +65,7 @@
     "@babel/eslint-plugin": "^7.19.1",
     "@babel/preset-env": "^7.22.9",
     "@babel/preset-react": "^7.23.3",
+    "@babel/register": "^7.27.1",
     "@storybook/react": "^9.0.15",
     "@storybook/react-webpack5": "^9.0.15",
     "babel-eslint": "^10.0.3",
