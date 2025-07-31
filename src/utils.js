@@ -535,11 +535,14 @@ export async function captureResponsiveDOM(page, options, percy, log) {
     height = await page.eval((configMinHeight) => {
       return window.outerHeight - window.innerHeight + configMinHeight;
     }, percy?.config?.snapshot?.minHeight || 600);
+    log.debug(`Using custom minHeight for responsive capture: ${height}`);
   }
 
   for (let width of options?.widths) {
+    log.debug(`Capturing snapshot at width: ${width}`);
     if (lastWindowWidth !== width) {
       resizeCount++;
+      log.debug(`Resizing viewport to width=${width}, height=${height}, resizeCount=${resizeCount}`);
       await page.eval(({ resizeCount }) => {
         window.resizeCount = resizeCount;
       }, { resizeCount });
@@ -549,6 +552,7 @@ export async function captureResponsiveDOM(page, options, percy, log) {
 
     if (process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE) {
       const currentUrl = await page.eval(() => window.location.href);
+      log.debug('Reloading page for responsive capture');
       await page.goto(currentUrl, { forceReload: true });
 
       // Re-inject PercyDOM if needed
@@ -556,16 +560,21 @@ export async function captureResponsiveDOM(page, options, percy, log) {
     }
 
     if (process.env.RESPONSIVE_CAPTURE_SLEEP_TIME) {
+      log.debug(`Sleeping for ${process.env.RESPONSIVE_CAPTURE_SLEEP_TIME} seconds before capturing snapshot`);
       await new Promise(resolve => setTimeout(resolve, parseInt(process.env.RESPONSIVE_CAPTURE_SLEEP_TIME, 10) * 1000));
     }
 
     // Capture DOM snapshot
+    log.debug(`Taking DOM snapshot at width=${width}`);
     let domSnapshot = await captureSerializedDOM(page, options, log);
     domSnapshot.width = width;
     domSnapshots.push(domSnapshot);
+    log.debug(`Snapshot captured for width=${width}`);
   }
 
   // Reset viewport size back to original dimensions
+  log.debug('Resetting viewport to original size after responsive capture');
   await changeViewportDimensionAndWait(page, currentWidth, currentHeight, resizeCount + 1, log);
+  log.debug('Responsive DOM capture complete');
   return domSnapshots;
 }
