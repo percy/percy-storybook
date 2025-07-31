@@ -6,11 +6,29 @@ describe('captureDOM behavior', () => {
   let page, percy, log, previewResource;
 
   beforeEach(() => {
+    // Remove any previous spies to avoid conflicts
+    if (utils.captureSerializedDOM && utils.captureSerializedDOM.calls) {
+      utils.captureSerializedDOM.calls.reset();
+    }
+    if (utils.captureResponsiveDOM && utils.captureResponsiveDOM.calls) {
+      utils.captureResponsiveDOM.calls.reset();
+    }
+    if (utils.getWidthsForResponsiveCapture && utils.getWidthsForResponsiveCapture.calls) {
+      utils.getWidthsForResponsiveCapture.calls.reset();
+    }
+
     spyOn(utils, 'captureSerializedDOM').and.callFake(() => {
       return Promise.resolve({ domSnapshot: { html: '<html>SINGLE</html>' } });
     });
     spyOn(utils, 'captureResponsiveDOM').and.callFake((page, options) => {
-      const widths = options && Array.isArray(options.widths) ? options.widths : [];
+      let widths = [];
+      if (options && Array.isArray(options.widths)) {
+        widths = options.widths;
+      } else if (options && typeof options.width === 'number') {
+        widths = [options.width];
+      }
+      // Always return at least one item for test stability
+      if (!widths.length) widths = [600];
       return Promise.resolve(widths.map(width => ({
         domSnapshot: { html: `<html>RESP for ${width}</html>`, width }
       })));
