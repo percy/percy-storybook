@@ -1,26 +1,22 @@
 import * as utils from '../src/utils.js';
 import { captureDOM } from '../src/snapshots.js';
 
-const mockCaptureSerializedDOM = jasmine.createSpy('captureSerializedDOM').and.returnValue(
-  Promise.resolve({ domSnapshot: { html: '<html>SINGLE</html>' } })
-);
-
-const mockCaptureResponsiveDOM = jasmine.createSpy('captureResponsiveDOM').and.callFake((page, widths) => {
-  return Promise.resolve(widths.map(width => ({
-    domSnapshot: { html: `<html>RESP for ${width}</html>`, width }
-  })));
-});
-
-const mockGetWidthsForResponsiveCapture = jasmine.createSpy('getWidthsForResponsiveCapture').and.callFake((input, extras) => {
-  if (Array.isArray(input)) return input;
-  return [111, 222];
-});
-
 // Mock utility functions before tests
 beforeAll(() => {
-  spyOn(utils, 'captureSerializedDOM').and.returnValue(mockCaptureSerializedDOM);
-  spyOn(utils, 'captureResponsiveDOM').and.returnValue(mockCaptureResponsiveDOM);
-  spyOn(utils, 'getWidthsForResponsiveCapture').and.returnValue(mockGetWidthsForResponsiveCapture);
+  spyOn(utils, 'captureSerializedDOM').and.callFake(() => {
+    return Promise.resolve({ domSnapshot: { html: '<html>SINGLE</html>' } });
+  });
+  spyOn(utils, 'captureResponsiveDOM').and.callFake((page, options) => {
+    // options.widths can be [500, 600], etc.
+    const widths = options && Array.isArray(options.widths) ? options.widths : [];
+    return Promise.resolve(widths.map(width => ({
+      domSnapshot: { html: `<html>RESP for ${width}</html>`, width }
+    })));
+  });
+  spyOn(utils, 'getWidthsForResponsiveCapture').and.callFake((input, extras) => {
+    if (Array.isArray(input)) return input;
+    return [111, 222];
+  });
 });
 
 describe('captureDOM behavior', () => {
@@ -62,9 +58,9 @@ describe('captureDOM behavior', () => {
     previewResource = { content: '<html>preview</html>' };
 
     // Reset spies on each test
-    mockCaptureSerializedDOM.calls.reset();
-    mockCaptureResponsiveDOM.calls.reset();
-    mockGetWidthsForResponsiveCapture.calls.reset();
+    utils.captureSerializedDOM.calls.reset();
+    utils.captureResponsiveDOM.calls.reset();
+    utils.getWidthsForResponsiveCapture.calls.reset();
   });
 
   it('shows multiple snapshots when the responsive feature is turned on by options', async () => {
@@ -77,7 +73,7 @@ describe('captureDOM behavior', () => {
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(mockCaptureResponsiveDOM).toHaveBeenCalled();
+    expect(utils.captureResponsiveDOM).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(2);
     expect(result[0].domSnapshot.html).toBe('<html>RESP for 500</html>');
@@ -96,7 +92,7 @@ describe('captureDOM behavior', () => {
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(mockCaptureSerializedDOM).toHaveBeenCalled();
+    expect(utils.captureSerializedDOM).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(false);
     expect(result.domSnapshot.html).toBe('<html>SINGLE</html>');
   });
@@ -110,7 +106,7 @@ describe('captureDOM behavior', () => {
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(mockCaptureResponsiveDOM).toHaveBeenCalled();
+    expect(utils.captureResponsiveDOM).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(1);
     expect(result[0].domSnapshot.html).toBe('<html>RESP for 600</html>');
@@ -126,7 +122,7 @@ describe('captureDOM behavior', () => {
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(mockCaptureSerializedDOM).toHaveBeenCalled();
+    expect(utils.captureSerializedDOM).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(false);
     expect(result.domSnapshot.html).toBe('<html>SINGLE</html>');
   });
