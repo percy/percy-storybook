@@ -94,7 +94,10 @@ describe('captureResponsiveDOM', () => {
       }),
       resize: jasmine.createSpy('resize').and.returnValue(Promise.resolve()),
       goto: jasmine.createSpy('goto').and.returnValue(Promise.resolve()),
-      insertPercyDom: jasmine.createSpy('insertPercyDom').and.returnValue(Promise.resolve())
+      insertPercyDom: jasmine.createSpy('insertPercyDom').and.returnValue(Promise.resolve()),
+      snapshot: jasmine.createSpy('snapshot').and.returnValue(
+        Promise.resolve({ domSnapshot: { html: '<html>resp</html>' } })
+      )
     };
 
     percy = {
@@ -109,7 +112,7 @@ describe('captureResponsiveDOM', () => {
 
     // Mock captureSerializedDOM correctly
     spyOn(utils, 'captureSerializedDOM').and.returnValue(
-      Promise.resolve({ domSnapshot: '<html>resp</html>' })
+      Promise.resolve({ domSnapshot: { html: '<html>resp</html>' } })
     );
   });
 
@@ -121,7 +124,7 @@ describe('captureResponsiveDOM', () => {
     expect(result.length).toBe(2);
     expect(result[0].width).toBe(800);
     expect(result[1].width).toBe(1024);
-    expect(result[0].domSnapshot).toBe('<html>resp</html>');
+    expect(result[0].domSnapshot.html).toBe('<html>resp</html>');
     expect(utils.captureSerializedDOM).toHaveBeenCalledTimes(2);
   });
 });

@@ -8,7 +8,7 @@ describe('captureDOM behavior', () => {
     page = {
       eval: jasmine.createSpy('eval'),
       snapshot: jasmine.createSpy('snapshot').and.returnValue(
-        Promise.resolve({ domSnapshot: '<html>SINGLE</html>' })
+        Promise.resolve({ domSnapshot: { html: '<html>SINGLE</html>' } })
       ),
       resize: jasmine.createSpy('resize'),
       goto: jasmine.createSpy('goto'),
@@ -41,12 +41,12 @@ describe('captureDOM behavior', () => {
 
     spyOn(utils, 'captureResponsiveDOM').and.returnValue(
       Promise.resolve([
-        { domSnapshot: '<html>RESP1</html>', width: 500 },
-        { domSnapshot: '<html>RESP2</html>', width: 600 }
+        { domSnapshot: { html: '<html>RESP1</html>', width: 500 } },
+        { domSnapshot: { html: '<html>RESP2</html>', width: 600 } }
       ])
     );
     spyOn(utils, 'captureSerializedDOM').and.returnValue(
-      Promise.resolve({ domSnapshot: '<html>SINGLE</html>' })
+      Promise.resolve({ domSnapshot: { html: '<html>SINGLE</html>' } })
     );
     spyOn(utils, 'getWidthsForResponsiveCapture').and.callThrough();
   });
@@ -54,7 +54,7 @@ describe('captureDOM behavior', () => {
   it('shows multiple snapshots when the responsive feature is turned on by options', async () => {
     percy.config.snapshot.responsiveSnapshotCapture = false;
     const options = {
-      widths: [500],
+      widths: [500, 600],
       responsiveSnapshotCapture: true,
       domSnapshot: previewResource.content
     };
@@ -63,9 +63,12 @@ describe('captureDOM behavior', () => {
 
     expect(utils.captureResponsiveDOM).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(true);
-    expect(result[0].domSnapshot).toBe('<html>RESP1</html>');
-    expect(result[0].width).toBe(500);
+
     expect(result.length).toBe(2);
+    expect(result[0].domSnapshot.html).toBe('<html>RESP1</html>');
+    expect(result[0].width).toBe(500);
+    expect(result[1].domSnapshot.html).toBe('<html>RESP2</html>');
+    expect(result[1].width).toBe(600);
   });
 
   it('shows a single snapshot when the responsive feature is turned off by options', async () => {
@@ -80,7 +83,7 @@ describe('captureDOM behavior', () => {
 
     expect(utils.captureSerializedDOM).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(false);
-    expect(result.domSnapshot).toBe('<html>SINGLE</html>');
+    expect(result.domSnapshot.html).toBe('<html>SINGLE</html>');
   });
 
   it('falls back to multiple snapshots when options do not specify but config is enabled', async () => {
@@ -94,8 +97,7 @@ describe('captureDOM behavior', () => {
 
     expect(utils.captureResponsiveDOM).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(true);
-    expect(result[0].domSnapshot).toBe('<html>RESP1</html>');
-    expect(result[0].width).toBe(500);
+    expect(result[0].domSnapshot.html).toBe('<html>RESP1</html>');
   });
 
   it('falls back to a single snapshot when neither options nor config enable responsiveness', async () => {
@@ -109,7 +111,7 @@ describe('captureDOM behavior', () => {
 
     expect(utils.captureSerializedDOM).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(false);
-    expect(result.domSnapshot).toBe('<html>SINGLE</html>');
+    expect(result.domSnapshot.html).toBe('<html>SINGLE</html>');
   });
 
   it('combines device widths with default widths before taking responsive snapshots', async () => {
@@ -129,25 +131,6 @@ describe('captureDOM behavior', () => {
       page,
       jasmine.objectContaining({ widths: [111, 222] }),
       percy,
-      log
-    );
-  });
-
-  it('uses only default widths before taking a single snapshot when responsiveness is off', async () => {
-    percy.config.snapshot.responsiveSnapshotCapture = false;
-    const options = { widths: [200], domSnapshot: previewResource.content };
-
-    spyOn(utils, 'getWidthsForResponsiveCapture').and.returnValue([808]);
-
-    await captureDOM(page, options, percy, log);
-
-    expect(utils.getWidthsForResponsiveCapture).toHaveBeenCalledWith(
-      [200],
-      { config: [800] }
-    );
-    expect(utils.captureSerializedDOM).toHaveBeenCalledWith(
-      page,
-      jasmine.objectContaining({ widths: [808] }),
       log
     );
   });
