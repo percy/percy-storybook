@@ -1,4 +1,4 @@
-import { captureDOM } from "../src/snapshots";
+import { captureDOM } from '../src/snapshots.js';
 
 describe('captureDOM', () => {
   describe('enableJavaScript and responsiveSnapshotCapture combinations', () => {
