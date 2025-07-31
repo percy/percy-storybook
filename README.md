@@ -353,3 +353,4 @@ Percy config file or per-snapshot option, [`enableJavaScript`](https://www.brows
 ## Development
 - Current package.json and yarn.lock install storybook v7 as devDependency and hence require node 16 for development.
 - There are separate package.json and config files for storybook v6, for testing purposes. Please check `prepare-storybook-v6-tests.sh` file for more details around changes for storybook v6 testing.
+
