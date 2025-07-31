@@ -417,3 +417,175 @@ export function evalSetCurrentStory({ waitFor }, story) {
     }
   });
 }
+
+// Utility functions for responsive snapshot capture
+
+// Process widths for responsive DOM capture with proper hierarchy
+export function getWidthsForDomCapture(userPassedWidths, eligibleWidths) {
+  let allWidths = [];
+
+  if (eligibleWidths?.mobile?.length > 0) {
+    allWidths = allWidths.concat(eligibleWidths?.mobile);
+  }
+  if (userPassedWidths && userPassedWidths.length) {
+    allWidths = allWidths.concat(userPassedWidths);
+  } else {
+    allWidths = allWidths.concat(eligibleWidths.config);
+  }
+
+  // Remove duplicates
+  return [...new Set(allWidths)].filter(e => e);
+}
+
+// Check if responsive snapshot capture is enabled with proper hierarchy
+export function isResponsiveSnapshotCaptureEnabled(options, config) {
+  if (options && 'responsiveSnapshotCapture' in options) {
+    const value = !!(options.responsiveSnapshotCapture);
+    return value;
+  }
+
+  if (config?.snapshot && 'responsiveSnapshotCapture' in config.snapshot) {
+    const value = !!(config.snapshot.responsiveSnapshotCapture);
+    return value;
+  }
+
+  return false;
+}
+
+async function changeViewportDimensionAndWait(page, width, height, resizeCount, log) {
+  try {
+    // Use Percy's CDP-based resize method
+    await page.resize({
+      width,
+      height,
+      deviceScaleFactor: 1,
+      mobile: false
+    });
+  } catch (e) {
+    log.debug('Resizing using CDP failed, falling back to page eval for width', width, e);
+    // Fallback to JavaScript execution
+    try {
+      await page.eval(({ width, height }) => {
+        window.resizeTo(width, height);
+        // Trigger resize events and force layout
+        window.dispatchEvent(new Event('resize'));
+        document.body.offsetHeight;
+      }, { width, height });
+    } catch (fallbackError) {
+      log.error('Fallback resize using page.eval failed', fallbackError);
+      throw new Error(`Failed to resize viewport using both CDP and page.eval: ${fallbackError.message}`);
+    }
+  }
+
+  try {
+    // Wait for resize to complete
+    await page.eval(({ resizeCount }) => {
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Timeout')), 1000);
+        const checkResize = () => {
+          if (window.resizeCount === resizeCount) {
+            clearTimeout(timeout);
+            resolve();
+          } else {
+            setTimeout(checkResize, 50);
+          }
+        };
+        checkResize();
+      });
+    }, { resizeCount });
+  } catch (e) {
+    log.debug('Timed out waiting for window resize event for width', width, e);
+  }
+}
+
+export async function captureSerializedDOM(page, options, log) {
+  try {
+    let { dom, domSnapshot = dom } = await page.snapshot(options);
+    return domSnapshot;
+  } catch (error) {
+    log.error('Error in captureSerializedDOM:', error);
+    throw new Error(`Failed to capture DOM snapshot: ${error.message}`);
+  }
+}
+
+// Capture responsive DOM snapshots across different widths
+export async function captureResponsiveDOM(page, options, percy, log) {
+  const domSnapshots = [];
+  let currentWidth, currentHeight;
+
+  // Get current viewport size
+  const viewportSize = await page.eval(() => ({
+    width: window.innerWidth,
+    height: window.innerHeight
+  }));
+
+  currentWidth = viewportSize.width;
+  currentHeight = viewportSize.height;
+
+  let lastWindowWidth = currentWidth;
+  let resizeCount = 0;
+
+  // Setup the resizeCount listener
+  await page.eval(() => {
+    if (typeof window.PercyDOM !== 'undefined' && window.PercyDOM.waitForResize) {
+      window.PercyDOM.waitForResize();
+    }
+    window.resizeCount = window.resizeCount || 0;
+  });
+
+  // PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT: (number) If set, overrides the minimum height for the viewport during capture.
+  let height = currentHeight;
+  if (process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT) {
+    height = await page.eval((configMinHeight) => {
+      return window.outerHeight - window.innerHeight + configMinHeight;
+    }, percy?.config?.snapshot?.minHeight || 600);
+    log.debug(`Using custom minHeight for responsive capture: ${height}`);
+  }
+
+  for (let width of options?.widths) {
+    log.debug(`Capturing snapshot at width: ${width}`);
+    if (lastWindowWidth !== width) {
+      resizeCount++;
+      log.debug(`Resizing viewport to width=${width}, height=${height}, resizeCount=${resizeCount}`);
+      await page.eval(({ resizeCount }) => {
+        window.resizeCount = resizeCount;
+      }, { resizeCount });
+      await changeViewportDimensionAndWait(page, width, height, resizeCount, log);
+      lastWindowWidth = width;
+    }
+
+    // PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE: (any value) If set, reloads the page before each snapshot width.
+    if (process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE) {
+      const currentUrl = await page.eval(() => window.location.href);
+      log.debug('Reloading page for responsive capture');
+      await page.goto(currentUrl, { forceReload: true });
+
+      // Re-inject PercyDOM if needed
+      await page.insertPercyDom();
+    }
+
+    // PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME: (number, seconds) If set, waits this many seconds before capturing each snapshot.
+    if (process.env.PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME) {
+      let sleepTime = parseInt(process.env.PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME, 10);
+      if (isNaN(sleepTime) || sleepTime < 0) {
+        log.warn(`Invalid value for PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME: "${process.env.PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME}". Using fallback value of 0 seconds.`);
+        sleepTime = 0;
+      }
+      log.debug(`Sleeping for ${sleepTime} seconds before capturing snapshot`);
+      await new Promise(resolve => setTimeout(resolve, sleepTime * 1000));
+    }
+
+    // Capture DOM snapshot
+    log.debug(`Taking DOM snapshot at width=${width}`);
+    let domSnapshot = await captureSerializedDOM(page, options, log);
+    let snapshotWithWidth = { ...domSnapshot, width };
+    domSnapshots.push(snapshotWithWidth);
+    log.debug(`Snapshot captured for width=${width}`);
+  }
+
+  // Reset viewport size back to original dimensions
+  log.debug('Resetting viewport to original size after responsive capture');
+  await changeViewportDimensionAndWait(page, currentWidth, currentHeight, resizeCount + 1, log);
+  log.debug('Responsive DOM capture complete');
+  return domSnapshots;
+}

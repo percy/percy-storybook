@@ -13,6 +13,18 @@ export const flags = [{
   multiple: true,
   short: 'e'
 }, {
+  name: 'responsive-snapshot-capture',
+  description: 'Enable responsive DOM capture for multiple viewport widths',
+  percyrc: 'snapshot.responsiveSnapshotCapture',
+  type: 'boolean',
+  default: false
+}, {
+  name: 'widths',
+  description: 'Comma-separated list of viewport widths for responsive capture (e.g. 375,768,1280)',
+  percyrc: 'snapshot.widths',
+  type: 'array',
+  parse: (value) => value.split(',').map(w => parseInt(w.trim(), 10)).filter(w => !isNaN(w))
+}, {
   name: 'shard-count',
   description: 'Number of shards to split snapshots into',
   validate: (count, { operators }) => (process.env.PERCY_PARALLEL_TOTAL ||= ((

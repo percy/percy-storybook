@@ -8,8 +8,51 @@ import {
   evalSetCurrentStory,
   validateStoryArgs,
   encodeStoryArgs,
-  withPage
+  withPage,
+  getWidthsForDomCapture,
+  isResponsiveSnapshotCaptureEnabled,
+  captureSerializedDOM,
+  captureResponsiveDOM
 } from './utils.js';
+
+// Main capture function
+export async function captureDOM(page, options, percy, log) {
+  const responsiveSnapshotCapture = isResponsiveSnapshotCaptureEnabled(
+    options,
+    percy.config
+  );
+
+  let widths;
+  if (responsiveSnapshotCapture) {
+    const deviceDetails = await percy.client.getDeviceDetails(percy.build?.id);
+    const eligibleWidths = {
+      mobile: Array.isArray(deviceDetails) ? deviceDetails.map(d => d.width).filter(Boolean) : [],
+      config: percy.config.snapshot?.widths || []
+    };
+    widths = getWidthsForDomCapture(
+      options.widths,
+      eligibleWidths
+    );
+
+    const responsiveOptions = { ...options, responsiveSnapshotCapture: true, widths };
+    log.debug('captureDOM: Using responsive snapshot capture', { responsiveOptions });
+    return await captureResponsiveDOM(page, responsiveOptions, percy, log);
+  } else {
+    const eligibleWidths = {
+      config: percy.config.snapshot?.widths || []
+    };
+    widths = getWidthsForDomCapture(
+      options.widths,
+      eligibleWidths
+    );
+
+    const singleDOMOptions = { ...options, widths };
+    log.debug('captureDOM: Using single snapshot capture', {
+      singleDOMOptions
+    });
+    return await captureSerializedDOM(page, singleDOMOptions, log);
+  }
+}
 
 // Returns true or false if the provided story should be skipped by matching against include and
 // exclude filter options. If any global filters are provided, they will override story filters.
@@ -217,9 +260,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
               log.debug(`Loading story: ${options.name}`);
               // when not dry-running and javascript is not enabled, capture the story dom
               yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
-              /* istanbul ignore next: tested, but coverage is stripped */
-              let { dom, domSnapshot = dom } = yield page.snapshot(options);
-              options.domSnapshot = domSnapshot;
+              options.domSnapshot = await captureDOM(page, options, percy, log);
             }
 
             // validate without logging to prune all other options

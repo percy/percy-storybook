@@ -42,6 +42,18 @@ export const storybookSchema = {
         queryParams: {
           type: 'object',
           normalize: false
+        },
+        responsiveSnapshotCapture: {
+          type: 'boolean',
+          default: false
+        },
+        widths: {
+          type: 'array',
+          items: {
+            type: 'integer',
+            minimum: 1
+          },
+          default: [375, 1280]
         }
       }
     },
