@@ -482,12 +482,15 @@ async function changeViewportDimensionAndWait(page, width, height, resizeCount, 
     await page.eval(({ resizeCount }) => {
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error('Timeout')), 1000);
-        (function check() {
+        const checkResize = () => {
           if (window.resizeCount === resizeCount) {
             clearTimeout(timeout);
             resolve();
+          } else {
+            setTimeout(checkResize, 50);
           }
-        })();
+        };
+        checkResize();
       });
     }, { resizeCount });
   } catch (e) {
