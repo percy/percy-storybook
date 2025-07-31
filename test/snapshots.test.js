@@ -1,28 +1,35 @@
+import * as utils from '../src/utils.js';
 import { captureDOM } from '../src/snapshots.js';
 
-describe('captureDOM function', () => {
+describe('captureDOM behavior', () => {
   let page, percy, log, previewResource;
 
   beforeEach(() => {
+    // Stub the inner helpers so we never call real width logic
+    spyOn(utils, 'captureResponsiveDOM').and.returnValue(Promise.resolve([
+      { domSnapshot: '<html>RESP1</html>' },
+      { domSnapshot: '<html>RESP2</html>' }
+    ]));
+    spyOn(utils, 'captureSerializedDOM').and.returnValue(Promise.resolve({
+      domSnapshot: '<html>SINGLE</html>'
+    }));
+    spyOn(utils, 'getWidthsForResponsiveCapture').and.callThrough();
+
     page = {
       eval: jasmine.createSpy('eval'),
-      snapshot: jasmine.createSpy('snapshot'),
-      goto: jasmine.createSpy('goto'),
-      insertPercyDom: jasmine.createSpy('insertPercyDom'),
-      resize: jasmine.createSpy('resize')
+      snapshot: jasmine.createSpy('snapshot')
     };
     percy = {
       config: {
         snapshot: {
-          enableJavaScript: false,
           widths: [800],
-          responsiveSnapshotCapture: false
+          responsiveSnapshotCapture: false,
+          enableJavaScript: false
         }
       },
       client: {
-        getDeviceDetails: jasmine
-          .createSpy('getDeviceDetails')
-          .and.returnValue(Promise.resolve([{ width: 800 }]))
+        getDeviceDetails: jasmine.createSpy('getDeviceDetails')
+          .and.returnValue(Promise.resolve([{ width: 320 }, { width: 375 }]))
       },
       build: { id: 'buildid' }
     };
@@ -34,94 +41,101 @@ describe('captureDOM function', () => {
     previewResource = { content: '<html>preview</html>' };
   });
 
-  describe('Different JavaScript and responsiveness settings', () => {
-    beforeEach(() => {
-      page.eval.and.returnValue(Promise.resolve());
-      page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>combo</html>' }));
-    });
-
-    const scenarios = [
-      { js: true, responsive: true },
-      { js: true, responsive: false },
-      { js: false, responsive: true },
-      { js: false, responsive: false }
-    ];
-
-    scenarios.forEach(({ js, responsive }) => {
-      it(`produces the right snapshot when JavaScript is ${js ? 'on' : 'off'} and responsive is ${responsive ? 'on' : 'off'}`, async () => {
-        percy.config.snapshot.enableJavaScript = js;
-        percy.config.snapshot.responsiveSnapshotCapture = responsive;
-        const options = {
-          name: 'story',
-          widths: [375, 800],
-          responsiveSnapshotCapture: responsive,
-          domSnapshot: previewResource.content
-        };
-
-        const result = await captureDOM(page, options, percy, log);
-
-        if (responsive) {
-          // when responsive capture is enabled, we expect an array of snapshots
-          expect(Array.isArray(result)).toBe(true);
-          expect(result.length).toBeGreaterThan(0);
-          expect(result[0].domSnapshot || result[0]).toBe('<html>combo</html>');
-        } else {
-          // when responsive capture is off, we expect a single snapshot
-          expect(result.domSnapshot || result).toBe('<html>combo</html>');
-        }
-      });
-    });
-  });
-
-  it('uses the responsive path when responsiveness is turned on', async () => {
-    page.eval.and.returnValue(Promise.resolve());
-    page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>responsive</html>' }));
-    percy.config.snapshot.responsiveSnapshotCapture = true;
-
+  it('shows multiple snapshots when the responsive feature is turned on by options', async () => {
+    percy.config.snapshot.responsiveSnapshotCapture = false;
     const options = {
-      name: 'story',
-      widths: [375, 800],
+      widths: [500],
       responsiveSnapshotCapture: true,
       domSnapshot: previewResource.content
     };
 
     const result = await captureDOM(page, options, percy, log);
 
+    expect(utils.captureResponsiveDOM).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(true);
-    expect(result[0].domSnapshot || result[0]).toBe('<html>responsive</html>');
+    expect(result[0].domSnapshot).toBe('<html>RESP1</html>');
   });
 
-  it('uses the simple path when responsiveness is turned off', async () => {
-    page.eval.and.returnValue(Promise.resolve());
-    page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>plain</html>' }));
-    percy.config.snapshot.responsiveSnapshotCapture = false;
-
+  it('shows a single snapshot when the responsive feature is turned off by options', async () => {
+    percy.config.snapshot.responsiveSnapshotCapture = true;
     const options = {
-      name: 'story',
-      widths: [800],
+      widths: [500],
       responsiveSnapshotCapture: false,
       domSnapshot: previewResource.content
     };
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(result.domSnapshot || result).toBe('<html>plain</html>');
+    expect(utils.captureSerializedDOM).toHaveBeenCalled();
+    expect(Array.isArray(result)).toBe(false);
+    expect(result.domSnapshot).toBe('<html>SINGLE</html>');
   });
 
-  it('captures the live DOM when running normally', async () => {
-    page.eval.and.returnValue(Promise.resolve());
-    page.snapshot.and.returnValue(Promise.resolve({ domSnapshot: '<html>live</html>' }));
-    percy.config.snapshot.responsiveSnapshotCapture = false;
-
+  it('falls back to multiple snapshots when options do not specify but config is enabled', async () => {
+    percy.config.snapshot.responsiveSnapshotCapture = true;
     const options = {
-      name: 'story',
-      widths: [800],
-      responsiveSnapshotCapture: false,
+      widths: [600],
       domSnapshot: previewResource.content
     };
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(result.domSnapshot || result).toBe('<html>live</html>');
+    expect(utils.captureResponsiveDOM).toHaveBeenCalled();
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it('falls back to a single snapshot when neither options nor config enable responsiveness', async () => {
+    percy.config.snapshot.responsiveSnapshotCapture = false;
+    const options = {
+      widths: [600],
+      domSnapshot: previewResource.content
+    };
+
+    const result = await captureDOM(page, options, percy, log);
+
+    expect(utils.captureSerializedDOM).toHaveBeenCalled();
+    expect(Array.isArray(result)).toBe(false);
+  });
+
+  it('combines device widths with default widths before taking responsive snapshots', async () => {
+    percy.config.snapshot.responsiveSnapshotCapture = true;
+    const options = { widths: [100], domSnapshot: previewResource.content };
+
+    // Now directly use the spy without a type cast:
+    utils.getWidthsForResponsiveCapture.and.returnValue([111, 222]);
+
+    await captureDOM(page, options, percy, log);
+
+    expect(percy.client.getDeviceDetails).toHaveBeenCalledWith('buildid');
+    expect(utils.getWidthsForResponsiveCapture).toHaveBeenCalledWith(
+      [100],
+      { mobile: [320, 375], config: [800] }
+    );
+    expect(utils.captureResponsiveDOM).toHaveBeenCalledWith(
+      page,
+      jasmine.objectContaining({ widths: [111, 222] }),
+      percy,
+      log
+    );
+  });
+
+  it('uses only default widths before taking a single snapshot when responsiveness is off', async () => {
+    percy.config.snapshot.responsiveSnapshotCapture = false;
+    const options = { widths: [200], domSnapshot: previewResource.content };
+
+    // Again, no type assertion—just call the spy:
+    utils.getWidthsForResponsiveCapture.and.returnValue([808]);
+
+    await captureDOM(page, options, percy, log);
+
+    expect(utils.getWidthsForResponsiveCapture).toHaveBeenCalledWith(
+      [200],
+      { config: [800] }
+    );
+    expect(utils.captureSerializedDOM).toHaveBeenCalledWith(
+      page,
+      jasmine.objectContaining({ widths: [808] }),
+      log
+    );
   });
 });
