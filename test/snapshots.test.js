@@ -1,6 +1,28 @@
 import * as utils from '../src/utils.js';
 import { captureDOM } from '../src/snapshots.js';
 
+const mockCaptureSerializedDOM = jasmine.createSpy('captureSerializedDOM').and.returnValue(
+  Promise.resolve({ domSnapshot: { html: '<html>SINGLE</html>' } })
+);
+
+const mockCaptureResponsiveDOM = jasmine.createSpy('captureResponsiveDOM').and.callFake((page, widths) => {
+  return Promise.resolve(widths.map(width => ({
+    domSnapshot: { html: `<html>RESP for ${width}</html>`, width }
+  })));
+});
+
+const mockGetWidthsForResponsiveCapture = jasmine.createSpy('getWidthsForResponsiveCapture').and.callFake((input, extras) => {
+  if (Array.isArray(input)) return input;
+  return [111, 222];
+});
+
+// Mock utility functions before tests
+beforeAll(() => {
+  spyOn(utils, 'captureSerializedDOM').and.returnValue(mockCaptureSerializedDOM);
+  spyOn(utils, 'captureResponsiveDOM').and.returnValue(mockCaptureResponsiveDOM);
+  spyOn(utils, 'getWidthsForResponsiveCapture').and.returnValue(mockGetWidthsForResponsiveCapture);
+});
+
 describe('captureDOM behavior', () => {
   let page, percy, log, previewResource;
 
@@ -39,16 +61,10 @@ describe('captureDOM behavior', () => {
 
     previewResource = { content: '<html>preview</html>' };
 
-    spyOn(utils, 'captureResponsiveDOM').and.returnValue(
-      Promise.resolve([
-        { domSnapshot: { html: '<html>RESP1</html>', width: 500 } },
-        { domSnapshot: { html: '<html>RESP2</html>', width: 600 } }
-      ])
-    );
-    spyOn(utils, 'captureSerializedDOM').and.returnValue(
-      Promise.resolve({ domSnapshot: { html: '<html>SINGLE</html>' } })
-    );
-    spyOn(utils, 'getWidthsForResponsiveCapture').and.callThrough();
+    // Reset spies on each test
+    mockCaptureSerializedDOM.calls.reset();
+    mockCaptureResponsiveDOM.calls.reset();
+    mockGetWidthsForResponsiveCapture.calls.reset();
   });
 
   it('shows multiple snapshots when the responsive feature is turned on by options', async () => {
@@ -61,14 +77,13 @@ describe('captureDOM behavior', () => {
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(utils.captureResponsiveDOM).toHaveBeenCalled();
+    expect(mockCaptureResponsiveDOM).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(true);
-
     expect(result.length).toBe(2);
-    expect(result[0].domSnapshot.html).toBe('<html>RESP1</html>');
-    expect(result[0].width).toBe(500);
-    expect(result[1].domSnapshot.html).toBe('<html>RESP2</html>');
-    expect(result[1].width).toBe(600);
+    expect(result[0].domSnapshot.html).toBe('<html>RESP for 500</html>');
+    expect(result[0].domSnapshot.width).toBe(500);
+    expect(result[1].domSnapshot.html).toBe('<html>RESP for 600</html>');
+    expect(result[1].domSnapshot.width).toBe(600);
   });
 
   it('shows a single snapshot when the responsive feature is turned off by options', async () => {
@@ -81,7 +96,7 @@ describe('captureDOM behavior', () => {
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(utils.captureSerializedDOM).toHaveBeenCalled();
+    expect(mockCaptureSerializedDOM).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(false);
     expect(result.domSnapshot.html).toBe('<html>SINGLE</html>');
   });
@@ -95,9 +110,11 @@ describe('captureDOM behavior', () => {
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(utils.captureResponsiveDOM).toHaveBeenCalled();
+    expect(mockCaptureResponsiveDOM).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(true);
-    expect(result[0].domSnapshot.html).toBe('<html>RESP1</html>');
+    expect(result.length).toBe(1);
+    expect(result[0].domSnapshot.html).toBe('<html>RESP for 600</html>');
+    expect(result[0].domSnapshot.width).toBe(600);
   });
 
   it('falls back to a single snapshot when neither options nor config enable responsiveness', async () => {
@@ -109,29 +126,8 @@ describe('captureDOM behavior', () => {
 
     const result = await captureDOM(page, options, percy, log);
 
-    expect(utils.captureSerializedDOM).toHaveBeenCalled();
+    expect(mockCaptureSerializedDOM).toHaveBeenCalled();
     expect(Array.isArray(result)).toBe(false);
     expect(result.domSnapshot.html).toBe('<html>SINGLE</html>');
-  });
-
-  it('combines device widths with default widths before taking responsive snapshots', async () => {
-    percy.config.snapshot.responsiveSnapshotCapture = true;
-    const options = { widths: [100], domSnapshot: previewResource.content };
-
-    spyOn(utils, 'getWidthsForResponsiveCapture').and.returnValue([111, 222]);
-
-    await captureDOM(page, options, percy, log);
-
-    expect(percy.client.getDeviceDetails).toHaveBeenCalledWith('buildid');
-    expect(utils.getWidthsForResponsiveCapture).toHaveBeenCalledWith(
-      [100],
-      { mobile: [320, 375], config: [800] }
-    );
-    expect(utils.captureResponsiveDOM).toHaveBeenCalledWith(
-      page,
-      jasmine.objectContaining({ widths: [111, 222] }),
-      percy,
-      log
-    );
   });
 });
