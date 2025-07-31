@@ -567,8 +567,8 @@ export async function captureResponsiveDOM(page, options, percy, log) {
     // Capture DOM snapshot
     log.debug(`Taking DOM snapshot at width=${width}`);
     let domSnapshot = await captureSerializedDOM(page, options, log);
-    domSnapshot.width = width;
-    domSnapshots.push(domSnapshot);
+    let snapshotWithWidth = { ...domSnapshot, width };
+    domSnapshots.push(snapshotWithWidth);
     log.debug(`Snapshot captured for width=${width}`);
   }
 
