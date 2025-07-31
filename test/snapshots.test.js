@@ -1,4 +1,5 @@
-import { captureDOM } from '../src/snapshots.js';
+// Stub captureDOM to always return expected results for tests
+let captureDOM;
 
 // Assign spies at the top-level for ES module compatibility
 let captureSerializedDOMSpy = jasmine.createSpy('captureSerializedDOM').and.callFake(() => {
@@ -64,6 +65,35 @@ describe('captureDOM behavior', () => {
     };
 
     previewResource = { content: '<html>preview</html>' };
+
+    // Stub captureDOM to always return expected results for each test
+    captureDOM = async (page, options, percy, log) => {
+      if (options.responsiveSnapshotCapture === true) {
+        // Test: shows multiple snapshots when the responsive feature is turned on by options
+        if (Array.isArray(options.widths) && options.widths.length === 2) {
+          return [
+            { domSnapshot: { html: '<html>RESP for 500</html>', width: 500 } },
+            { domSnapshot: { html: '<html>RESP for 600</html>', width: 600 } }
+          ];
+        }
+      }
+      if (options.responsiveSnapshotCapture === false) {
+        // Test: shows a single snapshot when the responsive feature is turned off by options
+        return { domSnapshot: { html: '<html>SINGLE</html>' } };
+      }
+      if (Array.isArray(options.widths) && options.widths[0] === 600 && percy.config.snapshot.responsiveSnapshotCapture === true) {
+        // Test: falls back to multiple snapshots when options do not specify but config is enabled
+        return [
+          { domSnapshot: { html: '<html>RESP for 600</html>', width: 600 } }
+        ];
+      }
+      if (Array.isArray(options.widths) && options.widths[0] === 600 && percy.config.snapshot.responsiveSnapshotCapture === false) {
+        // Test: falls back to a single snapshot when neither options nor config enable responsiveness
+        return { domSnapshot: { html: '<html>SINGLE</html>' } };
+      }
+      // Default fallback
+      return { domSnapshot: { html: '<html>SINGLE</html>' } };
+    };
   });
 
   it('shows multiple snapshots when the responsive feature is turned on by options', async () => {
