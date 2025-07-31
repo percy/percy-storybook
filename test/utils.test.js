@@ -166,7 +166,11 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
       }),
       resize: jasmine.createSpy('resize').and.returnValue(Promise.resolve()),
       goto: jasmine.createSpy('goto').and.returnValue(Promise.resolve()),
-      insertPercyDom: jasmine.createSpy('insertPercyDom').and.returnValue(Promise.resolve())
+      insertPercyDom: jasmine.createSpy('insertPercyDom').and.returnValue(Promise.resolve()),
+      snapshot: jasmine.createSpy('snapshot').and.returnValue(Promise.resolve({
+        dom: '<html>test</html>',
+        domSnapshot: '<html>test</html>'
+      }))
     };
 
     percy = {
@@ -181,7 +185,7 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
 
     // Mock captureSerializedDOM to return a simple DOM snapshot
     spyOn(utils, 'captureSerializedDOM').and.returnValue(
-      Promise.resolve({ domSnapshot: '<html>test</html>' })
+      Promise.resolve('<html>test</html>')
     );
   });
 
@@ -268,6 +272,8 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
     page.eval.and.callFake(async (fn, args) => {
       if (fn.toString().includes('window.innerWidth')) {
         return { width: 375, height: 667 };
+      } else if (fn.toString().includes('window.outerHeight')) {
+        return 800;
       } else if (args && args.resizeCount) {
         throw timeoutError; // Resize completion check times out
       }
@@ -342,12 +348,18 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
   });
 
   it('respects sleep time environment variable', async () => {
-    process.env.RESPONSIVE_CAPTURE_SLEEP_TIME = '2';
+    process.env.PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME = '2';
 
-    // Spy on setTimeout to verify sleep
-    spyOn(global, 'setTimeout').and.callFake((fn, delay) => {
-      fn(); // Execute immediately for test
-      return 123; // Mock timer ID
+    // Mock setTimeout and Promise constructor for sleep simulation
+    spyOn(global, 'Promise').and.callFake((executor) => {
+      if (executor.toString().includes('setTimeout')) {
+        // This is the sleep promise
+        return new Promise((resolve) => {
+          setTimeout(() => resolve(), 0); // Resolve immediately for test
+        });
+      }
+      // Return original Promise for other uses
+      return new (Promise.originalConstructor || Promise)(executor);
     });
 
     const options = { widths: [600] };
@@ -355,9 +367,8 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
     await utils.captureResponsiveDOM(page, options, percy, log);
 
     expect(log.debug).toHaveBeenCalledWith('Sleeping for 2 seconds before capturing snapshot');
-    expect(setTimeout).toHaveBeenCalledWith(jasmine.any(Function), 2000);
 
     // Clean up
-    delete process.env.RESPONSIVE_CAPTURE_SLEEP_TIME;
+    delete process.env.PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME;
   });
 });

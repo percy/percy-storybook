@@ -533,6 +533,7 @@ export async function captureResponsiveDOM(page, options, percy, log) {
     window.resizeCount = window.resizeCount || 0;
   });
 
+  // PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT: (number) If set, overrides the minimum height for the viewport during capture.
   let height = currentHeight;
   if (process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT) {
     height = await page.eval((configMinHeight) => {
@@ -553,6 +554,7 @@ export async function captureResponsiveDOM(page, options, percy, log) {
       lastWindowWidth = width;
     }
 
+    // PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE: (any value) If set, reloads the page before each snapshot width.
     if (process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE) {
       const currentUrl = await page.eval(() => window.location.href);
       log.debug('Reloading page for responsive capture');
@@ -562,9 +564,15 @@ export async function captureResponsiveDOM(page, options, percy, log) {
       await page.insertPercyDom();
     }
 
-    if (process.env.RESPONSIVE_CAPTURE_SLEEP_TIME) {
-      log.debug(`Sleeping for ${process.env.RESPONSIVE_CAPTURE_SLEEP_TIME} seconds before capturing snapshot`);
-      await new Promise(resolve => setTimeout(resolve, parseInt(process.env.RESPONSIVE_CAPTURE_SLEEP_TIME, 10) * 1000));
+    // PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME: (number, seconds) If set, waits this many seconds before capturing each snapshot.
+    if (process.env.PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME) {
+      let sleepTime = parseInt(process.env.PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME, 10);
+      if (isNaN(sleepTime) || sleepTime < 0) {
+        log.warn(`Invalid value for PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME: "${process.env.PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME}". Using fallback value of 0 seconds.`);
+        sleepTime = 0;
+      }
+      log.debug(`Sleeping for ${sleepTime} seconds before capturing snapshot`);
+      await new Promise(resolve => setTimeout(resolve, sleepTime * 1000));
     }
 
     // Capture DOM snapshot
