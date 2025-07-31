@@ -17,7 +17,7 @@ let captureResponsiveDOMSpy = jasmine.createSpy('captureResponsiveDOM').and.call
     domSnapshot: { html: `<html>RESP for ${width}</html>`, width }
   })));
 });
-let getWidthsForResponsiveCaptureSpy = jasmine.createSpy('getWidthsForResponsiveCapture').and.callFake((input, extras) => {
+let getWidthsForDomCaptureSpy = jasmine.createSpy('getWidthsForDomCapture').and.callFake((input, extras) => {
   if (Array.isArray(input)) return input;
   return [111, 222];
 });
@@ -30,7 +30,7 @@ describe('captureDOM behavior', () => {
     // Only reset spy calls, do not reassign
     captureSerializedDOMSpy.calls.reset();
     captureResponsiveDOMSpy.calls.reset();
-    getWidthsForResponsiveCaptureSpy.calls.reset();
+    getWidthsForDomCaptureSpy.calls.reset();
 
     page = {
       eval: jasmine.createSpy('eval'),

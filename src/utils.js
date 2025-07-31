@@ -421,7 +421,7 @@ export function evalSetCurrentStory({ waitFor }, story) {
 // Utility functions for responsive snapshot capture
 
 // Process widths for responsive DOM capture with proper hierarchy
-export function getWidthsForResponsiveCapture(userPassedWidths, eligibleWidths) {
+export function getWidthsForDomCapture(userPassedWidths, eligibleWidths) {
   let allWidths = [];
 
   if (eligibleWidths?.mobile?.length > 0) {

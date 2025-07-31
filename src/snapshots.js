@@ -9,7 +9,7 @@ import {
   validateStoryArgs,
   encodeStoryArgs,
   withPage,
-  getWidthsForResponsiveCapture,
+  getWidthsForDomCapture,
   isResponsiveSnapshotCaptureEnabled,
   captureSerializedDOM,
   captureResponsiveDOM
@@ -29,7 +29,7 @@ export async function captureDOM(page, options, percy, log) {
       mobile: Array.isArray(deviceDetails) ? deviceDetails.map(d => d.width).filter(Boolean) : [],
       config: percy.config.snapshot?.widths || []
     };
-    widths = getWidthsForResponsiveCapture(
+    widths = getWidthsForDomCapture(
       options.widths,
       eligibleWidths
     );
@@ -41,7 +41,7 @@ export async function captureDOM(page, options, percy, log) {
     const eligibleWidths = {
       config: percy.config.snapshot?.widths || []
     };
-    widths = getWidthsForResponsiveCapture(
+    widths = getWidthsForDomCapture(
       options.widths,
       eligibleWidths
     );
