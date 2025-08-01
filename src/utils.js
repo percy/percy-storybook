@@ -137,12 +137,25 @@ export function decodeStoryArgs(value) {
   }
 }
 
-// Borrows a percy discovery browser page to navigate to a URL and evaluate a function, returning
-// the results and normalizing any thrown errors.
+// Helper function to detect execution context errors
+function isExecutionContextError(error) {
+  return error?.message && (
+    error.message.includes('Execution context was destroyed') ||
+    error.message.includes('Protocol error (Runtime.callFunctionOn)') ||
+    error.message.includes('Target closed') ||
+    error.message.includes('Session closed')
+  );
+}
+
+// Simplified withPage function
 export async function* withPage(percy, url, callback, retry, args) {
   let log = logger('storybook:utils');
   let attempt = 0;
   let retries = 3;
+
+  // Get snapshot name - simplified with no dynamic resolution
+  const snapshotName = args?.snapshotName;
+
   while (attempt < retries) {
     try {
       // provide discovery options that may impact how the page loads
@@ -172,11 +185,21 @@ export async function* withPage(percy, url, callback, retry, args) {
       ), ...args);
       try {
         yield page.goto(url);
+
+        // Call the callback with the page
         return yield* yieldTo(callback(page));
       } catch (error) {
-        // if the page crashed and retry returns truthy, try again
+        // Check for execution context errors first
+        if (isExecutionContextError(error)) {
+          log.warn(`Execution context error for snapshot: ${snapshotName}:  ${error.message}. Retrying...`);
+          throw error; // Propagate to outer catch for handling
+        }
+
+        // Handle page crashes separately
         if (error.message?.includes('crashed') && retry?.()) {
-          return yield* withPage(...arguments);
+          log.debug('Page crashed, retrying...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
         }
 
         /* istanbul ignore next: purposefully not handling real errors */
@@ -195,8 +218,6 @@ export async function* withPage(percy, url, callback, retry, args) {
       let enableRetry = process.env.PERCY_RETRY_STORY_ON_ERROR || 'true';
       const from = args?.from;
       if (!(enableRetry === 'true') || attempt === retries) {
-        // Add snapshotName to the error message
-        const snapshotName = args?.snapshotName;
         if (from) {
           error.message = `${from}: \n${error.message}`;
         }
@@ -206,15 +227,12 @@ export async function* withPage(percy, url, callback, retry, args) {
         throw error;
       }
 
-      // throw warning message with snapshot name if it is present.
-      if (args?.snapshotName) {
-        log.warn(`Retrying Story: ${args.snapshotName}, attempt: ${attempt}`);
+      // Log retry message - now guaranteed to have the correct name
+      if (snapshotName) {
+        log.warn(`Retrying Story: ${snapshotName}, attempt: ${attempt}`);
       }
-      // throw warning message with from where it is called if from in present.
       if (from) {
-        log.warn(
-          `Retrying because error occurred in: ${from}, attempt: ${attempt}`
-        );
+        log.warn(`Retrying because error occurred in: ${from}, attempt: ${attempt}`);
       }
     }
   }
