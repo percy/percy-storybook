@@ -162,7 +162,7 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config }) {
     return all.concat(options, (
       additionalSnapshots.reduce((add, {
         prefix = '', suffix = '', ...snap
-      }) => shouldSkipStory(story.name, snap) ? add : (
+      }) => shouldSkipStory(story.name, snap, config) ? add : (
         add.concat(PercyConfig.merge([options, {
           name: `${prefix}${story.name}${suffix}`
         }, snap]))
