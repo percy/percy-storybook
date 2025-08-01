@@ -243,8 +243,6 @@ export async function* takeStorybookSnapshots(percy, callback, {
     // Track retry attempts per story to avoid infinite loops
     const retryAttempts = new Map();
 
-    log.info(`Found ${snapshots.length} stories to process`);
-
     // CRITICAL CHANGE: Process ONE story per page
     // This eliminates race conditions between story name tracking and error handling
     while (snapshots.length > 0) {
