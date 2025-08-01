@@ -310,8 +310,6 @@ export async function* takeStorybookSnapshots(percy, callback, {
           // Take the Percy snapshot
           percy.snapshot(options);
 
-          // log.info(`Snapshot taken: ${options.name}`);
-
           // Mark as successfully processed
           processedStories.add(id);
 

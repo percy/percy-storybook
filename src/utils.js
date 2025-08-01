@@ -197,9 +197,7 @@ export async function* withPage(percy, url, callback, retry, args) {
 
         // Handle page crashes separately
         if (error.message?.includes('crashed') && retry?.()) {
-          log.debug('Page crashed, retrying...');
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          continue;
+          return yield* withPage(...arguments);
         }
 
         /* istanbul ignore next: purposefully not handling real errors */
