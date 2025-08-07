@@ -138,7 +138,7 @@ export function decodeStoryArgs(value) {
 }
 
 // Helper function to detect execution context errors
-function isExecutionContextError(error) {
+export function isExecutionContextError(error) {
   return error?.message && (
     error.message.includes('Execution context was destroyed') ||
     error.message.includes('Protocol error (Runtime.callFunctionOn)') ||
