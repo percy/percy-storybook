@@ -333,7 +333,7 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
   });
 
   it('respects sleep time environment variable', async () => {
-    process.env.PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME = '2';
+    process.env.RESPONSIVE_CAPTURE_SLEEP_TIME = '2';
 
     const options = { widths: [600] };
 
@@ -342,6 +342,6 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
     expect(log.debug).toHaveBeenCalledWith('Sleeping for 2 seconds before capturing snapshot');
 
     // Clean up
-    delete process.env.PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME;
+    delete process.env.RESPONSIVE_CAPTURE_SLEEP_TIME;
   });
 });

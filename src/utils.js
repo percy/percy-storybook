@@ -564,11 +564,11 @@ export async function captureResponsiveDOM(page, options, percy, log) {
       await page.insertPercyDom();
     }
 
-    // PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME: (number, seconds) If set, waits this many seconds before capturing each snapshot.
-    if (process.env.PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME) {
-      let sleepTime = parseInt(process.env.PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME, 10);
+    // RESPONSIVE_CAPTURE_SLEEP_TIME: (number, seconds) If set, waits this many seconds before capturing each snapshot.
+    if (process.env.RESPONSIVE_CAPTURE_SLEEP_TIME) {
+      let sleepTime = parseInt(process.env.RESPONSIVE_CAPTURE_SLEEP_TIME, 10);
       if (isNaN(sleepTime) || sleepTime < 0) {
-        log.warn(`Invalid value for PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME: "${process.env.PERCY_RESPONSIVE_CAPTURE_SLEEP_TIME}". Using fallback value of 0 seconds.`);
+        log.warn(`Invalid value for RESPONSIVE_CAPTURE_SLEEP_TIME: "${process.env.RESPONSIVE_CAPTURE_SLEEP_TIME}". Using fallback value of 0 seconds.`);
         sleepTime = 0;
       }
       log.debug(`Sleeping for ${sleepTime} seconds before capturing snapshot`);
