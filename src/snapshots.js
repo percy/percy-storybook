@@ -12,7 +12,8 @@ import {
   getWidthsForDomCapture,
   isResponsiveSnapshotCaptureEnabled,
   captureSerializedDOM,
-  captureResponsiveDOM
+  captureResponsiveDOM,
+  isExecutionContextError
 } from './utils.js';
 
 // Main capture function
@@ -196,14 +197,17 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config }) {
 }
 
 // Starts the percy instance and collects Storybook snapshots, calling the callback when done
-export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags }) {
+export async function* takeStorybookSnapshots(percy, callback, {
+  baseUrl,
+  flags
+}) {
   try {
     let aboutUrl = new URL('?path=/settings/about', baseUrl).href;
     let previewUrl = new URL('iframe.html', baseUrl).href;
     let log = logger('storybook');
-    let lastCount;
 
     log.debug(`Requesting Storybook: ${baseUrl}`);
+
     // start a timeout to show a log if storybook takes a few seconds to respond
     let logTimeout = setTimeout(log.warn, 3000, 'Waiting on a response from Storybook...');
     let previewResource = yield fetchStorybookPreviewResource(percy, previewUrl);
@@ -216,8 +220,12 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
 
     // gather storybook data in parallel
     let [environmentInfo, stories] = yield* yieldAll([
-      withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo), undefined, { from: 'about url' }),
-      withPage(percy, previewUrl, p => p.eval(evalStorybookStorySnapshots), undefined, { from: 'preview url' })
+      withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo), undefined, {
+        from: 'about url'
+      }),
+      withPage(percy, previewUrl, p => p.eval(evalStorybookStorySnapshots), undefined, {
+        from: 'preview url'
+      })
     ]);
 
     // map stories to snapshot options
@@ -230,60 +238,232 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     // set storybook environment info
     percy.client.addEnvironmentInfo(environmentInfo);
 
-    // We use an outer and inner loop on same snapshots.length
-    // - we create a new page and load one story on it at a time for snapshotting
-    // - if it throws exception then we want to catch it outside of `withPage` call as
-    //   when `withPage` returns it closes the page
-    // - we want to make sure we close the page that had exception in story to make sure
-    //   we dont reuse a page which is possibly in a weird state due to last exception
-    // - so post exception we come out of inner loop and skip the story, create new page
-    //   using outer loop and continue next stories again on a new page
-    while (snapshots.length) {
+    // Track processed stories to avoid duplicates
+    const processedStories = new Set();
+
+    // Track stories that have already encountered execution context errors
+    const contextErrorStories = new Set();
+
+    // Helper function to process a single story in isolation
+    async function* processIsolatedStory(story) {
+      const { id, name } = story;
+
+      log.warn(`Processing story in isolation: ${name}`);
+
       try {
-        // use a single page to capture story snapshots without reloading
-        // loading an existing story instead of just iframe.html as that triggers `storyMissing` event
-        // This in turn leads to promise rejection and failure
-        yield* withPage(percy, `${previewUrl}?id=${snapshots[0].id}&viewMode=story`, async function*(page) {
-          // determines when to retry page crashes
-          lastCount = snapshots.length;
+        // Process just this one problematic story in a fresh page
+        yield* withPage(percy, `${previewUrl}?id=${id}&viewMode=story`, async function*(page) {
+          const {
+            id,
+            args,
+            globals,
+            queryParams,
+            ...options
+          } = story;
 
-          while (snapshots.length) {
-            // separate story and snapshot options
-            let { id, args, globals, queryParams, ...options } = snapshots[0];
+          const enableJavaScript = options.enableJavaScript ?? percy.config.snapshot.enableJavaScript;
 
-            const enableJavaScript = options.enableJavaScript ?? percy.config.snapshot.enableJavaScript;
-            if (flags.dryRun || enableJavaScript) {
-              log.debug(`Loading story via previewResource: ${options.name}`);
-              // when dry-running or when javascript is enabled, use the preview dom
-              options.domSnapshot = previewResource.content;
-            } else {
-              log.debug(`Loading story: ${options.name}`);
-              // when not dry-running and javascript is not enabled, capture the story dom
-              yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
-              options.domSnapshot = await captureDOM(page, options, percy, log);
+          if (flags.dryRun || enableJavaScript) {
+            log.debug(`Loading story via previewResource in isolated page: ${options.name}`);
+            options.domSnapshot = previewResource.content;
+          } else {
+            log.debug(`Loading story in isolated page: ${options.name}`);
+
+            // Set the current story
+            yield page.eval(evalSetCurrentStory, {
+              id,
+              args,
+              globals,
+              queryParams
+            });
+
+            // Take the snapshot
+            let {
+              dom,
+              domSnapshot = dom
+            } = yield page.snapshot(options);
+            options.domSnapshot = domSnapshot;
+          }
+
+          // validate without logging to prune all other options
+          PercyConfig.validate(options, '/snapshot/dom');
+
+          // Take the Percy snapshot
+          percy.snapshot(options);
+
+          // Mark as successfully processed
+          processedStories.add(id);
+
+          // Return true to indicate successful processing
+          return true;
+        }, undefined, {
+          // Pass the exact name for this isolated story
+          snapshotName: name
+        });
+
+        return true; // Successfully processed
+      } catch (isolatedError) {
+        if (process.env.PERCY_SKIP_STORY_ON_ERROR === 'true') {
+          // Skip problematic story after isolation attempt failed
+          log.error(`Failed to capture isolated story: ${name}`);
+          log.error(isolatedError);
+          return true; // Continue with next story
+        } else {
+          throw isolatedError; // Let the caller handle it
+        }
+      }
+    }
+
+    // Improved approach: Use a single page for multiple stories, create new page only when necessary
+    while (snapshots.length > 0) {
+      // Save the current story to avoid race conditions
+      const currentStory = snapshots[0];
+
+      // If this story previously had context errors, process it in isolation immediately
+      if (contextErrorStories.has(currentStory.id)) {
+        const success = yield* processIsolatedStory(currentStory);
+        if (success) {
+          // Remove from queue only after successful processing
+          snapshots.shift();
+        }
+        continue;
+      }
+
+      try {
+        // Process multiple stories in a single page
+        yield* withPage(percy, `${previewUrl}?id=${currentStory.id}&viewMode=story`, async function*(page) {
+          // Process stories in a batch until we encounter an error
+          let currentIndex = 0;
+
+          while (currentIndex < snapshots.length) {
+            const storyToProcess = snapshots[currentIndex];
+            const { id, name } = storyToProcess;
+
+            // Skip if already processed
+            if (processedStories.has(id)) {
+              log.debug(`Story already processed, skipping: ${name}`);
+              snapshots.splice(currentIndex, 1);
+              continue;
             }
 
-            // validate without logging to prune all other options
-            PercyConfig.validate(options, '/snapshot/dom');
-            // snapshots are queued and do not need to be awaited on
-            percy.snapshot(options);
-            // discard this story snapshot when done
-            snapshots.shift();
+            try {
+              // Set a specific variable to track which story we're processing
+              // This helps ensure we know exactly which story had an error
+              const currentlyProcessingStory = storyToProcess;
+
+              // Process this story
+              const {
+                id,
+                args,
+                globals,
+                queryParams,
+                ...options
+              } = currentlyProcessingStory;
+
+              const enableJavaScript = options.enableJavaScript ?? percy.config.snapshot.enableJavaScript;
+
+              if (flags.dryRun || enableJavaScript) {
+                log.debug(`Loading story via previewResource: ${options.name}`);
+                options.domSnapshot = previewResource.content;
+              } else {
+                log.debug(`Loading story: ${options.name}`);
+
+                // Set the current story
+                yield page.eval(evalSetCurrentStory, {
+                  id,
+                  args,
+                  globals,
+                  queryParams
+                });
+
+                // Take the snapshot
+                let {
+                  dom,
+                  domSnapshot = dom
+                } = yield page.snapshot(options);
+                options.domSnapshot = domSnapshot;
+              }
+
+              // validate without logging to prune all other options
+              PercyConfig.validate(options, '/snapshot/dom');
+
+              // Take the Percy snapshot
+              percy.snapshot(options);
+
+              // Mark as successfully processed
+              processedStories.add(id);
+
+              // Remove from queue
+              snapshots.splice(currentIndex, 1);
+
+              // We successfully processed this story, continue with the next one in the same page
+            } catch (error) {
+              // Check if this is an execution context error
+              if (isExecutionContextError(error)) {
+                log.warn(`Execution context error for story ${name}. This story requires isolation.`);
+
+                // Mark this story as needing isolation in future attempts
+                contextErrorStories.add(id);
+
+                // Create a wrapper error with story details to identify it in the outer catch
+                const enhancedError = {
+                  originalError: error,
+                  storyId: id,
+                  storyName: name,
+                  isContextError: true
+                };
+
+                // Don't increment index - we'll process this story in a new page
+                throw enhancedError; // Break out of the withPage function
+              } else if (process.env.PERCY_SKIP_STORY_ON_ERROR === 'true') {
+                // For other errors, skip if configured
+                log.error(`Failed to capture story: ${name}`);
+                log.error(error);
+                snapshots.splice(currentIndex, 1);
+              } else {
+                // Otherwise throw the error
+                throw error;
+              }
+            }
           }
-        }, () => {
-          log.debug(`Page crashed while loading story: ${snapshots[0].name}`);
-          // return true to retry as long as the length decreases
-          return lastCount > snapshots.length;
-        }, { snapshotName: snapshots[0].name });
-      } catch (e) {
-        if (process.env.PERCY_SKIP_STORY_ON_ERROR === 'true') {
-          let { name } = snapshots[0];
-          log.error(`Failed to capture story: ${name}`);
-          log.error(e);
-          // ignore story
+        }, undefined, {
+          // Pass the exact name of the current story being processed
+          snapshotName: currentStory.name
+        });
+      } catch (error) {
+        // Check if this is our enhanced error object with story context
+        const hasErrorContext = error && typeof error === 'object' && error.isContextError;
+
+        if (hasErrorContext) {
+          // We have context about which story caused the error
+          const { storyId, storyName } = error;
+
+          log.warn(`Isolating story with execution context error: ${storyName}`);
+
+          // Find the story in the snapshots array - it may have moved if other stories were processed
+          const storyIndex = snapshots.findIndex(s => s.id === storyId);
+
+          if (storyIndex !== -1) {
+            // Process this specific story in isolation
+            const storyToIsolate = snapshots[storyIndex];
+            const success = yield* processIsolatedStory(storyToIsolate);
+
+            if (success) {
+              // Remove the story from the queue at its current position
+              snapshots.splice(storyIndex, 1);
+            }
+          } else {
+            // If somehow we can't find the story, just continue
+            log.warn(`Could not find story with ID ${storyId} in snapshots queue`);
+          }
+        } else if (process.env.PERCY_SKIP_STORY_ON_ERROR === 'true') {
+          // For other errors, skip the current story if configured
+          log.error(`Failed to process story batch starting with: ${snapshots[0]?.name}`);
+          log.error(error);
           snapshots.shift();
         } else {
-          throw e;
+          // Otherwise throw the error
+          throw error;
         }
       }
     }
