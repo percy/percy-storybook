@@ -197,6 +197,7 @@ export async function* withPage(percy, url, callback, retry, args) {
 
         // Handle page crashes separately
         if (error.message?.includes('crashed') && retry?.()) {
+          log.debug(`Page crashed while loading story: ${snapshotName}`);
           return yield* withPage(...arguments);
         }
 
