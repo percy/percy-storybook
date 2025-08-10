@@ -137,24 +137,19 @@ export function decodeStoryArgs(value) {
   }
 }
 
-// Helper function to detect execution context errors
-export function isExecutionContextError(error) {
-  return error?.message && (
-    error.message.includes('Execution context was destroyed') ||
-    error.message.includes('Protocol error (Runtime.callFunctionOn)') ||
-    error.message.includes('Target closed') ||
-    error.message.includes('Session closed')
-  );
-}
-
-// Simplified withPage function
+// Borrows a percy discovery browser page to navigate to a URL and evaluate a function, returning
+// the results and normalizing any thrown errors.
 export async function* withPage(percy, url, callback, retry, args) {
   let log = logger('storybook:utils');
   let attempt = 0;
   let retries = 3;
 
-  // Get snapshot name - simplified with no dynamic resolution
-  const snapshotName = args?.snapshotName;
+  // Check if this is a context destruction error that needs to be propagated
+  const isExecutionContextDestroyed = (error) => {
+    return error.message?.includes('Execution context was destroyed') ||
+           error.message?.includes('context was destroyed') ||
+           error.message?.includes('execution context');
+  };
 
   while (attempt < retries) {
     try {
@@ -185,19 +180,18 @@ export async function* withPage(percy, url, callback, retry, args) {
       ), ...args);
       try {
         yield page.goto(url);
-
-        // Call the callback with the page
         return yield* yieldTo(callback(page));
       } catch (error) {
-        // Check for execution context errors first
-        if (isExecutionContextError(error)) {
-          log.warn(`Execution context error for snapshot: ${snapshotName}:  ${error.message}. Retrying...`);
-          throw error; // Propagate to outer catch for handling
+        // For context destruction error, create a special error object with flag
+        if (isExecutionContextDestroyed(error)) {
+          log.debug(`Execution context was destroyed for: ${args?.snapshotName || url}`);
+          const contextError = new Error(error.message);
+          contextError.isExecutionContextDestroyed = true;
+          throw contextError;
         }
 
-        // Handle page crashes separately
+        // if the page crashed and retry returns truthy, try again
         if (error.message?.includes('crashed') && retry?.()) {
-          log.debug(`Page crashed while loading story: ${snapshotName}`);
           return yield* withPage(...arguments);
         }
 
@@ -216,7 +210,16 @@ export async function* withPage(percy, url, callback, retry, args) {
       attempt++;
       let enableRetry = process.env.PERCY_RETRY_STORY_ON_ERROR || 'true';
       const from = args?.from;
+
+      // If it's a context destruction error, propagate it with special flag
+      if (error.isExecutionContextDestroyed) {
+        log.warn(`Detected execution context destruction for: ${args?.snapshotName || url}`);
+        throw error;
+      }
+
       if (!(enableRetry === 'true') || attempt === retries) {
+        // Add snapshotName to the error message
+        const snapshotName = args?.snapshotName;
         if (from) {
           error.message = `${from}: \n${error.message}`;
         }
@@ -226,12 +229,15 @@ export async function* withPage(percy, url, callback, retry, args) {
         throw error;
       }
 
-      // Log retry message - now guaranteed to have the correct name
-      if (snapshotName) {
-        log.warn(`Retrying Story: ${snapshotName}, attempt: ${attempt}`);
+      // throw warning message with snapshot name if it is present.
+      if (args?.snapshotName) {
+        log.warn(`Retrying Story: ${args.snapshotName}, attempt: ${attempt}`);
       }
+      // throw warning message with from where it is called if from in present.
       if (from) {
-        log.warn(`Retrying because error occurred in: ${from}, attempt: ${attempt}`);
+        log.warn(
+          `Retrying because error occurred in: ${from}, attempt: ${attempt}`
+        );
       }
     }
   }
