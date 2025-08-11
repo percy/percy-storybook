@@ -143,6 +143,14 @@ export async function* withPage(percy, url, callback, retry, args) {
   let log = logger('storybook:utils');
   let attempt = 0;
   let retries = 3;
+
+  // Check if this is a context destruction error that needs to be propagated
+  const isExecutionContextDestroyed = (error) => {
+    return error.message?.includes('Execution context was destroyed') ||
+           error.message?.includes('context was destroyed') ||
+           error.message?.includes('execution context');
+  };
+
   while (attempt < retries) {
     try {
       // provide discovery options that may impact how the page loads
@@ -174,6 +182,14 @@ export async function* withPage(percy, url, callback, retry, args) {
         yield page.goto(url);
         return yield* yieldTo(callback(page));
       } catch (error) {
+        // For context destruction error, create a special error object with flag
+        if (isExecutionContextDestroyed(error)) {
+          log.debug(`Execution context was destroyed for: ${args?.snapshotName || url}`);
+          const contextError = new Error(error.message);
+          contextError.isExecutionContextDestroyed = true;
+          throw contextError;
+        }
+
         // if the page crashed and retry returns truthy, try again
         if (error.message?.includes('crashed') && retry?.()) {
           return yield* withPage(...arguments);
@@ -194,6 +210,7 @@ export async function* withPage(percy, url, callback, retry, args) {
       attempt++;
       let enableRetry = process.env.PERCY_RETRY_STORY_ON_ERROR || 'true';
       const from = args?.from;
+
       if (!(enableRetry === 'true') || attempt === retries) {
         // Add snapshotName to the error message
         const snapshotName = args?.snapshotName;
@@ -215,6 +232,12 @@ export async function* withPage(percy, url, callback, retry, args) {
         log.warn(
           `Retrying because error occurred in: ${from}, attempt: ${attempt}`
         );
+      }
+
+      // If it's a context destruction error, propagate it with special flag
+      if (error.isExecutionContextDestroyed) {
+        log.warn(`Detected execution context destruction for: ${args?.snapshotName || url}`);
+        throw error;
       }
     }
   }
