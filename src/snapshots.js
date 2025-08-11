@@ -274,23 +274,11 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
               // Handle execution context destruction errors specially
               if (storyError.isExecutionContextDestroyed) {
                 log.warn(`Execution context was destroyed while processing story: ${snapshots[0].name}`);
-
-                // Need to create a new page - break out of the inner loop
-                // but don't remove the story from the queue so it can be retried
-                throw storyError;
               }
 
-              // For other errors, log and skip if configured to do so
-              if (process.env.PERCY_SKIP_STORY_ON_ERROR === 'true') {
-                let { name } = snapshots[0];
-                log.error(`Failed to capture story: ${name}`);
-                log.error(storyError);
-                // Skip this story and continue with the next one using the same page
-                snapshots.shift();
-              } else {
-                // Re-throw to be handled in the outer catch
-                throw storyError;
-              }
+              // Need to create a new page - break out of the inner loop
+              // but don't remove the story from the queue so it can be retried
+              throw storyError;
             }
           }
         }, undefined, { snapshotName: snapshots[0].name });

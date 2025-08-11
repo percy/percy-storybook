@@ -211,12 +211,6 @@ export async function* withPage(percy, url, callback, retry, args) {
       let enableRetry = process.env.PERCY_RETRY_STORY_ON_ERROR || 'true';
       const from = args?.from;
 
-      // If it's a context destruction error, propagate it with special flag
-      if (error.isExecutionContextDestroyed) {
-        log.warn(`Detected execution context destruction for: ${args?.snapshotName || url}`);
-        throw error;
-      }
-
       if (!(enableRetry === 'true') || attempt === retries) {
         // Add snapshotName to the error message
         const snapshotName = args?.snapshotName;
@@ -238,6 +232,12 @@ export async function* withPage(percy, url, callback, retry, args) {
         log.warn(
           `Retrying because error occurred in: ${from}, attempt: ${attempt}`
         );
+      }
+
+      // If it's a context destruction error, propagate it with special flag
+      if (error.isExecutionContextDestroyed) {
+        log.warn(`Detected execution context destruction for: ${args?.snapshotName || url}`);
+        throw error;
       }
     }
   }
