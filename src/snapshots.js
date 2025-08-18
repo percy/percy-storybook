@@ -34,7 +34,11 @@ export async function captureDOM(page, options, percy, log) {
       eligibleWidths
     );
 
-    const responsiveOptions = { ...options, responsiveSnapshotCapture: true, widths };
+    const responsiveOptions = {
+      ...options,
+      responsiveSnapshotCapture: true,
+      widths
+    };
     log.debug('captureDOM: Using responsive snapshot capture', { responsiveOptions });
     return await captureResponsiveDOM(page, responsiveOptions, percy, log);
   } else {
@@ -252,9 +256,38 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     // set storybook environment info
     percy.client.addEnvironmentInfo(environmentInfo);
 
+    // Track previous story state to determine when fresh pages are needed
+    let previousStory = null;
+
     // Main snapshot processing loop
     while (snapshots.length) {
       let initialSnapshotsCount = snapshots.length;
+      let currentStory = snapshots[0];
+
+      // Check if we need a fresh page due to global state changes
+      let needsFreshPage = false;
+      if (previousStory) {
+        // Check if previous story was an additional snapshot (has globals)
+        const previousWasAdditional = previousStory.globals && Object.keys(previousStory.globals).length > 0;
+
+        // Check if current story has different globals than previous
+        const globalsChanged = JSON.stringify(previousStory.globals || {}) !== JSON.stringify(currentStory.globals || {});
+
+        // Check if current story has globals (is an additional snapshot)
+        const currentHasGlobals = currentStory.globals && Object.keys(currentStory.globals).length > 0;
+
+        // Need fresh page if:
+        // 1. Previous story was additional snapshot with globals, OR
+        // 2. Globals changed between stories, OR
+        // 3. Current story has globals but previous didn't
+        needsFreshPage = previousWasAdditional || globalsChanged || (currentHasGlobals && !previousStory.globals);
+
+        if (needsFreshPage) {
+          log.debug(
+            `Fresh page needed for story "${currentStory.name}" - previous story had globals: ${previousWasAdditional}, globals changed: ${globalsChanged}, current has globals: ${currentStory.globals}`
+          );
+        }
+      }
 
       try {
         // Use a single page for as many stories as possible until a context error occurs
@@ -262,14 +295,35 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
           // Process snapshots one by one with the current page
           while (snapshots.length) {
             try {
+              let currentStory = snapshots[0];
+
+              // If we need a fresh page for global state reset, break out to create a new page
+              if (needsFreshPage && snapshots.length < initialSnapshotsCount) {
+                log.debug(`Breaking to create fresh page for story: ${currentStory.name}`);
+                break; // Break out of the inner loop to create a new page
+              }
+
               // Process the story and capture its DOM
-              const options = yield* processStory(page, snapshots[0], previewResource, percy, flags, log);
+              const options = yield* processStory(page, currentStory, previewResource, percy, flags, log);
 
               // Take the snapshot
               percy.snapshot(options);
 
+              // Update previous story tracking
+              previousStory = currentStory;
+
               // Remove processed story from queue
               snapshots.shift();
+
+              // Check if next story needs fresh page
+              if (snapshots.length > 0) {
+                let nextStory = snapshots[0];
+                const currentHasGlobals = currentStory.globals && Object.keys(currentStory.globals).length > 0;
+                const globalsWillChange = JSON.stringify(currentStory.globals || {}) !== JSON.stringify(nextStory.globals || {});
+                const nextHasGlobals = nextStory.globals && Object.keys(nextStory.globals).length > 0;
+
+                needsFreshPage = currentHasGlobals || globalsWillChange || (nextHasGlobals && !currentStory.globals);
+              }
             } catch (storyError) {
               // Handle execution context destruction errors specially
               if (storyError.isExecutionContextDestroyed) {
