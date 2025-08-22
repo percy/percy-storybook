@@ -154,7 +154,6 @@ Global options:
 Examples:
   $ percy storybook:start
   $ percy storybook:start --port 9000
-  $ percy storybook:start --static-dir public
 ```
 <!-- commandsstop -->
 
