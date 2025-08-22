@@ -54,7 +54,7 @@
     ]
   },
   "dependencies": {
-    "@percy/cli-command": "^1.30.7",
+    "@percy/cli-command": "^1.31.2-beta.1",
     "cross-spawn": "^7.0.3",
     "qs": "^6.11.0"
   },
