@@ -20,8 +20,7 @@ export const start = command('start', {
 
   examples: [
     '$0',
-    '$0 --port 9000',
-    '$0 --static-dir public'
+    '$0 --port 9000'
   ],
 
   percy: {

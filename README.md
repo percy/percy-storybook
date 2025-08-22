@@ -67,7 +67,7 @@ $ percy storybook https://storybook.foobar.com
 Automatically run `start-storybook`:
 
 ``` sh
-$ percy storybook:start --port=9009 --static-dir=./public
+$ percy storybook:start --port=9009
 ```
 
 ## Commands:
@@ -154,7 +154,6 @@ Global options:
 Examples:
   $ percy storybook:start
   $ percy storybook:start --port 9000
-  $ percy storybook:start --static-dir public
 ```
 <!-- commandsstop -->
 
