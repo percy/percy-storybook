@@ -34,7 +34,11 @@ export async function captureDOM(page, options, percy, log) {
       eligibleWidths
     );
 
-    const responsiveOptions = { ...options, responsiveSnapshotCapture: true, widths };
+    const responsiveOptions = {
+      ...options,
+      responsiveSnapshotCapture: true,
+      widths
+    };
     log.debug('captureDOM: Using responsive snapshot capture', { responsiveOptions });
     return await captureResponsiveDOM(page, responsiveOptions, percy, log);
   } else {
@@ -195,6 +199,19 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config }) {
   });
 }
 
+// Helper function to check if a story has state that could contaminate the page
+function hasContaminatingState(story) {
+  return (story.globals && Object.keys(story.globals).length > 0) ||
+         (story.queryParams && Object.keys(story.queryParams).length > 0);
+}
+
+// Helper function to determine if a fresh page is needed
+function needsFreshPage(previousStory) {
+  // Only need fresh page if previous story had contaminating state
+  // The current story will be loaded correctly regardless of globals/queryParams
+  return previousStory && hasContaminatingState(previousStory);
+}
+
 // Process a single story and capture its DOM
 async function* processStory(page, story, previewResource, percy, flags, log) {
   // Extract story details
@@ -252,9 +269,20 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     // set storybook environment info
     percy.client.addEnvironmentInfo(environmentInfo);
 
+    // Track previous story state to determine when fresh pages are needed
+    let previousStory = null;
+
     // Main snapshot processing loop
     while (snapshots.length) {
       let initialSnapshotsCount = snapshots.length;
+      let currentStory = snapshots[0];
+
+      // Check if we need a fresh page (only when previous story had contaminating state)
+      let needsNewPage = needsFreshPage(previousStory);
+
+      if (needsNewPage) {
+        log.debug(`Fresh page needed for story "${currentStory.name}" - previous story had contaminating state`);
+      }
 
       try {
         // Use a single page for as many stories as possible until a context error occurs
@@ -262,14 +290,30 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
           // Process snapshots one by one with the current page
           while (snapshots.length) {
             try {
+              let currentStory = snapshots[0];
+
+              // If we need a fresh page for state reset, break out to create a new page
+              if (needsNewPage && snapshots.length < initialSnapshotsCount) {
+                log.debug(`Breaking to create fresh page for story: ${currentStory.name}`);
+                break; // Break out of the inner loop to create a new page
+              }
+
               // Process the story and capture its DOM
-              const options = yield* processStory(page, snapshots[0], previewResource, percy, flags, log);
+              const options = yield* processStory(page, currentStory, previewResource, percy, flags, log);
 
               // Take the snapshot
               percy.snapshot(options);
 
+              // Update previous story tracking
+              previousStory = currentStory;
+
               // Remove processed story from queue
               snapshots.shift();
+
+              // Check if next story needs fresh page (only if current story has contaminating state)
+              if (snapshots.length > 0) {
+                needsNewPage = needsFreshPage(currentStory);
+              }
             } catch (storyError) {
               // Handle execution context destruction errors specially
               if (storyError.isExecutionContextDestroyed) {
