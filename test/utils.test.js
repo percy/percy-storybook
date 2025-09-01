@@ -1,11 +1,26 @@
 import * as utils from '../src/utils.js';
 
+const MOCK_MOBILE_DEVICES = [
+  { width: 375, height: 812 },
+  { width: 414, height: 896 }
+];
+
+// Helper function to create percy mock with consistent device data
+const createPercyMock = (config = {}) => ({
+  client: {
+    getDeviceDetails: jasmine.createSpy('getDeviceDetails').and.returnValue(Promise.resolve(MOCK_MOBILE_DEVICES))
+  },
+  config: {
+    snapshot: { minHeight: 600, ...config }
+  }
+});
+
 describe('getWidthsForDomCapture', () => {
   describe('responsive mode (with defaultHeight)', () => {
     it('merges mobile and user widths, desktop widths override mobile', () => {
       const user = [320, 375, 768];
       const eligible = {
-        mobile: [{ width: 375, height: 812 }, { width: 414, height: 896 }],
+        mobile: MOCK_MOBILE_DEVICES,
         config: [1024, 1280]
       };
       const defaultHeight = 1024;
@@ -20,7 +35,7 @@ describe('getWidthsForDomCapture', () => {
     it('desktop widths override mobile heights when same width', () => {
       const user = [375];
       const eligible = {
-        mobile: [{ width: 375, height: 812 }],
+        mobile: [MOCK_MOBILE_DEVICES[0]], // Use first device only
         config: []
       };
       const defaultHeight = 1024;
@@ -169,15 +184,7 @@ describe('captureResponsiveDOM', () => {
       )
     };
 
-    percy = {
-      client: {
-        getDeviceDetails: jasmine.createSpy('getDeviceDetails').and.returnValue(Promise.resolve([
-          { width: 375, height: 812 },
-          { width: 414, height: 896 }
-        ]))
-      },
-      config: { snapshot: { minHeight: 600 } }
-    };
+    percy = createPercyMock();
 
     log = {
       debug: jasmine.createSpy('debug'),
@@ -255,15 +262,7 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
       }))
     };
 
-    percy = {
-      client: {
-        getDeviceDetails: jasmine.createSpy('getDeviceDetails').and.returnValue(Promise.resolve([
-          { width: 375, height: 812 },
-          { width: 414, height: 896 }
-        ]))
-      },
-      config: { snapshot: { minHeight: 600 } }
-    };
+    percy = createPercyMock();
 
     log = {
       debug: jasmine.createSpy('debug'),
@@ -474,20 +473,10 @@ describe('captureResponsiveDOM environment variables', () => {
       }))
     };
 
-    percy = {
-      client: {
-        getDeviceDetails: jasmine.createSpy('getDeviceDetails').and.returnValue(Promise.resolve([
-          { width: 375, height: 812 },
-          { width: 414, height: 896 }
-        ]))
-      },
-      config: {
-        snapshot: {
-          minHeight: 1024,
-          widths: [768, 1024]
-        }
-      }
-    };
+    percy = createPercyMock({
+      minHeight: 1024,
+      widths: [768, 1024]
+    });
 
     log = {
       debug: jasmine.createSpy('debug'),
