@@ -463,7 +463,7 @@ function buildWidthHeightCombinations(userPassedWidths, eligibleWidths, defaultH
 
   // Add mobile devices with their heights
   eligibleWidths.mobile?.forEach(device => {
-    if (device.width) {
+    if (device.width != null) {
       widthHeightMap.set(device.width, device.height || defaultHeight);
     }
   });
@@ -471,7 +471,7 @@ function buildWidthHeightCombinations(userPassedWidths, eligibleWidths, defaultH
   // Add desktop widths with default height (overwrites mobile if same width)
   const desktopWidths = userPassedWidths?.length ? userPassedWidths : eligibleWidths.config;
   desktopWidths?.forEach(width => {
-    if (width) {
+    if (width != null) {
       widthHeightMap.set(width, defaultHeight);
     }
   });
@@ -479,7 +479,7 @@ function buildWidthHeightCombinations(userPassedWidths, eligibleWidths, defaultH
   // Convert to array of objects
   return Array.from(widthHeightMap.entries())
     .map(([width, height]) => ({ width, height }))
-    .filter(item => item.width);
+    .filter(item => item.width != null);
 }
 
 /**
@@ -499,8 +499,8 @@ function buildNonResponsiveWidthsArray(userPassedWidths, eligibleWidths) {
     allWidths.push(...desktopWidths);
   }
 
-  // Remove duplicates and filter out falsy values
-  return [...new Set(allWidths)].filter(Boolean);
+  // Remove duplicates and filter out null/undefined values (but keep 0)
+  return [...new Set(allWidths)].filter(width => width != null);
 }
 
 // Check if responsive snapshot capture is enabled with proper hierarchy

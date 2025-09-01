@@ -50,13 +50,14 @@ describe('getWidthsForDomCapture', () => {
       ]);
     });
 
-    it('filters out duplicates and falsy values', () => {
+    it('filters out null/undefined but keeps zero values', () => {
       const eligible = {
-        mobile: [{ width: 375, height: 812 }, { width: 0 }, { width: 1280, height: 800 }],
+        mobile: [{ width: 375, height: 812 }, { width: 0, height: 400 }, { width: 1280, height: 800 }],
         config: [1280, null]
       };
       expect(utils.getWidthsForDomCapture([375, 1280, 0], eligible, 1024)).toEqual([
         { width: 375, height: 1024 },
+        { width: 0, height: 1024 },
         { width: 1280, height: 1024 }
       ]);
     });
@@ -79,9 +80,9 @@ describe('getWidthsForDomCapture', () => {
       expect(utils.getWidthsForDomCapture(undefined, eligible)).toEqual([400, 500]);
     });
 
-    it('filters out duplicates and falsy values', () => {
+    it('filters out null/undefined but keeps zero values', () => {
       const eligible = { mobile: [375, 0, 1280], config: [1280, null] };
-      expect(utils.getWidthsForDomCapture([375, 1280, 0], eligible)).toEqual([375, 1280]);
+      expect(utils.getWidthsForDomCapture([375, 1280, 0], eligible)).toEqual([375, 0, 1280]);
     });
 
     it('handles empty inputs gracefully', () => {
