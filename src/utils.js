@@ -585,6 +585,7 @@ export async function captureResponsiveDOM(page, options, percy, log) {
   }));
 
   let lastWindowWidth = currentWidth;
+  let lastWindowHeight = currentHeight;
   let resizeCount = 0;
 
   // Setup the resizeCount listener
@@ -619,7 +620,9 @@ export async function captureResponsiveDOM(page, options, percy, log) {
 
   for (const { width, height: targetHeight } of widthHeightCombinations) {
     log.debug(`Capturing snapshot at width: ${width}, height: ${targetHeight}`);
-    if (lastWindowWidth !== width) {
+
+    // Resize if either width or height has changed
+    if (lastWindowWidth !== width || lastWindowHeight !== targetHeight) {
       resizeCount++;
       log.debug(`Resizing viewport to width=${width}, height=${targetHeight}, resizeCount=${resizeCount}`);
       await page.eval(({ resizeCount }) => {
@@ -627,6 +630,7 @@ export async function captureResponsiveDOM(page, options, percy, log) {
       }, { resizeCount });
       await changeViewportDimensionAndWait(page, width, targetHeight, resizeCount, log);
       lastWindowWidth = width;
+      lastWindowHeight = targetHeight;
     }
 
     // PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE: If set, reloads the page before each snapshot width.
