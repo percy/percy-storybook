@@ -1,25 +1,91 @@
 import * as utils from '../src/utils.js';
 
 describe('getWidthsForDomCapture', () => {
-  it('merges mobile and user widths, then adds config defaults', () => {
+  it('merges mobile and user widths, returns width-height objects', () => {
     const user = [320, 375, 768];
-    const eligible = { mobile: [375, 414], config: [1024, 1280] };
-    expect(utils.getWidthsForDomCapture(user, eligible)).toEqual([375, 414, 320, 768]);
+    const eligible = { 
+      mobile: [{ width: 375, height: 812 }, { width: 414, height: 896 }], 
+      config: [1024, 1280] 
+    };
+    const defaultHeight = 1024;
+    expect(utils.getWidthsForDomCapture(user, eligible, defaultHeight)).toEqual([
+      { width: 375, height: 812 },
+      { width: 414, height: 896 },
+      { width: 320, height: 1024 },
+      { width: 768, height: 1024 }
+    ]);
   });
 
   it('falls back to config widths when user provided none', () => {
     const eligible = { mobile: [], config: [800, 1200] };
-    expect(utils.getWidthsForDomCapture(undefined, eligible)).toEqual([800, 1200]);
+    const defaultHeight = 1024;
+    expect(utils.getWidthsForDomCapture(undefined, eligible, defaultHeight)).toEqual([
+      { width: 800, height: 1024 },
+      { width: 1200, height: 1024 }
+    ]);
   });
 
   it('falls back to mobile widths when config provided none', () => {
-    const eligible = { mobile: [400, 500], config: [] };
-    expect(utils.getWidthsForDomCapture(undefined, eligible)).toEqual([400, 500]);
+    const eligible = { 
+      mobile: [{ width: 400, height: 800 }, { width: 500, height: 900 }], 
+      config: [] 
+    };
+    const defaultHeight = 1024;
+    expect(utils.getWidthsForDomCapture(undefined, eligible, defaultHeight)).toEqual([
+      { width: 400, height: 800 },
+      { width: 500, height: 900 }
+    ]);
   });
 
   it('filters out duplicates and falsy values', () => {
-    const eligible = { mobile: [375, 0, 1280], config: [1280, null] };
-    expect(utils.getWidthsForDomCapture([375, 1280, 0], eligible)).toEqual([375, 1280]);
+    const eligible = { 
+      mobile: [{ width: 375, height: 812 }, { width: 0 }, { width: 1280, height: 800 }], 
+      config: [1280, null] 
+    };
+    expect(utils.getWidthsForDomCapture([375, 1280, 0], eligible, 1024)).toEqual([
+      { width: 375, height: 812 },
+      { width: 1280, height: 800 }
+    ]);
+  });
+
+  it('gives minHeight preference over mobile height when both desktop and mobile have same width', () => {
+    const user = [375];
+    const eligible = { 
+      mobile: [{ width: 375, height: 812 }], 
+      config: [] 
+    };
+    const customMinHeight = 1200; // Different from default 1024
+    expect(utils.getWidthsForDomCapture(user, eligible, customMinHeight)).toEqual([
+      { width: 375, height: 812 }, // Mobile device first
+      { width: 375, height: 1200 }  // User width with minHeight preference
+    ]);
+  });
+
+  it('uses mobile height when width matches mobile device and no custom minHeight', () => {
+    const user = [375];
+    const eligible = { 
+      mobile: [{ width: 375, height: 812 }], 
+      config: [] 
+    };
+    const defaultHeight = 1024;
+    expect(utils.getWidthsForDomCapture(user, eligible, defaultHeight)).toEqual([
+      { width: 375, height: 812 }, // Mobile device first
+      { width: 375, height: 812 }  // User width matches mobile, use mobile height
+    ]);
+  });
+
+  it('uses default height for widths not in mobile API', () => {
+    const user = [768, 1024];
+    const eligible = { 
+      mobile: [{ width: 375, height: 812 }], 
+      config: [] 
+    };
+    const defaultHeight = 1024;
+    expect(utils.getWidthsForDomCapture(user, eligible, defaultHeight)).toEqual([
+      { width: 375, height: 812 },
+      { width: 768, height: 1024 },
+      { width: 1024, height: 1024 }
+    ]);
   });
 });
 
@@ -117,11 +183,13 @@ describe('captureResponsiveDOM', () => {
   });
 
   it('produces snapshots at each width in the list', async () => {
-    const options = { widths: [800, 1024] };
+    const options = { widths: [{ width: 800, height: 1024 }, { width: 1024, height: 768 }] };
     const result = await utils.captureResponsiveDOM(page, options, percy, log);
 
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(2);
+    expect(result[0]).toEqual(jasmine.objectContaining({ width: 800, height: 1024 }));
+    expect(result[1]).toEqual(jasmine.objectContaining({ width: 1024, height: 768 }));
   });
 });
 
@@ -190,34 +258,34 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
   });
 
   it('successfully resizes viewport using CDP method during responsive capture', async () => {
-    const options = { widths: [768, 1024] };
+    const options = { widths: [{ width: 768, height: 1366 }, { width: 1024, height: 768 }] };
 
     await utils.captureResponsiveDOM(page, options, percy, log);
 
-    // Should call resize for each width
+    // Should call resize for each width-height pair
     expect(page.resize).toHaveBeenCalledWith({
       width: 768,
-      height: 667,
+      height: 1366,
       deviceScaleFactor: 1,
       mobile: false
     });
 
     expect(page.resize).toHaveBeenCalledWith({
       width: 1024,
-      height: 667,
+      height: 768,
       deviceScaleFactor: 1,
       mobile: false
     });
 
-    expect(log.debug).toHaveBeenCalledWith('Resizing viewport to width=768, height=667, resizeCount=1');
-    expect(log.debug).toHaveBeenCalledWith('Resizing viewport to width=1024, height=667, resizeCount=2');
+    expect(log.debug).toHaveBeenCalledWith('Resizing viewport to width=768, height=1366, resizeCount=1');
+    expect(log.debug).toHaveBeenCalledWith('Resizing viewport to width=1024, height=768, resizeCount=2');
   });
 
   it('handles CDP resize failure and logs fallback attempt', async () => {
     const cdpError = new Error('CDP resize failed');
     page.resize.and.returnValue(Promise.reject(cdpError));
 
-    const options = { widths: [800] };
+    const options = { widths: [{ width: 800, height: 1024 }] };
 
     await utils.captureResponsiveDOM(page, options, percy, log);
 
@@ -253,7 +321,7 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
       return undefined;
     });
 
-    const options = { widths: [600] };
+    const options = { widths: [{ width: 600, height: 800 }] };
 
     await expectAsync(
       utils.captureResponsiveDOM(page, options, percy, log)
@@ -266,7 +334,7 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
   });
 
   it('resets viewport to original size after responsive capture', async () => {
-    const options = { widths: [768, 1024] };
+    const options = { widths: [{ width: 768, height: 1366 }, { width: 1024, height: 768 }] };
 
     await utils.captureResponsiveDOM(page, options, percy, log);
 
@@ -297,7 +365,7 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
       return undefined;
     });
 
-    const options = { widths: [320] };
+    const options = { widths: [{ width: 320, height: 568 }] };
 
     await utils.captureResponsiveDOM(page, options, percy, log);
 
@@ -320,7 +388,7 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
       return undefined;
     });
 
-    const options = { widths: [480] };
+    const options = { widths: [{ width: 480, height: 800 }] };
 
     await utils.captureResponsiveDOM(page, options, percy, log);
 
@@ -335,7 +403,7 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
   it('respects sleep time environment variable', async () => {
     process.env.RESPONSIVE_CAPTURE_SLEEP_TIME = '2';
 
-    const options = { widths: [600] };
+    const options = { widths: [{ width: 600, height: 800 }] };
 
     await utils.captureResponsiveDOM(page, options, percy, log);
 

@@ -443,21 +443,64 @@ export function evalSetCurrentStory({ waitFor }, story) {
 
 // Utility functions for responsive snapshot capture
 
-// Process widths for responsive DOM capture with proper hierarchy
-export function getWidthsForDomCapture(userPassedWidths, eligibleWidths) {
-  let allWidths = [];
-
-  if (eligibleWidths?.mobile?.length > 0) {
-    allWidths = allWidths.concat(eligibleWidths?.mobile);
-  }
-  if (userPassedWidths && userPassedWidths.length) {
-    allWidths = allWidths.concat(userPassedWidths);
-  } else {
-    allWidths = allWidths.concat(eligibleWidths.config);
+// Process widths for DOM capture with proper hierarchy
+// Returns: array of numbers (non-responsive mode) | array of {width, height} objects (responsive mode)
+export function getWidthsForDomCapture(userPassedWidths, eligibleWidths, defaultHeight) {
+  // Responsive mode: return width-height objects
+  if (defaultHeight !== undefined) {
+    return buildWidthHeightCombinations(userPassedWidths, eligibleWidths, defaultHeight);
   }
 
-  // Remove duplicates
-  return [...new Set(allWidths)].filter(e => e);
+  // Non-responsive mode: return simple array of numbers
+  return buildNonResponsiveWidthsArray(userPassedWidths, eligibleWidths);
+}
+
+/**
+ * Build width-height combinations for responsive capture
+ */
+function buildWidthHeightCombinations(userPassedWidths, eligibleWidths, defaultHeight) {
+  const widthHeightMap = new Map();
+  
+  // Add mobile devices with their heights
+  eligibleWidths.mobile?.forEach(device => {
+    if (device.width) {
+      widthHeightMap.set(device.width, device.height || defaultHeight);
+    }
+  });
+
+  // Add desktop widths with default height (overwrites mobile if same width)
+  const desktopWidths = userPassedWidths?.length ? userPassedWidths : eligibleWidths.config;
+  desktopWidths?.forEach(width => {
+    if (width) {
+      widthHeightMap.set(width, defaultHeight);
+    }
+  });
+
+  // Convert to array of objects
+  return Array.from(widthHeightMap.entries())
+    .map(([width, height]) => ({ width, height }))
+    .filter(item => item.width);
+}
+
+/**
+ * Build non-responsive widths array (numbers only)
+ */
+function buildNonResponsiveWidthsArray(userPassedWidths, eligibleWidths) {
+  const allWidths = [];
+
+  // Add mobile widths
+  if (eligibleWidths.mobile?.length) {
+    allWidths.push(...eligibleWidths.mobile);
+  }
+
+  // Add user or config widths
+  const desktopWidths = userPassedWidths?.length ? userPassedWidths : eligibleWidths.config;
+  if (desktopWidths?.length) {
+    allWidths.push(...desktopWidths);
+  }
+
+  // Remove duplicates and filter out falsy values
+  return [...new Set(allWidths)].filter(Boolean);
 }
 
 // Check if responsive snapshot capture is enabled with proper hierarchy
@@ -534,16 +577,12 @@ export async function captureSerializedDOM(page, options, log) {
 // Capture responsive DOM snapshots across different widths
 export async function captureResponsiveDOM(page, options, percy, log) {
   const domSnapshots = [];
-  let currentWidth, currentHeight;
-
+  
   // Get current viewport size
-  const viewportSize = await page.eval(() => ({
+  const { width: currentWidth, height: currentHeight } = await page.eval(() => ({
     width: window.innerWidth,
     height: window.innerHeight
   }));
-
-  currentWidth = viewportSize.width;
-  currentHeight = viewportSize.height;
 
   let lastWindowWidth = currentWidth;
   let resizeCount = 0;
@@ -556,28 +595,41 @@ export async function captureResponsiveDOM(page, options, percy, log) {
     window.resizeCount = window.resizeCount || 0;
   });
 
-  // PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT: (number) If set, overrides the minimum height for the viewport during capture.
-  let height = currentHeight;
+  // Fetch device details and build eligible widths
+  const deviceDetails = await percy.client.getDeviceDetails(percy.build?.id);
+  const eligibleWidths = {
+    mobile: Array.isArray(deviceDetails) ? deviceDetails.filter(d => d.width) : [],
+    config: percy.config.snapshot?.widths || []
+  };
+
+  // PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT: If set, overrides the minimum height for the viewport during capture.
+  let defaultHeight = currentHeight;
   if (process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT) {
-    height = await page.eval((configMinHeight) => {
-      return window.outerHeight - window.innerHeight + configMinHeight;
-    }, percy?.config?.snapshot?.minHeight || 600);
-    log.debug(`Using custom minHeight for responsive capture: ${height}`);
+    const viewportOuterHeight = await page.eval(() => window.outerHeight);
+    const configMinHeight = percy?.config?.snapshot?.minHeight || 600;
+    defaultHeight = viewportOuterHeight - currentHeight + configMinHeight;
+    log.debug(`Using custom minHeight for responsive capture: ${defaultHeight}`);
   }
 
-  for (let width of options?.widths) {
-    log.debug(`Capturing snapshot at width: ${width}`);
+  const widthHeightCombinations = getWidthsForDomCapture(
+    options.widths,
+    eligibleWidths,
+    defaultHeight
+  );
+
+  for (const { width, height: targetHeight } of widthHeightCombinations) {
+    log.debug(`Capturing snapshot at width: ${width}, height: ${targetHeight}`);
     if (lastWindowWidth !== width) {
       resizeCount++;
-      log.debug(`Resizing viewport to width=${width}, height=${height}, resizeCount=${resizeCount}`);
+      log.debug(`Resizing viewport to width=${width}, height=${targetHeight}, resizeCount=${resizeCount}`);
       await page.eval(({ resizeCount }) => {
         window.resizeCount = resizeCount;
       }, { resizeCount });
-      await changeViewportDimensionAndWait(page, width, height, resizeCount, log);
+      await changeViewportDimensionAndWait(page, width, targetHeight, resizeCount, log);
       lastWindowWidth = width;
     }
 
-    // PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE: (any value) If set, reloads the page before each snapshot width.
+    // PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE: If set, reloads the page before each snapshot width.
     if (process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE) {
       const currentUrl = await page.eval(() => window.location.href);
       log.debug('Reloading page for responsive capture');
@@ -599,11 +651,15 @@ export async function captureResponsiveDOM(page, options, percy, log) {
     }
 
     // Capture DOM snapshot
-    log.debug(`Taking DOM snapshot at width=${width}`);
-    let domSnapshot = await captureSerializedDOM(page, options, log);
-    let snapshotWithWidth = { ...domSnapshot, width };
-    domSnapshots.push(snapshotWithWidth);
-    log.debug(`Snapshot captured for width=${width}`);
+    log.debug(`Taking DOM snapshot at width=${width}, height=${targetHeight}`);
+    const serializationOptions = {
+      ...options,
+      responsiveSnapshotCapture: true,
+      widths: widthHeightCombinations.map(item => item.width) // Convert to simple widths array
+    };
+    const domSnapshot = await captureSerializedDOM(page, serializationOptions, log);
+    domSnapshots.push({ ...domSnapshot, width });
+    log.debug(`Snapshot captured for width=${width}, height=${targetHeight}`);
   }
 
   // Reset viewport size back to original dimensions
