@@ -30,7 +30,7 @@ export async function captureDOM(page, options, percy, log) {
   log.debug('captureDOM: Using single snapshot capture');
   const eligibleWidths = { config: percy.config.snapshot?.widths || [] };
   const widths = getWidthsForDomCapture(options.widths, eligibleWidths);
-  
+
   return await captureSerializedDOM(page, { ...options, widths }, log);
 }
 

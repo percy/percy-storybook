@@ -460,7 +460,7 @@ export function getWidthsForDomCapture(userPassedWidths, eligibleWidths, default
  */
 function buildWidthHeightCombinations(userPassedWidths, eligibleWidths, defaultHeight) {
   const widthHeightMap = new Map();
-  
+
   // Add mobile devices with their heights
   eligibleWidths.mobile?.forEach(device => {
     if (device.width) {
@@ -577,7 +577,7 @@ export async function captureSerializedDOM(page, options, log) {
 // Capture responsive DOM snapshots across different widths
 export async function captureResponsiveDOM(page, options, percy, log) {
   const domSnapshots = [];
-  
+
   // Get current viewport size
   const { width: currentWidth, height: currentHeight } = await page.eval(() => ({
     width: window.innerWidth,
