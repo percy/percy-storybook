@@ -530,11 +530,11 @@ describe('captureResponsiveDOM environment variables', () => {
     const options = { widths: [768] };
     await utils.captureResponsiveDOM(page, options, percy, log);
 
-    // Should calculate: outerHeight(800) - currentHeight(667) + fallback(600) = 733
-    expect(log.debug).toHaveBeenCalledWith('Using custom minHeight for responsive capture: 733');
+    // Should calculate: outerHeight(800) - currentHeight(667) + fallback(1024) = 1157
+    expect(log.debug).toHaveBeenCalledWith('Using custom minHeight for responsive capture: 1157');
     expect(page.resize).toHaveBeenCalledWith({
       width: 768,
-      height: 733,
+      height: 1157,
       deviceScaleFactor: 1,
       mobile: false
     });

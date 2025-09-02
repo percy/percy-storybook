@@ -607,7 +607,7 @@ export async function captureResponsiveDOM(page, options, percy, log) {
   let defaultHeight = currentHeight;
   if (process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT) {
     const viewportOuterHeight = await page.eval(() => window.outerHeight);
-    const configMinHeight = percy?.config?.snapshot?.minHeight || 600;
+    const configMinHeight = percy?.config?.snapshot?.minHeight || 1024;
     defaultHeight = viewportOuterHeight - currentHeight + configMinHeight;
     log.debug(`Using custom minHeight for responsive capture: ${defaultHeight}`);
   }
