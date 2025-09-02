@@ -22,40 +22,16 @@ export async function captureDOM(page, options, percy, log) {
     percy.config
   );
 
-  let widths;
   if (responsiveSnapshotCapture) {
-    const deviceDetails = await percy.client.getDeviceDetails(percy.build?.id);
-    const eligibleWidths = {
-      mobile: Array.isArray(deviceDetails) ? deviceDetails.map(d => d.width).filter(Boolean) : [],
-      config: percy.config.snapshot?.widths || []
-    };
-    widths = getWidthsForDomCapture(
-      options.widths,
-      eligibleWidths
-    );
-
-    const responsiveOptions = {
-      ...options,
-      responsiveSnapshotCapture: true,
-      widths
-    };
-    log.debug('captureDOM: Using responsive snapshot capture', { responsiveOptions });
-    return await captureResponsiveDOM(page, responsiveOptions, percy, log);
-  } else {
-    const eligibleWidths = {
-      config: percy.config.snapshot?.widths || []
-    };
-    widths = getWidthsForDomCapture(
-      options.widths,
-      eligibleWidths
-    );
-
-    const singleDOMOptions = { ...options, widths };
-    log.debug('captureDOM: Using single snapshot capture', {
-      singleDOMOptions
-    });
-    return await captureSerializedDOM(page, singleDOMOptions, log);
+    log.debug('captureDOM: Using responsive snapshot capture', { options });
+    return await captureResponsiveDOM(page, options, percy, log);
   }
+
+  log.debug('captureDOM: Using single snapshot capture');
+  const eligibleWidths = { config: percy.config.snapshot?.widths || [] };
+  const widths = getWidthsForDomCapture(options.widths, eligibleWidths);
+
+  return await captureSerializedDOM(page, { ...options, widths }, log);
 }
 
 // Returns true or false if the provided story should be skipped by matching against include and

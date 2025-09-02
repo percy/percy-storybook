@@ -1,25 +1,109 @@
 import * as utils from '../src/utils.js';
 
+const MOCK_MOBILE_DEVICES = [
+  { width: 375, height: 812 },
+  { width: 414, height: 896 }
+];
+
+// Helper function to create percy mock with consistent device data
+const createPercyMock = (config = {}) => ({
+  client: {
+    getDeviceDetails: jasmine.createSpy('getDeviceDetails').and.returnValue(Promise.resolve(MOCK_MOBILE_DEVICES))
+  },
+  config: {
+    snapshot: { minHeight: 600, ...config }
+  }
+});
+
 describe('getWidthsForDomCapture', () => {
-  it('merges mobile and user widths, then adds config defaults', () => {
-    const user = [320, 375, 768];
-    const eligible = { mobile: [375, 414], config: [1024, 1280] };
-    expect(utils.getWidthsForDomCapture(user, eligible)).toEqual([375, 414, 320, 768]);
+  describe('responsive mode (with defaultHeight)', () => {
+    it('merges mobile and user widths, desktop widths override mobile', () => {
+      const user = [320, 375, 768];
+      const eligible = {
+        mobile: MOCK_MOBILE_DEVICES,
+        config: [1024, 1280]
+      };
+      const defaultHeight = 1024;
+      expect(utils.getWidthsForDomCapture(user, eligible, defaultHeight)).toEqual([
+        { width: 375, height: 1024 },
+        { width: 414, height: 896 },
+        { width: 320, height: 1024 },
+        { width: 768, height: 1024 }
+      ]);
+    });
+
+    it('desktop widths override mobile heights when same width', () => {
+      const user = [375];
+      const eligible = {
+        mobile: [MOCK_MOBILE_DEVICES[0]], // Use first device only
+        config: []
+      };
+      const defaultHeight = 1024;
+      expect(utils.getWidthsForDomCapture(user, eligible, defaultHeight)).toEqual([
+        { width: 375, height: 1024 }
+      ]);
+    });
+
+    it('falls back to config widths when user provided none', () => {
+      const eligible = { mobile: [], config: [800, 1200] };
+      const defaultHeight = 1024;
+      expect(utils.getWidthsForDomCapture(undefined, eligible, defaultHeight)).toEqual([
+        { width: 800, height: 1024 },
+        { width: 1200, height: 1024 }
+      ]);
+    });
+
+    it('uses only mobile widths when no desktop widths provided', () => {
+      const eligible = {
+        mobile: [{ width: 400, height: 800 }, { width: 500, height: 900 }],
+        config: []
+      };
+      const defaultHeight = 1024;
+      expect(utils.getWidthsForDomCapture(undefined, eligible, defaultHeight)).toEqual([
+        { width: 400, height: 800 },
+        { width: 500, height: 900 }
+      ]);
+    });
+
+    it('filters out null/undefined but keeps zero values', () => {
+      const eligible = {
+        mobile: [{ width: 375, height: 812 }, { width: 0, height: 400 }, { width: 1280, height: 800 }],
+        config: [1280, null]
+      };
+      expect(utils.getWidthsForDomCapture([375, 1280, 0], eligible, 1024)).toEqual([
+        { width: 375, height: 1024 },
+        { width: 0, height: 1024 },
+        { width: 1280, height: 1024 }
+      ]);
+    });
   });
 
-  it('falls back to config widths when user provided none', () => {
-    const eligible = { mobile: [], config: [800, 1200] };
-    expect(utils.getWidthsForDomCapture(undefined, eligible)).toEqual([800, 1200]);
-  });
+  describe('non-responsive mode (without defaultHeight)', () => {
+    it('merges mobile and user widths, returns numbers array', () => {
+      const user = [320, 768];
+      const eligible = { mobile: [375, 414], config: [1024, 1280] };
+      expect(utils.getWidthsForDomCapture(user, eligible)).toEqual([375, 414, 320, 768]);
+    });
 
-  it('falls back to mobile widths when config provided none', () => {
-    const eligible = { mobile: [400, 500], config: [] };
-    expect(utils.getWidthsForDomCapture(undefined, eligible)).toEqual([400, 500]);
-  });
+    it('falls back to config widths when user provided none', () => {
+      const eligible = { mobile: [], config: [800, 1200] };
+      expect(utils.getWidthsForDomCapture(undefined, eligible)).toEqual([800, 1200]);
+    });
 
-  it('filters out duplicates and falsy values', () => {
-    const eligible = { mobile: [375, 0, 1280], config: [1280, null] };
-    expect(utils.getWidthsForDomCapture([375, 1280, 0], eligible)).toEqual([375, 1280]);
+    it('uses only mobile widths when no config provided', () => {
+      const eligible = { mobile: [400, 500], config: [] };
+      expect(utils.getWidthsForDomCapture(undefined, eligible)).toEqual([400, 500]);
+    });
+
+    it('filters out null/undefined but keeps zero values', () => {
+      const eligible = { mobile: [375, 0, 1280], config: [1280, null] };
+      expect(utils.getWidthsForDomCapture([375, 1280, 0], eligible)).toEqual([375, 0, 1280]);
+    });
+
+    it('handles empty inputs gracefully', () => {
+      const eligible = { mobile: [], config: [] };
+      expect(utils.getWidthsForDomCapture([], eligible)).toEqual([]);
+    });
   });
 });
 
@@ -100,9 +184,7 @@ describe('captureResponsiveDOM', () => {
       )
     };
 
-    percy = {
-      config: { snapshot: { minHeight: 600 } }
-    };
+    percy = createPercyMock();
 
     log = {
       debug: jasmine.createSpy('debug'),
@@ -121,7 +203,14 @@ describe('captureResponsiveDOM', () => {
     const result = await utils.captureResponsiveDOM(page, options, percy, log);
 
     expect(Array.isArray(result)).toBe(true);
-    expect(result.length).toBe(2);
+    expect(result.length).toBe(4);
+
+    // Check that all widths are included (mobile + user)
+    const widths = result.map(r => r.width);
+    expect(widths).toContain(375);
+    expect(widths).toContain(414);
+    expect(widths).toContain(800);
+    expect(widths).toContain(1024);
   });
 });
 
@@ -173,9 +262,7 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
       }))
     };
 
-    percy = {
-      config: { snapshot: { minHeight: 600 } }
-    };
+    percy = createPercyMock();
 
     log = {
       debug: jasmine.createSpy('debug'),
@@ -194,7 +281,22 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
 
     await utils.captureResponsiveDOM(page, options, percy, log);
 
-    // Should call resize for each width
+    // Should call resize for all widths (mobile + user): 375, 414, 768, 1024
+    // 375 gets resized (height change from 667 to 812)
+    expect(page.resize).toHaveBeenCalledWith({
+      width: 375,
+      height: 812,
+      deviceScaleFactor: 1,
+      mobile: false
+    });
+
+    expect(page.resize).toHaveBeenCalledWith({
+      width: 414,
+      height: 896,
+      deviceScaleFactor: 1,
+      mobile: false
+    });
+
     expect(page.resize).toHaveBeenCalledWith({
       width: 768,
       height: 667,
@@ -209,8 +311,11 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
       mobile: false
     });
 
-    expect(log.debug).toHaveBeenCalledWith('Resizing viewport to width=768, height=667, resizeCount=1');
-    expect(log.debug).toHaveBeenCalledWith('Resizing viewport to width=1024, height=667, resizeCount=2');
+    // Check the actual resize sequence from the logs (all now resize!)
+    expect(log.debug).toHaveBeenCalledWith(jasmine.stringMatching(/Resizing viewport to width=375, height=812, resizeCount=1/));
+    expect(log.debug).toHaveBeenCalledWith(jasmine.stringMatching(/Resizing viewport to width=414, height=896, resizeCount=2/));
+    expect(log.debug).toHaveBeenCalledWith(jasmine.stringMatching(/Resizing viewport to width=768, height=667, resizeCount=3/));
+    expect(log.debug).toHaveBeenCalledWith(jasmine.stringMatching(/Resizing viewport to width=1024, height=667, resizeCount=4/));
   });
 
   it('handles CDP resize failure and logs fallback attempt', async () => {
@@ -253,7 +358,7 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
       return undefined;
     });
 
-    const options = { widths: [600] };
+    const options = { widths: [{ width: 600, height: 800 }] };
 
     await expectAsync(
       utils.captureResponsiveDOM(page, options, percy, log)
@@ -301,7 +406,7 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
 
     await utils.captureResponsiveDOM(page, options, percy, log);
 
-    expect(log.debug).toHaveBeenCalledWith('Using custom minHeight for responsive capture: 800');
+    expect(log.debug).toHaveBeenCalledWith('Using custom minHeight for responsive capture: 733');
 
     // Clean up
     delete process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT;
@@ -335,7 +440,7 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
   it('respects sleep time environment variable', async () => {
     process.env.RESPONSIVE_CAPTURE_SLEEP_TIME = '2';
 
-    const options = { widths: [600] };
+    const options = { widths: [{ width: 600, height: 800 }] };
 
     await utils.captureResponsiveDOM(page, options, percy, log);
 
@@ -343,5 +448,130 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
 
     // Clean up
     delete process.env.RESPONSIVE_CAPTURE_SLEEP_TIME;
+  });
+});
+
+describe('captureResponsiveDOM environment variables', () => {
+  let page, percy, log;
+
+  beforeEach(() => {
+    page = {
+      eval: jasmine.createSpy('eval').and.callFake(async (fn, args) => {
+        if (fn.toString().includes('window.innerWidth')) {
+          return { width: 375, height: 667 };
+        } else if (fn.toString().includes('window.outerHeight')) {
+          return 800; // Mock outer height
+        }
+        return undefined;
+      }),
+      goto: jasmine.createSpy('goto'),
+      resize: jasmine.createSpy('resize').and.returnValue(Promise.resolve()),
+      insertPercyDom: jasmine.createSpy('insertPercyDom').and.returnValue(Promise.resolve()),
+      snapshot: jasmine.createSpy('snapshot').and.returnValue(Promise.resolve({
+        dom: '<html>test</html>',
+        domSnapshot: '<html>test</html>'
+      }))
+    };
+
+    percy = createPercyMock({
+      minHeight: 1024,
+      widths: [768, 1024]
+    });
+
+    log = {
+      debug: jasmine.createSpy('debug'),
+      warn: jasmine.createSpy('warn'),
+      error: jasmine.createSpy('error')
+    };
+
+    spyOn(utils, 'captureSerializedDOM').and.returnValue(
+      Promise.resolve('<html>test</html>')
+    );
+  });
+
+  afterEach(() => {
+    // Clean up environment variables
+    delete process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT;
+  });
+
+  it('uses calculated height when PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT is set', async () => {
+    process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT = 'true';
+
+    const options = { widths: [768] };
+    await utils.captureResponsiveDOM(page, options, percy, log);
+
+    // Should calculate: outerHeight(800) - currentHeight(667) + configMinHeight(1024) = 1157
+    expect(log.debug).toHaveBeenCalledWith('Using custom minHeight for responsive capture: 1157');
+    expect(page.resize).toHaveBeenCalledWith({
+      width: 768,
+      height: 1157,
+      deviceScaleFactor: 1,
+      mobile: false
+    });
+  });
+
+  it('uses current height when PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT is not set', async () => {
+    const options = { widths: [768] };
+    await utils.captureResponsiveDOM(page, options, percy, log);
+
+    // Should use currentHeight (667) as default
+    expect(page.resize).toHaveBeenCalledWith({
+      width: 768,
+      height: 667,
+      deviceScaleFactor: 1,
+      mobile: false
+    });
+  });
+
+  it('uses configMinHeight fallback when config.snapshot.minHeight is not set', async () => {
+    process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT = 'true';
+    percy.config.snapshot.minHeight = undefined;
+
+    const options = { widths: [768] };
+    await utils.captureResponsiveDOM(page, options, percy, log);
+
+    // Should calculate: outerHeight(800) - currentHeight(667) + fallback(1024) = 1157
+    expect(log.debug).toHaveBeenCalledWith('Using custom minHeight for responsive capture: 1157');
+    expect(page.resize).toHaveBeenCalledWith({
+      width: 768,
+      height: 1157,
+      deviceScaleFactor: 1,
+      mobile: false
+    });
+  });
+
+  it('properly combines mobile and desktop widths with calculated heights', async () => {
+    process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT = 'true';
+
+    const options = { widths: [375, 768] }; // 375 is mobile AND desktop (desktop wins!)
+    await utils.captureResponsiveDOM(page, options, percy, log);
+
+    // All widths: 375(mobile), 414(mobile), 768(desktop), 375(desktop override)
+    // 414 mobile-only gets mobile height
+    expect(page.resize).toHaveBeenCalledWith({
+      width: 414,
+      height: 896, // Mobile height from API
+      deviceScaleFactor: 1,
+      mobile: false
+    });
+
+    // 768 desktop gets calculated height
+    expect(page.resize).toHaveBeenCalledWith({
+      width: 768,
+      height: 1157, // Calculated height: 800 - 667 + 1024
+      deviceScaleFactor: 1,
+      mobile: false
+    });
+
+    // 375 desktop override (user provided) - now correctly uses calculated height
+    expect(page.resize).toHaveBeenCalledWith({
+      width: 375,
+      height: 1157, // Should be calculated height (desktop preference wins over mobile): 800-667+1024=1157
+      deviceScaleFactor: 1,
+      mobile: false
+    });
+
+    // Clean up
+    delete process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT;
   });
 });
