@@ -575,7 +575,7 @@ export async function captureSerializedDOM(page, options, log) {
 }
 
 // Capture responsive DOM snapshots across different widths
-export async function captureResponsiveDOM(page, options, percy, log) {
+export async function captureResponsiveDOM(page, options, percy, log, story) {
   const domSnapshots = [];
 
   // Get current viewport size
@@ -633,14 +633,21 @@ export async function captureResponsiveDOM(page, options, percy, log) {
       lastWindowHeight = targetHeight;
     }
 
-    // PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE: If set, reloads the page before each snapshot width.
+    // PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE: If set, reloads the page and re-applies story state
     if (process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE) {
-      const currentUrl = await page.eval(() => window.location.href);
-      log.debug('Reloading page for responsive capture');
-      await page.goto(currentUrl, { forceReload: true });
+      // Build the complete URL with all story parameters
+      const url = new URL(story.url);
+      if (!url.searchParams.has('viewMode')) {
+        url.searchParams.set('viewMode', 'story');
+      }
+      const reloadUrl = url.toString();
 
-      // Re-inject PercyDOM if needed
-      await page.insertPercyDom();
+      log.debug('Reloading page for responsive capture');
+      await page.goto(reloadUrl, { forceReload: true });
+
+      // After reload, re-apply the story state (globals, args, etc.)
+      log.debug('Re-applying story state after reload');
+      await page.eval(evalSetCurrentStory, story);
     }
 
     // RESPONSIVE_CAPTURE_SLEEP_TIME: (number, seconds) If set, waits this many seconds before capturing each snapshot.

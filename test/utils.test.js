@@ -200,7 +200,8 @@ describe('captureResponsiveDOM', () => {
 
   it('produces snapshots at each width in the list', async () => {
     const options = { widths: [800, 1024] };
-    const result = await utils.captureResponsiveDOM(page, options, percy, log);
+    const story = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+    const result = await utils.captureResponsiveDOM(page, options, percy, log, story);
 
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(4);
@@ -279,7 +280,8 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
   it('successfully resizes viewport using CDP method during responsive capture', async () => {
     const options = { widths: [768, 1024] };
 
-    await utils.captureResponsiveDOM(page, options, percy, log);
+    const story = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
 
     // Should call resize for all widths (mobile + user): 375, 414, 768, 1024
     // 375 gets resized (height change from 667 to 812)
@@ -324,7 +326,8 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
 
     const options = { widths: [800] };
 
-    await utils.captureResponsiveDOM(page, options, percy, log);
+    const story = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
 
     expect(page.resize).toHaveBeenCalled();
     expect(log.debug).toHaveBeenCalledWith(
@@ -373,7 +376,8 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
   it('resets viewport to original size after responsive capture', async () => {
     const options = { widths: [768, 1024] };
 
-    await utils.captureResponsiveDOM(page, options, percy, log);
+    const story = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
 
     // Should reset to original size (375x667 as mocked)
     expect(page.resize).toHaveBeenCalledWith({
@@ -404,7 +408,8 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
 
     const options = { widths: [320] };
 
-    await utils.captureResponsiveDOM(page, options, percy, log);
+    const story = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
 
     expect(log.debug).toHaveBeenCalledWith('Using custom minHeight for responsive capture: 733');
 
@@ -427,11 +432,11 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
 
     const options = { widths: [480] };
 
-    await utils.captureResponsiveDOM(page, options, percy, log);
+    const story = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
 
     expect(log.debug).toHaveBeenCalledWith('Reloading page for responsive capture');
-    expect(page.goto).toHaveBeenCalledWith('http://localhost:6006/iframe.html?id=test', { forceReload: true });
-    expect(page.insertPercyDom).toHaveBeenCalled();
+    expect(page.goto).toHaveBeenCalledWith('http://localhost:6006/iframe.html?id=test&viewMode=story', { forceReload: true });
 
     // Clean up
     delete process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE;
@@ -442,7 +447,8 @@ describe('captureResponsiveDOM viewport resizing behavior', () => {
 
     const options = { widths: [{ width: 600, height: 800 }] };
 
-    await utils.captureResponsiveDOM(page, options, percy, log);
+    const story = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
 
     expect(log.debug).toHaveBeenCalledWith('Sleeping for 2 seconds before capturing snapshot');
 
@@ -498,7 +504,8 @@ describe('captureResponsiveDOM environment variables', () => {
     process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT = 'true';
 
     const options = { widths: [768] };
-    await utils.captureResponsiveDOM(page, options, percy, log);
+    const story = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
 
     // Should calculate: outerHeight(800) - currentHeight(667) + configMinHeight(1024) = 1157
     expect(log.debug).toHaveBeenCalledWith('Using custom minHeight for responsive capture: 1157');
@@ -512,7 +519,8 @@ describe('captureResponsiveDOM environment variables', () => {
 
   it('uses current height when PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT is not set', async () => {
     const options = { widths: [768] };
-    await utils.captureResponsiveDOM(page, options, percy, log);
+    const story = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
 
     // Should use currentHeight (667) as default
     expect(page.resize).toHaveBeenCalledWith({
@@ -528,7 +536,8 @@ describe('captureResponsiveDOM environment variables', () => {
     percy.config.snapshot.minHeight = undefined;
 
     const options = { widths: [768] };
-    await utils.captureResponsiveDOM(page, options, percy, log);
+    const story = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
 
     // Should calculate: outerHeight(800) - currentHeight(667) + fallback(1024) = 1157
     expect(log.debug).toHaveBeenCalledWith('Using custom minHeight for responsive capture: 1157');
@@ -544,7 +553,8 @@ describe('captureResponsiveDOM environment variables', () => {
     process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT = 'true';
 
     const options = { widths: [375, 768] }; // 375 is mobile AND desktop (desktop wins!)
-    await utils.captureResponsiveDOM(page, options, percy, log);
+    const story = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
 
     // All widths: 375(mobile), 414(mobile), 768(desktop), 375(desktop override)
     // 414 mobile-only gets mobile height
@@ -573,5 +583,166 @@ describe('captureResponsiveDOM environment variables', () => {
 
     // Clean up
     delete process.env.PERCY_RESPONSIVE_CAPTURE_MIN_HEIGHT;
+  });
+});
+
+describe('captureResponsiveDOM story state restoration', () => {
+  let page, percy, log;
+
+  beforeEach(() => {
+    page = {
+      eval: jasmine.createSpy('eval').and.callFake(async (fn, args) => {
+        if (fn.toString().includes('window.innerWidth')) {
+          return { width: 375, height: 667 };
+        } else if (fn.toString().includes('window.resizeCount')) {
+          return undefined;
+        }
+        return undefined;
+      }),
+      resize: jasmine.createSpy('resize').and.returnValue(Promise.resolve()),
+      goto: jasmine.createSpy('goto').and.returnValue(Promise.resolve()),
+      insertPercyDom: jasmine.createSpy('insertPercyDom').and.returnValue(Promise.resolve()),
+      snapshot: jasmine.createSpy('snapshot').and.returnValue(Promise.resolve({
+        dom: '<html>test</html>',
+        domSnapshot: '<html>test</html>'
+      }))
+    };
+
+    percy = createPercyMock();
+
+    log = {
+      debug: jasmine.createSpy('debug'),
+      warn: jasmine.createSpy('warn'),
+      error: jasmine.createSpy('error')
+    };
+
+    spyOn(utils, 'captureSerializedDOM').and.returnValue(
+      Promise.resolve('<html>test</html>')
+    );
+  });
+
+  afterEach(() => {
+    // Clean up environment variables
+    delete process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE;
+  });
+
+  it('reloads page and re-applies story state when PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE is set', async () => {
+    process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE = 'true';
+
+    const story = {
+      id: 'test-story',
+      url: 'http://localhost:6006/iframe.html?id=test-story',
+      args: { color: 'red' },
+      globals: { theme: 'dark' },
+      queryParams: { viewMode: 'story' }
+    };
+
+    const options = { widths: [768] };
+
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
+
+    // Should reload the page with the story URL (viewMode=story is automatically added)
+    expect(log.debug).toHaveBeenCalledWith('Reloading page for responsive capture');
+    expect(page.goto).toHaveBeenCalledWith('http://localhost:6006/iframe.html?id=test-story&viewMode=story', { forceReload: true });
+
+    // Should re-apply story state after reload
+    expect(log.debug).toHaveBeenCalledWith('Re-applying story state after reload');
+    expect(page.eval).toHaveBeenCalledWith(jasmine.any(Function), story);
+  });
+
+  it('adds viewMode=story to URL if not present when reloading', async () => {
+    process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE = 'true';
+
+    const story = {
+      id: 'test-story',
+      url: 'http://localhost:6006/iframe.html?id=test-story',
+      args: { color: 'red' },
+      globals: { theme: 'dark' }
+    };
+
+    const options = { widths: [768] };
+
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
+
+    // Should add viewMode=story to the URL
+    expect(page.goto).toHaveBeenCalledWith('http://localhost:6006/iframe.html?id=test-story&viewMode=story', { forceReload: true });
+  });
+
+  it('preserves existing viewMode in URL when reloading', async () => {
+    process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE = 'true';
+
+    const story = {
+      id: 'test-story',
+      url: 'http://localhost:6006/iframe.html?id=test-story&viewMode=docs',
+      args: { color: 'red' },
+      globals: { theme: 'dark' }
+    };
+
+    const options = { widths: [768] };
+
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
+
+    // Should preserve existing viewMode
+    expect(page.goto).toHaveBeenCalledWith('http://localhost:6006/iframe.html?id=test-story&viewMode=docs', { forceReload: true });
+  });
+
+  it('does not reload page when PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE is not set', async () => {
+    const story = {
+      id: 'test-story',
+      url: 'http://localhost:6006/iframe.html?id=test-story',
+      args: { color: 'red' },
+      globals: { theme: 'dark' }
+    };
+
+    const options = { widths: [768] };
+
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
+
+    // Should not reload the page
+    expect(page.goto).not.toHaveBeenCalled();
+    expect(log.debug).not.toHaveBeenCalledWith('Reloading page for responsive capture');
+    expect(log.debug).not.toHaveBeenCalledWith('Re-applying story state after reload');
+  });
+
+  it('handles story with complex URL parameters correctly', async () => {
+    process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE = 'true';
+
+    const story = {
+      id: 'test-story',
+      url: 'http://localhost:6006/iframe.html?id=test-story&args=color:red&globals=theme:dark',
+      args: { color: 'red' },
+      globals: { theme: 'dark' }
+    };
+
+    const options = { widths: [768] };
+
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
+
+    // Should preserve all existing parameters and add viewMode (URL encoding is handled by URL constructor)
+    expect(page.goto).toHaveBeenCalledWith('http://localhost:6006/iframe.html?id=test-story&args=color%3Ared&globals=theme%3Adark&viewMode=story', { forceReload: true });
+  });
+
+  it('calls evalSetCurrentStory with the complete story object after reload', async () => {
+    process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE = 'true';
+
+    const story = {
+      id: 'test-story',
+      url: 'http://localhost:6006/iframe.html?id=test-story',
+      args: { color: 'red', size: 'large' },
+      globals: { theme: 'dark', locale: 'en' },
+      queryParams: { viewMode: 'story' }
+    };
+
+    const options = { widths: [768] };
+
+    await utils.captureResponsiveDOM(page, options, percy, log, story);
+
+    // Should call eval with evalSetCurrentStory function and the complete story object
+    expect(page.eval).toHaveBeenCalledWith(jasmine.any(Function), story);
+
+    // Verify the function passed is evalSetCurrentStory by checking its string representation
+    const evalCall = page.eval.calls.all().find(call => call.args[1] === story);
+    expect(evalCall).toBeDefined();
+    expect(evalCall.args[0].toString()).toContain('evalSetCurrentStory');
   });
 });

@@ -16,7 +16,7 @@ import {
 } from './utils.js';
 
 // Main capture function
-export async function captureDOM(page, options, percy, log) {
+export async function captureDOM(page, options, percy, log, story) {
   const responsiveSnapshotCapture = isResponsiveSnapshotCaptureEnabled(
     options,
     percy.config
@@ -24,7 +24,7 @@ export async function captureDOM(page, options, percy, log) {
 
   if (responsiveSnapshotCapture) {
     log.debug('captureDOM: Using responsive snapshot capture', { options });
-    return await captureResponsiveDOM(page, options, percy, log);
+    return await captureResponsiveDOM(page, options, percy, log, story);
   }
 
   log.debug('captureDOM: Using single snapshot capture');
@@ -202,7 +202,7 @@ async function* processStory(page, story, previewResource, percy, flags, log) {
     log.debug(`Loading story: ${options.name}`);
     // when not dry-running and javascript is not enabled, capture the story dom
     yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
-    options.domSnapshot = await captureDOM(page, options, percy, log);
+    options.domSnapshot = await captureDOM(page, options, percy, log, story);
   }
 
   // validate without logging to prune all other options
