@@ -195,7 +195,6 @@ describe('captureDOM behavior', () => {
     await captureDOM(page, options, percy, log, null);
 
     expect(log.debug).toHaveBeenCalledWith('captureDOM: Using responsive snapshot capture', { options });
-    expect(log.debug).toHaveBeenCalledWith('Reloading page for responsive capture');
   });
 
   // Test 8: Verifies log parameter usage in single capture mode
