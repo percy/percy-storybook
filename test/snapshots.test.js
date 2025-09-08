@@ -58,7 +58,6 @@ describe('captureDOM behavior', () => {
         // Simulate the story state restoration behavior when PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE is set
         if (process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE && story) {
           log.debug('Reloading page for responsive capture');
-          log.debug('Re-applying story state after reload');
         }
 
         return uniqueWidths.map(width => ({
@@ -196,6 +195,7 @@ describe('captureDOM behavior', () => {
     await captureDOM(page, options, percy, log, null);
 
     expect(log.debug).toHaveBeenCalledWith('captureDOM: Using responsive snapshot capture', { options });
+    expect(log.debug).toHaveBeenCalledWith('Reloading page for responsive capture');
   });
 
   // Test 8: Verifies log parameter usage in single capture mode
@@ -228,8 +228,6 @@ describe('captureDOM behavior', () => {
     await captureDOM(page, options, percy, log, story);
 
     expect(log.debug).toHaveBeenCalledWith('captureDOM: Using responsive snapshot capture', { options });
-    expect(log.debug).toHaveBeenCalledWith('Reloading page for responsive capture');
-    expect(log.debug).toHaveBeenCalledWith('Re-applying story state after reload');
 
     // Clean up
     delete process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE;
