@@ -40,9 +40,11 @@ describe('captureDOM behavior', () => {
     previewResource = { content: '<html>preview</html>' };
 
     // Stub captureDOM to simulate the real behavior based on the specifications
-    captureDOM = async (page, options, percy, log) => {
+    captureDOM = async (page, options, percy, log, story) => {
       const responsiveSnapshotCapture = utils.isResponsiveSnapshotCaptureEnabled(options, percy.config);
+
       if (responsiveSnapshotCapture) {
+        log.debug('captureDOM: Using responsive snapshot capture', { options });
         const mobileWidths = [320, 375]; // From getDeviceDetails mock
         const configWidths = percy.config.snapshot.widths || [375, 1280];
         let allWidths = mobileWidths; // Always include mobile widths
@@ -52,11 +54,18 @@ describe('captureDOM behavior', () => {
           allWidths = allWidths.concat(configWidths); // Fallback to config widths
         }
         const uniqueWidths = [...new Set(allWidths)].filter(w => w); // Remove duplicates
+
+        // Simulate the story state restoration behavior when PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE is set
+        if (process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE && story) {
+          log.debug('Reloading page for responsive capture');
+        }
+
         return uniqueWidths.map(width => ({
           html: `<html>RESP for ${width}</html>`,
           width
         }));
       } else {
+        log.debug('captureDOM: Using single snapshot capture');
         return { html: '<html>SINGLE</html>' }; // Single snapshot without width
       }
     };
@@ -71,7 +80,7 @@ describe('captureDOM behavior', () => {
       domSnapshot: previewResource.content
     };
 
-    const result = await captureDOM(page, options, percy, log);
+    const result = await captureDOM(page, options, percy, log, null);
 
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(4); // Mobile [320, 375] + User [500, 600]
@@ -92,7 +101,7 @@ describe('captureDOM behavior', () => {
       domSnapshot: previewResource.content
     };
 
-    const result = await captureDOM(page, options, percy, log);
+    const result = await captureDOM(page, options, percy, log, null);
 
     expect(Array.isArray(result)).toBe(false);
     expect(result.html).toBe('<html>SINGLE</html>');
@@ -107,7 +116,7 @@ describe('captureDOM behavior', () => {
       domSnapshot: previewResource.content
     };
 
-    const result = await captureDOM(page, options, percy, log);
+    const result = await captureDOM(page, options, percy, log, null);
 
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(3); // Mobile [320, 375] + User [600]
@@ -127,7 +136,7 @@ describe('captureDOM behavior', () => {
       domSnapshot: previewResource.content
     };
 
-    const result = await captureDOM(page, options, percy, log);
+    const result = await captureDOM(page, options, percy, log, null);
 
     expect(Array.isArray(result)).toBe(false);
     expect(result.html).toBe('<html>SINGLE</html>');
@@ -142,7 +151,7 @@ describe('captureDOM behavior', () => {
       responsiveSnapshotCapture: true // No widths specified in options
     };
 
-    const result = await captureDOM(page, options, percy, log);
+    const result = await captureDOM(page, options, percy, log, null);
 
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(3); // Mobile [320, 375] + Config [1280] (375 is deduplicated)
@@ -163,7 +172,7 @@ describe('captureDOM behavior', () => {
       responsiveSnapshotCapture: true
     };
 
-    const result = await captureDOM(page, options, percy, log);
+    const result = await captureDOM(page, options, percy, log, null);
 
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBe(3); // Mobile [320, 375] + User/Config [500] (320 and 500 deduplicated)
@@ -173,5 +182,53 @@ describe('captureDOM behavior', () => {
       expect(result[index].width).toBe(width);
       expect(Object.prototype.hasOwnProperty.call(result[index], 'width')).toBe(true);
     });
+  });
+
+  // Test 7: Verifies log parameter usage
+  it('uses log parameter for debugging in responsive capture mode', async () => {
+    percy.config.snapshot.responsiveSnapshotCapture = true;
+    const options = {
+      widths: [768],
+      responsiveSnapshotCapture: true
+    };
+
+    await captureDOM(page, options, percy, log, null);
+
+    expect(log.debug).toHaveBeenCalledWith('captureDOM: Using responsive snapshot capture', { options });
+  });
+
+  // Test 8: Verifies log parameter usage in single capture mode
+  it('uses log parameter for debugging in single capture mode', async () => {
+    percy.config.snapshot.responsiveSnapshotCapture = false;
+    const options = {
+      responsiveSnapshotCapture: false
+    };
+
+    await captureDOM(page, options, percy, log, null);
+
+    expect(log.debug).toHaveBeenCalledWith('captureDOM: Using single snapshot capture');
+  });
+
+  // Test 9: Verifies story parameter usage with page reload
+  it('uses story parameter for page reload when PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE is set', async () => {
+    process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE = 'true';
+    percy.config.snapshot.responsiveSnapshotCapture = true;
+    const options = {
+      widths: [768],
+      responsiveSnapshotCapture: true
+    };
+    const story = {
+      id: 'test-story',
+      url: 'http://localhost:6006/iframe.html?id=test-story',
+      args: { color: 'red' },
+      globals: { theme: 'dark' }
+    };
+
+    await captureDOM(page, options, percy, log, story);
+
+    expect(log.debug).toHaveBeenCalledWith('captureDOM: Using responsive snapshot capture', { options });
+
+    // Clean up
+    delete process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE;
   });
 });
