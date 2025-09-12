@@ -278,7 +278,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
               const options = yield* processStory(page, currentStory, previewResource, percy, flags, log);
 
               // Take the snapshot
-              percy.snapshot(options);
+              yield percy.snapshot(options);
 
               // Update previous story tracking
               previousStory = currentStory;
