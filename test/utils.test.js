@@ -752,10 +752,10 @@ describe('evalStorybookStorySnapshots', () => {
   const storiesObj = {
     'story--one': { id: 'story--one', kind: 'Foo', name: 'Bar', parameters: { percy: {} } }
   };
-  const entries = [
-    { id: 'docs--one', type: 'docs', tags: [] },
-    { id: 'autodoc--one', type: 'docs', tags: ['autodocs'] }
-  ];
+  const entries = {
+    'docs--one': { id: 'docs--one', type: 'docs', tags: [] },
+    'autodoc--one': { id: 'autodoc--one', type: 'docs', tags: ['autodocs'] }
+  };
   global.window = {
     __STORYBOOK_PREVIEW__: {
       ready: () => Promise.resolve(),
