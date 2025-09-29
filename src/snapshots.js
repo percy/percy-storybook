@@ -191,7 +191,7 @@ function hasContaminatingState(story) {
 function needsFreshPage(previousStory) {
   // Only need fresh page if previous story had contaminating state
   // The current story will be loaded correctly regardless of globals/queryParams
-  return previousStory && (hasContaminatingState(previousStory) || previousStory.type === 'docs');
+  return previousStory && (previousStory.type === 'docs' || hasContaminatingState(previousStory));
 }
 
 // Process a single story and capture its DOM
