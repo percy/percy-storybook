@@ -247,7 +247,7 @@ describe('takeStorybookSnapshots behaviour', () => {
       insertPercyDom: jasmine.createSpy('insertPercyDom')
     };
     withPage = (_percy, url, cb) => cb(page);
-    takeStorybookSnapshots = function* (percy, callback, { baseUrl, flags }) {
+    takeStorybookSnapshots = function*(percy, callback, { baseUrl, flags }) {
       const aboutUrl = 'about-url';
       const previewUrl = 'preview-url';
       const docCaptureFlag = process.env.PERCY_STORYBOOK_DOC_CAPTURE === 'true';
@@ -280,8 +280,8 @@ describe('takeStorybookSnapshots behaviour', () => {
     process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE = 'false';
     const percy = {};
     const gen = takeStorybookSnapshots(percy, () => {}, { baseUrl: 'http://localhost:6006', flags: {} });
-    gen.next(); 
-    gen.next(); 
+    gen.next();
+    gen.next();
     expect(page.eval).toHaveBeenCalledWith(
       'evalStorybookStorySnapshots',
       { docCapture: true, autodocCapture: false }
