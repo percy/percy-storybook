@@ -166,11 +166,13 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config }) {
   if (!snapshots.length) throw new Error('No snapshots found');
 
   // remove filter options and generate story snapshot URLs
-  return snapshots.map(({ skip, include, exclude, ...story }) => {
+  return snapshots.map(({ skip, include, exclude, ...story }, i) => {
     let url = `${previewUrl}?id=${story.id}`;
     if (story.args) url += `&args=${buildStorybookArgsParam(story.args)}`;
     if (story.globals) url += `&globals=${buildStorybookArgsParam(story.globals)}`;
     for (let [k, v] of Object.entries(story.queryParams ?? {})) url += `&${k}=${v}`;
+    // Only add type if present in the original data
+    if (stories.data[i]?.type) story.type = stories.data[i].type;
     return Object.assign(story, { url });
   });
 }
@@ -185,7 +187,7 @@ function hasContaminatingState(story) {
 function needsFreshPage(previousStory) {
   // Only need fresh page if previous story had contaminating state
   // The current story will be loaded correctly regardless of globals/queryParams
-  return previousStory && hasContaminatingState(previousStory);
+  return previousStory && (hasContaminatingState(previousStory) || previousStory.type === 'docs');
 }
 
 // Process a single story and capture its DOM
@@ -232,7 +234,19 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     // gather storybook data in parallel
     let [environmentInfo, stories] = yield* yieldAll([
       withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo), undefined, { from: 'about url' }),
-      withPage(percy, previewUrl, p => p.eval(evalStorybookStorySnapshots), undefined, { from: 'preview url' })
+      withPage(
+        percy,
+        previewUrl,
+        p => p.eval(
+          evalStorybookStorySnapshots,
+          {
+            docCapture: process.env.PERCY_STORYBOOK_DOC_CAPTURE === 'true',
+            autodocCapture: process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE === 'true'
+          }
+        ),
+        undefined,
+        { from: 'preview url' }
+      )
     ]);
 
     // map stories to snapshot options
