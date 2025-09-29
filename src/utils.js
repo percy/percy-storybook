@@ -362,7 +362,6 @@ export function evalSetCurrentStory({ waitFor }, story) {
 
       channel.on('storyRendered', handleRendered);
       channel.on('docsRendered', handleRendered);
-      
 
       channel.on('storyMissing', (err) => reject(err || new Error('Story Missing')));
       channel.on('storyErrored', (err) => reject(err || new Error('Story Errored')));
