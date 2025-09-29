@@ -232,3 +232,61 @@ describe('captureDOM behavior', () => {
     delete process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE;
   });
 });
+
+describe('takeStorybookSnapshots behaviour', () => {
+  let takeStorybookSnapshots, page, withPage;
+
+  beforeEach(() => {
+    page = {
+      eval: jasmine.createSpy('eval').and.returnValue(
+        Promise.resolve({ invalid: [], data: [{ id: 'story--one', name: 'Story One' }] })
+      ),
+      snapshot: jasmine.createSpy('snapshot'),
+      resize: jasmine.createSpy('resize'),
+      goto: jasmine.createSpy('goto'),
+      insertPercyDom: jasmine.createSpy('insertPercyDom')
+    };
+    withPage = (_percy, url, cb) => cb(page);
+    takeStorybookSnapshots = function* (percy, callback, { baseUrl, flags }) {
+      const aboutUrl = 'about-url';
+      const previewUrl = 'preview-url';
+      const docCaptureFlag = process.env.PERCY_STORYBOOK_DOC_CAPTURE === 'true';
+      const autodocCaptureFlag = process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE === 'true';
+      yield withPage(
+        percy,
+        aboutUrl,
+        p => p.eval('evalStorybookEnvironmentInfo'),
+        undefined,
+        { from: 'about url' }
+      );
+      yield withPage(
+        percy,
+        previewUrl,
+        p => p.eval(
+          'evalStorybookStorySnapshots',
+          {
+            docCapture: docCaptureFlag,
+            autodocCapture: autodocCaptureFlag
+          }
+        ),
+        undefined,
+        { from: 'preview url' }
+      );
+    };
+  });
+
+  it('calls page.eval for evalStorybookStorySnapshots with correct flags from env', () => {
+    process.env.PERCY_STORYBOOK_DOC_CAPTURE = 'true';
+    process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE = 'false';
+    const percy = {};
+    const gen = takeStorybookSnapshots(percy, () => {}, { baseUrl: 'http://localhost:6006', flags: {} });
+    gen.next(); 
+    gen.next(); 
+    expect(page.eval).toHaveBeenCalledWith(
+      'evalStorybookStorySnapshots',
+      { docCapture: true, autodocCapture: false }
+    );
+    delete process.env.PERCY_STORYBOOK_DOC_CAPTURE;
+    delete process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE;
+  });
+});
