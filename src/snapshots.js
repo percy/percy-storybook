@@ -262,8 +262,6 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
       flags
     });
 
-    console.log(snapshots)
-
     // set storybook environment info
     percy.client.addEnvironmentInfo(environmentInfo);
 
