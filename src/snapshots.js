@@ -61,17 +61,23 @@ function shouldSkipStory(name, options, config) {
 // Returns snapshot config options for a Storybook story merged with global Storybook
 // options. Validation error messages will be added to the provided validations set.
 function getSnapshotConfig(story, config, invalid) {
-  let { id, ...options } = PercyConfig.migrate(story, '/storybook');
+  // Remove type before validation
+  const { type, ...storyWithoutType } = story;
+  let { id, ...options } = PercyConfig.migrate(storyWithoutType, '/storybook');
 
   let errors = PercyConfig.validate(options, '/storybook');
   for (let e of (errors || [])) invalid.set(e.path, e.message);
 
-  return PercyConfig.merge([config, options, { id }], (path, prev, next) => {
+  let merged = PercyConfig.merge([config, options, { id }], (path, prev, next) => {
     // normalize, but do not merge include or exclude options
     if (path.length === 1 && ['include', 'exclude'].includes(path[0])) {
       return [path, [].concat(next).filter(Boolean)];
     }
   });
+
+  // Reattach type if present (robust for null/undefined)
+  if (type != null) merged.type = type;
+  return merged;
 }
 
 // Returns a copy of the provided config object with encoded Storybook args and globals
@@ -166,13 +172,11 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config }) {
   if (!snapshots.length) throw new Error('No snapshots found');
 
   // remove filter options and generate story snapshot URLs
-  return snapshots.map(({ skip, include, exclude, ...story }, i) => {
+  return snapshots.map(({ skip, include, exclude, ...story }) => {
     let url = `${previewUrl}?id=${story.id}`;
     if (story.args) url += `&args=${buildStorybookArgsParam(story.args)}`;
     if (story.globals) url += `&globals=${buildStorybookArgsParam(story.globals)}`;
     for (let [k, v] of Object.entries(story.queryParams ?? {})) url += `&${k}=${v}`;
-    // Only add type if present in the original data
-    if (stories.data[i]?.type) story.type = stories.data[i].type;
     return Object.assign(story, { url });
   });
 }
