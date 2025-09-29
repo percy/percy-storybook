@@ -236,6 +236,8 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     yield percy.browser.launch();
 
     // gather storybook data in parallel
+    const docCaptureFlag = process.env.PERCY_STORYBOOK_DOC_CAPTURE === 'true';
+    const autodocCaptureFlag = process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE === 'true';
     let [environmentInfo, stories] = yield* yieldAll([
       withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo), undefined, { from: 'about url' }),
       withPage(
@@ -244,8 +246,8 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
         p => p.eval(
           evalStorybookStorySnapshots,
           {
-            docCapture: process.env.PERCY_STORYBOOK_DOC_CAPTURE === 'true',
-            autodocCapture: process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE === 'true'
+            docCapture: docCaptureFlag,
+            autodocCapture: autodocCaptureFlag
           }
         ),
         undefined,
@@ -259,6 +261,8 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
       previewUrl,
       flags
     });
+
+    console.log(snapshots)
 
     // set storybook environment info
     percy.client.addEnvironmentInfo(environmentInfo);
