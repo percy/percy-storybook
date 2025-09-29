@@ -61,23 +61,17 @@ function shouldSkipStory(name, options, config) {
 // Returns snapshot config options for a Storybook story merged with global Storybook
 // options. Validation error messages will be added to the provided validations set.
 function getSnapshotConfig(story, config, invalid) {
-  // Remove type before validation
-  const { type, ...storyWithoutType } = story;
-  let { id, ...options } = PercyConfig.migrate(storyWithoutType, '/storybook');
+  let { id, ...options } = PercyConfig.migrate(story, '/storybook');
 
   let errors = PercyConfig.validate(options, '/storybook');
   for (let e of (errors || [])) invalid.set(e.path, e.message);
 
-  let merged = PercyConfig.merge([config, options, { id }], (path, prev, next) => {
+  return PercyConfig.merge([config, options, { id }], (path, prev, next) => {
     // normalize, but do not merge include or exclude options
     if (path.length === 1 && ['include', 'exclude'].includes(path[0])) {
       return [path, [].concat(next).filter(Boolean)];
     }
   });
-
-  // Reattach type if present (robust for null/undefined)
-  if (type != null) merged.type = type;
-  return merged;
 }
 
 // Returns a copy of the provided config object with encoded Storybook args and globals

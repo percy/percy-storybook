@@ -121,7 +121,8 @@ export const storybookSchema = {
       ],
       properties: {
         name: { type: 'string' },
-        skip: { type: 'boolean' }
+        skip: { type: 'boolean' },
+        type: { type: 'string', enum: ['story', 'docs'] }
       }
     }
   }
