@@ -287,23 +287,23 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
     await (window.__STORYBOOK_PREVIEW__?.cacheAllCSFFiles?.() ||
     window.__STORYBOOK_STORY_STORE__?.cacheAllCSFFiles?.());
 
+    // Always prepare docsEntries for possible concat
+    let docsEntries = [];
+    const entries = window.__STORYBOOK_PREVIEW__?.storyStoreValue?.storyIndex?.entries;
+    if ((docCapture || autodocCapture) && entries) {
+      docsEntries = Object.values(entries).filter(entry => {
+        if (entry.type !== 'docs') return false;
+        if (entry.tags && entry.tags.includes('autodocs')) {
+          return !!autodocCapture;
+        } else {
+          return !!docCapture;
+        }
+      });
+    }
+
     const storiesObj = await (window.__STORYBOOK_PREVIEW__?.extract?.());
     if (storiesObj && !Array.isArray(storiesObj)) {
       const stories = Object.values(storiesObj);
-
-      let docsEntries = [];
-      if (docCapture || autodocCapture) {
-        docsEntries = Object.values(window.__STORYBOOK_PREVIEW__.storyStoreValue.storyIndex.entries)
-          .filter(entry => {
-            if (entry.type !== 'docs') return false;
-            if (entry.tags && entry.tags.includes('autodocs')) {
-              return !!autodocCapture;
-            } else {
-              return !!docCapture;
-            }
-          });
-      }
-
       return stories.concat(docsEntries);
     }
 

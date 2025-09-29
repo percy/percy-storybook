@@ -749,27 +749,22 @@ describe('captureResponsiveDOM story state restoration', () => {
 
 describe('evalStorybookStorySnapshots', () => {
   const waitFor = fn => Promise.resolve(fn());
-
-  beforeEach(() => {
-    // Clear global.window before each test
-    delete global.window;
-  });
+  const storiesObj = {
+    'story--one': { id: 'story--one', kind: 'Foo', name: 'Bar', parameters: { percy: {} } }
+  };
+  const entries = [
+    { id: 'docs--one', type: 'docs', tags: [] },
+    { id: 'autodoc--one', type: 'docs', tags: ['autodocs'] }
+  ];
+  global.window = {
+    __STORYBOOK_PREVIEW__: {
+      ready: () => Promise.resolve(),
+      extract: () => storiesObj,
+      storyStoreValue: { storyIndex: { entries } }
+    }
+  };
 
   it('includes story, docs, and autodoc when both flags are true', async () => {
-    const storiesObj = {
-      'story--one': { id: 'story--one', kind: 'Foo', name: 'Bar', parameters: { percy: {} } }
-    };
-    const entries = [
-      { id: 'docs--one', type: 'docs', tags: [] },
-      { id: 'autodoc--one', type: 'docs', tags: ['autodocs'] }
-    ];
-    global.window = {
-      __STORYBOOK_PREVIEW__: {
-        ready: () => Promise.resolve(),
-        extract: () => storiesObj,
-        storyStoreValue: { storyIndex: { entries } }
-      }
-    };
     const { data } = await utils.evalStorybookStorySnapshots(
       { waitFor }, { docCapture: true, autodocCapture: true }
     );
@@ -781,20 +776,6 @@ describe('evalStorybookStorySnapshots', () => {
   });
 
   it('includes only story and docs when docCapture=true, autodocCapture=false', async () => {
-    const storiesObj = {
-      'story--one': { id: 'story--one', kind: 'Foo', name: 'Bar', parameters: { percy: {} } }
-    };
-    const entries = [
-      { id: 'docs--one', type: 'docs', tags: [] },
-      { id: 'autodoc--one', type: 'docs', tags: ['autodocs'] }
-    ];
-    global.window = {
-      __STORYBOOK_PREVIEW__: {
-        ready: () => Promise.resolve(),
-        extract: () => storiesObj,
-        storyStoreValue: { storyIndex: { entries } }
-      }
-    };
     const { data } = await utils.evalStorybookStorySnapshots(
       { waitFor }, { docCapture: true, autodocCapture: false }
     );
@@ -806,20 +787,6 @@ describe('evalStorybookStorySnapshots', () => {
   });
 
   it('includes only story and autodoc when docCapture=false, autodocCapture=true', async () => {
-    const storiesObj = {
-      'story--one': { id: 'story--one', kind: 'Foo', name: 'Bar', parameters: { percy: {} } }
-    };
-    const entries = [
-      { id: 'docs--one', type: 'docs', tags: [] },
-      { id: 'autodoc--one', type: 'docs', tags: ['autodocs'] }
-    ];
-    global.window = {
-      __STORYBOOK_PREVIEW__: {
-        ready: () => Promise.resolve(),
-        extract: () => storiesObj,
-        storyStoreValue: { storyIndex: { entries } }
-      }
-    };
     const { data } = await utils.evalStorybookStorySnapshots(
       { waitFor }, { docCapture: false, autodocCapture: true }
     );
@@ -831,17 +798,6 @@ describe('evalStorybookStorySnapshots', () => {
   });
 
   it('includes only story when both flags are false', async () => {
-    const storiesObj = {
-      'story--one': { id: 'story--one', kind: 'Foo', name: 'Bar', parameters: { percy: {} } }
-    };
-    const entries = [];
-    global.window = {
-      __STORYBOOK_PREVIEW__: {
-        ready: () => Promise.resolve(),
-        extract: () => storiesObj,
-        storyStoreValue: { storyIndex: { entries } }
-      }
-    };
     const { data } = await utils.evalStorybookStorySnapshots(
       { waitFor }, { docCapture: false, autodocCapture: false }
     );
