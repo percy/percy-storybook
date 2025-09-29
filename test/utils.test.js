@@ -807,4 +807,17 @@ describe('evalStorybookStorySnapshots', () => {
     expect(ids).not.toContain('autodoc--one');
     expect(data.length).toBe(1);
   });
+
+  it('handles missing entries object gracefully (no errors, only story returned)', async () => {
+    // Remove the entries property
+    delete global.window.__STORYBOOK_PREVIEW__.storyStoreValue.storyIndex.entries;
+    const { data } = await utils.evalStorybookStorySnapshots(
+      { waitFor }, { docCapture: true, autodocCapture: true }
+    );
+    const ids = data.map(s => s.id);
+    expect(ids).toContain('story--one');
+    expect(ids).not.toContain('docs--one');
+    expect(ids).not.toContain('autodoc--one');
+    expect(data.length).toBe(1);
+  });
 });
