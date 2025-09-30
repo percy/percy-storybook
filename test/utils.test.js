@@ -823,7 +823,7 @@ describe('evalStorybookStorySnapshots', () => {
 });
 
 describe('evalSetCurrentStory event handling', () => {
-  let channel, waitFor, story;
+  let channel, waitFor;
 
   function patchNoLoaders() {
     global.document = {
@@ -847,7 +847,6 @@ describe('evalSetCurrentStory event handling', () => {
       }
     };
     waitFor = fn => Promise.resolve(fn());
-    story = { id: 'story--one', args: {}, globals: {}, queryParams: {} };
     global.window = {
       __STORYBOOK_PREVIEW__: { channel },
       __STORYBOOK_STORY_STORE__: { _channel: channel }
