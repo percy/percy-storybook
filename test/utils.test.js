@@ -821,3 +821,50 @@ describe('evalStorybookStorySnapshots', () => {
     expect(data.length).toBe(1);
   });
 });
+
+describe('evalSetCurrentStory event handling', () => {
+  let channel, waitFor, story;
+
+  function patchNoLoaders() {
+    global.document = {
+      getElementById: () => null,
+      querySelector: () => null,
+      querySelectorAll: () => [],
+      body: { classList: { contains: () => false, toString: () => '' } }
+    };
+    global.window.getComputedStyle = () => ({ display: 'none', visibility: 'visible', opacity: '1' });
+  }
+
+  beforeEach(() => {
+    const listeners = {};
+    channel = {
+      on: (event, cb) => {
+        listeners[event] = listeners[event] || [];
+        listeners[event].push(cb);
+      },
+      emit: (event, payload) => {
+        if (listeners[event]) listeners[event].forEach(cb => cb(payload));
+      }
+    };
+    waitFor = fn => Promise.resolve(fn());
+    story = { id: 'story--one', args: {}, globals: {}, queryParams: {} };
+    global.window = {
+      __STORYBOOK_PREVIEW__: { channel },
+      __STORYBOOK_STORY_STORE__: { _channel: channel }
+    };
+  });
+
+  afterEach(() => {
+    delete global.window;
+    delete global.document;
+    delete global.window?.getComputedStyle;
+  });
+
+  it('resolves when docsRendered event is emitted', async () => {
+    patchNoLoaders();
+    const testStory = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+    const promise = utils.evalSetCurrentStory({ waitFor }, testStory);
+    setTimeout(() => channel.emit('docsRendered'), 0);
+    await expectAsync(promise).toBeResolved();
+  });
+});
