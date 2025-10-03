@@ -256,7 +256,7 @@ export function evalStorybookEnvironmentInfo({ waitForXPath }) {
 
 // Evaluate and return serialized Storybook stories to snapshot
 /* istanbul ignore next: no instrumenting injected code */
-export function evalStorybookStorySnapshots({ waitFor }) {
+export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, autodocCapture = false } = {}) {
   let serialize = (what, value, invalid) => {
     if (what === 'include' || what === 'exclude') {
       return [].concat(value).filter(Boolean).map(v => v.toString());
@@ -287,9 +287,24 @@ export function evalStorybookStorySnapshots({ waitFor }) {
     await (window.__STORYBOOK_PREVIEW__?.cacheAllCSFFiles?.() ||
     window.__STORYBOOK_STORY_STORE__?.cacheAllCSFFiles?.());
 
+    // Always prepare docsEntries for possible concat
+    let docsEntries = [];
+    const entries = window.__STORYBOOK_PREVIEW__?.storyStoreValue?.storyIndex?.entries;
+    if ((docCapture || autodocCapture) && entries) {
+      docsEntries = Object.values(entries).filter(entry => {
+        if (entry.type !== 'docs') return false;
+        if (entry.tags && entry.tags.includes('autodocs')) {
+          return !!autodocCapture;
+        } else {
+          return !!docCapture;
+        }
+      });
+    }
+
     const storiesObj = await (window.__STORYBOOK_PREVIEW__?.extract?.());
     if (storiesObj && !Array.isArray(storiesObj)) {
-      return Object.values(storiesObj);
+      const stories = Object.values(storiesObj);
+      return stories.concat(docsEntries);
     }
 
     await window.__STORYBOOK_STORY_STORE__?.extract?.();
@@ -301,9 +316,10 @@ export function evalStorybookStorySnapshots({ waitFor }) {
     let invalid = new Map();
 
     let data = stories.map(story => serialize('snapshot', {
-      name: `${story.kind}: ${story.name}`,
+      name: story.kind ? `${story.kind}: ${story.name}` : `${story.title}: ${story.name}`,
       ...story.parameters?.percy,
-      id: story.id
+      id: story.id,
+      type: story.type ? story.type : 'story'
     }, invalid));
 
     return {
@@ -335,14 +351,17 @@ export function evalSetCurrentStory({ waitFor }, story) {
 
     // resolve when rendered, reject on any other renderer event
     return new Promise((resolve, reject) => {
-      channel.on('storyRendered', () => {
-        // After the story is rendered, add a small delay before checking loaders
+      const handleRendered = () => {
+        // After the story/docs is rendered, add a small delay before checking loaders
         // This helps ensure that any post-render loader state changes have time to occur
         setTimeout(() => {
           // Wait for any loaders to disappear before resolving
           waitForLoadersToDisappear().then(resolve).catch(reject);
         }, 100);
-      });
+      };
+
+      channel.on('storyRendered', handleRendered);
+      channel.on('docsRendered', handleRendered);
 
       channel.on('storyMissing', (err) => reject(err || new Error('Story Missing')));
       channel.on('storyErrored', (err) => reject(err || new Error('Story Errored')));

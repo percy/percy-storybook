@@ -185,7 +185,7 @@ function hasContaminatingState(story) {
 function needsFreshPage(previousStory) {
   // Only need fresh page if previous story had contaminating state
   // The current story will be loaded correctly regardless of globals/queryParams
-  return previousStory && hasContaminatingState(previousStory);
+  return previousStory && (previousStory.type === 'docs' || hasContaminatingState(previousStory));
 }
 
 // Process a single story and capture its DOM
@@ -230,9 +230,23 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     yield percy.browser.launch();
 
     // gather storybook data in parallel
+    const docCaptureFlag = process.env.PERCY_STORYBOOK_DOC_CAPTURE === 'true';
+    const autodocCaptureFlag = process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE === 'true';
     let [environmentInfo, stories] = yield* yieldAll([
       withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo), undefined, { from: 'about url' }),
-      withPage(percy, previewUrl, p => p.eval(evalStorybookStorySnapshots), undefined, { from: 'preview url' })
+      withPage(
+        percy,
+        previewUrl,
+        p => p.eval(
+          evalStorybookStorySnapshots,
+          {
+            docCapture: docCaptureFlag,
+            autodocCapture: autodocCaptureFlag
+          }
+        ),
+        undefined,
+        { from: 'preview url' }
+      )
     ]);
 
     // map stories to snapshot options

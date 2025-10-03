@@ -746,3 +746,124 @@ describe('captureResponsiveDOM story state restoration', () => {
     expect(evalCall.args[0].toString()).toContain('evalSetCurrentStory');
   });
 });
+
+describe('evalStorybookStorySnapshots', () => {
+  const waitFor = fn => Promise.resolve(fn());
+  const storiesObj = {
+    'story--one': { id: 'story--one', kind: 'Foo', name: 'Bar', parameters: { percy: {} } }
+  };
+  const entries = {
+    'docs--one': { id: 'docs--one', type: 'docs', tags: [] },
+    'autodoc--one': { id: 'autodoc--one', type: 'docs', tags: ['autodocs'] }
+  };
+  global.window = {
+    __STORYBOOK_PREVIEW__: {
+      ready: () => Promise.resolve(),
+      extract: () => storiesObj,
+      storyStoreValue: { storyIndex: { entries } }
+    }
+  };
+
+  it('includes story, docs, and autodoc when both flags are true', async () => {
+    const { data } = await utils.evalStorybookStorySnapshots(
+      { waitFor }, { docCapture: true, autodocCapture: true }
+    );
+    const ids = data.map(s => s.id);
+    expect(ids).toContain('story--one');
+    expect(ids).toContain('docs--one');
+    expect(ids).toContain('autodoc--one');
+    expect(data.length).toBe(3);
+  });
+
+  it('includes only story and docs when docCapture=true, autodocCapture=false', async () => {
+    const { data } = await utils.evalStorybookStorySnapshots(
+      { waitFor }, { docCapture: true, autodocCapture: false }
+    );
+    const ids = data.map(s => s.id);
+    expect(ids).toContain('story--one');
+    expect(ids).toContain('docs--one');
+    expect(ids).not.toContain('autodoc--one');
+    expect(data.length).toBe(2);
+  });
+
+  it('includes only story and autodoc when docCapture=false, autodocCapture=true', async () => {
+    const { data } = await utils.evalStorybookStorySnapshots(
+      { waitFor }, { docCapture: false, autodocCapture: true }
+    );
+    const ids = data.map(s => s.id);
+    expect(ids).toContain('story--one');
+    expect(ids).toContain('autodoc--one');
+    expect(ids).not.toContain('docs--one');
+    expect(data.length).toBe(2);
+  });
+
+  it('includes only story when both flags are false', async () => {
+    const { data } = await utils.evalStorybookStorySnapshots(
+      { waitFor }, { docCapture: false, autodocCapture: false }
+    );
+    const ids = data.map(s => s.id);
+    expect(ids).toContain('story--one');
+    expect(ids).not.toContain('docs--one');
+    expect(ids).not.toContain('autodoc--one');
+    expect(data.length).toBe(1);
+  });
+
+  it('handles missing entries object gracefully (no errors, only story returned)', async () => {
+    // Remove the entries property
+    delete global.window.__STORYBOOK_PREVIEW__.storyStoreValue.storyIndex.entries;
+    const { data } = await utils.evalStorybookStorySnapshots(
+      { waitFor }, { docCapture: true, autodocCapture: true }
+    );
+    const ids = data.map(s => s.id);
+    expect(ids).toContain('story--one');
+    expect(ids).not.toContain('docs--one');
+    expect(ids).not.toContain('autodoc--one');
+    expect(data.length).toBe(1);
+  });
+});
+
+describe('evalSetCurrentStory event handling', () => {
+  let channel, waitFor;
+
+  function patchNoLoaders() {
+    global.document = {
+      getElementById: () => null,
+      querySelector: () => null,
+      querySelectorAll: () => [],
+      body: { classList: { contains: () => false, toString: () => '' } }
+    };
+    global.window.getComputedStyle = () => ({ display: 'none', visibility: 'visible', opacity: '1' });
+  }
+
+  beforeEach(() => {
+    const listeners = {};
+    channel = {
+      on: (event, cb) => {
+        listeners[event] = listeners[event] || [];
+        listeners[event].push(cb);
+      },
+      emit: (event, payload) => {
+        if (listeners[event]) listeners[event].forEach(cb => cb(payload));
+      }
+    };
+    waitFor = fn => Promise.resolve(fn());
+    global.window = {
+      __STORYBOOK_PREVIEW__: { channel },
+      __STORYBOOK_STORY_STORE__: { _channel: channel }
+    };
+  });
+
+  afterEach(() => {
+    delete global.window;
+    delete global.document;
+    delete global.window?.getComputedStyle;
+  });
+
+  it('resolves when docsRendered event is emitted', async () => {
+    patchNoLoaders();
+    const testStory = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+    const promise = utils.evalSetCurrentStory({ waitFor }, testStory);
+    setTimeout(() => channel.emit('docsRendered'), 0);
+    await expectAsync(promise).toBeResolved();
+  });
+});
