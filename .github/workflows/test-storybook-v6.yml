@@ -25,7 +25,7 @@ jobs:
       - name: Break on invalid branch name
         run: exit 1
         if: ${{ github.event_name == 'workflow_dispatch' && steps.regex-match.outputs && steps.regex-match.outputs.match == '' }}
-      - uses: actions/checkout@8459bc0c7e3759cdf591f513d9f141a95fef0a8f
+      - uses: actions/checkout@71cf2267d89c5cb81562390fa70a37fa40b1305e
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
