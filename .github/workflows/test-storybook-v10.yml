@@ -11,11 +11,11 @@ on:
         default: master
 jobs:
   test:
-    name: Test Storybook v9
+    name: Test Storybook v10
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node: [20]
+        node: [20.19]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions-ecosystem/action-regex-match@9e6c4fb3d5e898f505be7a1fb6e7b0a278f6665b
@@ -31,7 +31,6 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-      - run: ./prepare-storybook-tests.sh 9
       - uses: actions/cache@v3
         with:
           path: node_modules

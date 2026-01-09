@@ -312,7 +312,7 @@ describe('percy storybook', () => {
   });
 
   it('uses the preview dom when javascript is enabled', async () => {
-    const FAKE_PREVIEW_V9 = `{ async extract() { return ${JSON.stringify([
+    const FAKE_PREVIEW_V10 = `{ async extract() { return ${JSON.stringify([
       { id: '1', kind: 'foo', name: 'bar' },
       { id: '2', kind: 'foo', name: 'bar/baz', parameters: { percy: { enableJavaScript: true } } }
     ])}
@@ -320,7 +320,7 @@ describe('percy storybook', () => {
     'channel: { emit() {}, on: (a, c) => a === "storyRendered" && c() }' +
     ' }';
 
-    let previewDOM = [`<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V9}</script>`,
+    let previewDOM = [`<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V10}</script>`,
       '<script>__STORYBOOK_STORY_STORE__ = { raw: () => ' + JSON.stringify([
         { id: '1', kind: 'foo', name: 'bar' },
         { id: '2', kind: 'foo', name: 'bar/baz', parameters: { percy: { enableJavaScript: true } } }
@@ -330,7 +330,7 @@ describe('percy storybook', () => {
     let storyDOM = [
       '<!DOCTYPE html><html><head></head><body>',
       '<p>This is a story. The html needs to be complete since it gets serialized</p>',
-      `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V9}</script>`,
+      `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V10}</script>`,
       '<script>__STORYBOOK_STORY_STORE__ = { raw: () => ' + JSON.stringify([
         { id: '1', kind: 'foo', name: 'bar' },
         { id: '2', kind: 'foo', name: 'bar/baz', parameters: { percy: { enableJavaScript: true } } }
@@ -673,7 +673,7 @@ describe('percy storybook', () => {
         name: 'test'
       }];
 
-      const FAKE_PREVIEW_V9 = `{ async extract() { return ${JSON.stringify(stories)} }, ` +
+      const FAKE_PREVIEW_V10 = `{ async extract() { return ${JSON.stringify(stories)} }, ` +
       'channel: { emit() {}, on: (a, c) => a === "storyRendered" && c() }' +
       ' }';
 
@@ -682,7 +682,7 @@ describe('percy storybook', () => {
           return [403, 'text/plain', 'Invalid auth'];
         }
         return [200, 'text/html', [
-          `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V9}</script>`,
+          `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V10}</script>`,
           `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(stories)} }</script>`
         ].join('')];
       });
@@ -692,7 +692,7 @@ describe('percy storybook', () => {
           return [403, 'text/plain', 'Invalid auth'];
         }
         return [200, 'text/html', [
-          `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V9}</script>`,
+          `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW_V10}</script>`,
           `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(stories)} }</script>`
         ].join('')];
       });
