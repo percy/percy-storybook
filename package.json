@@ -21,8 +21,8 @@
     "access": "public",
     "tag": "latest"
   },
-  "engine": {
-    "node": ">=14"
+  "engines": {
+    "node": ">=22.12"
   },
   "files": [
     "bin",
