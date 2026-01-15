@@ -18,8 +18,9 @@ if [[ " ${versions[*]} " =~ " $storybook_version " ]]; then
     mv "./packageV$storybook_version.json" "./package.json"
     mv "./test/.storybook/mainV$storybook_version.js" "./test/.storybook/main.js"
     
-    # Use old babel config for v7-v8, current babel config for v9
-    if [ "$storybook_version" != "9" ]; then
+    # Use old babel config for v7-v8, current babel config for v9+
+    old_babel_versions=(7 8)
+    if [[ " ${old_babel_versions[*]} " =~ " $storybook_version " ]]; then
         mv "./babel.config.old.cjs" "./babel.config.cjs"
     fi
 else

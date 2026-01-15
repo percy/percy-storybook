@@ -64,4 +64,4 @@ jobs:
           yarn link `echo $PERCY_PACKAGES`
           npx percy --version
 
-      - run: yarn test:coverage
+      - run: yarn test
