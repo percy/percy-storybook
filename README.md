@@ -350,5 +350,5 @@ upgrade and experience diffs due to the lack of JavaScript, it can be re-enabled
 Percy config file or per-snapshot option, [`enableJavaScript`](https://www.browserstack.com/docs/percy/take-percy-snapshots/overview#snapshot).
 
 ## Development
-- Current package.json and yarn.lock install storybook v7 as devDependency and hence require node 16 for development.
-- There are separate package.json and config files for storybook v6, for testing purposes. Please check `prepare-storybook-v6-tests.sh` file for more details around changes for storybook v6 testing.
+- Current package.json and yarn.lock install storybook v10 as devDependency and hence require Node.js >=22.12 for development.
+- There are separate package.json and config files for storybook v7, v8, and v9, for backward compatibility testing. Please check `prepare-storybook-tests.sh` file for more details.

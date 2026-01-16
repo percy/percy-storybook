@@ -21,8 +21,8 @@
     "access": "public",
     "tag": "latest"
   },
-  "engine": {
-    "node": ">=14"
+  "engines": {
+    "node": ">=22.12"
   },
   "files": [
     "bin",
@@ -65,8 +65,8 @@
     "@babel/eslint-plugin": "^7.19.1",
     "@babel/preset-env": "^7.22.9",
     "@babel/preset-react": "^7.23.3",
-    "@storybook/react": "^9.0.15",
-    "@storybook/react-webpack5": "^9.0.15",
+    "@storybook/react": "^10.1.11",
+    "@storybook/react-webpack5": "^10.1.11",
     "babel-eslint": "^10.0.3",
     "babel-loader": "^10.0.0",
     "babel-plugin-istanbul": "^6.1.1",
@@ -84,7 +84,7 @@
     "nyc": "^17.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "storybook": "^9.0.15"
+    "storybook": "^10.1.11"
   },
   "resolutions": {
     "jackspeak": "2.1.1"
