@@ -1,5 +1,5 @@
 import { request, createRootResource, yieldTo } from '@percy/cli-command/utils';
-import { logger } from '@percy/cli-command';
+import { logger, PercyConfig } from '@percy/cli-command';
 import spawn from 'cross-spawn';
 
 // check storybook version
@@ -319,7 +319,8 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       name: story.kind ? `${story.kind}: ${story.name}` : `${story.title}: ${story.name}`,
       ...story.parameters?.percy,
       id: story.id,
-      type: story.type ? story.type : 'story'
+      type: story.type ? story.type : 'story',
+      tags: story.tags
     }, invalid));
 
     return {
@@ -697,4 +698,85 @@ export async function captureResponsiveDOM(page, options, percy, log, story) {
   await changeViewportDimensionAndWait(page, currentWidth, currentHeight, resizeCount + 1, log);
   log.debug('Responsive DOM capture complete');
   return domSnapshots;
+}
+
+// ============ Doc Rule Matching Helpers ============
+
+// Helper function to check if rules array exists and has items
+export function hasRules(rules) {
+  return Array.isArray(rules) && rules.length > 0;
+}
+
+// Glob chars in pattern: * = any characters, ? = single character. Otherwise exact match.
+export const GLOB_CHARS = /[*?]/;
+
+export function patternToRegex(pattern) {
+  const re = pattern
+    .split('')
+    .map(c => {
+      if (c === '*') return '.*';
+      if (c === '?') return '.';
+      if (/[.+^${}()|[\]\\]/.test(c)) return '\\' + c;
+      return c;
+    })
+    .join('');
+  return new RegExp('^' + re + '$');
+}
+
+export function matchesPattern(str, pattern) {
+  if (GLOB_CHARS.test(pattern)) {
+    try {
+      return patternToRegex(pattern).test(str);
+    } catch {
+      return false;
+    }
+  }
+  return str === pattern;
+}
+
+// Match doc id (or name) against rule.match. Exact match, or glob if pattern contains * or ?.
+export function matchDocId(id, name, matchPattern) {
+  if (matchPattern == null || typeof matchPattern !== 'string') return false;
+  const s = matchPattern.trim();
+  if (s === '') return false;
+  const idStr = id != null ? String(id) : '';
+  const nameStr = name != null ? String(name) : '';
+  return matchesPattern(idStr, s) || matchesPattern(nameStr, s);
+}
+
+// Normalize rule.match to array of non-empty strings. Returns [] if invalid.
+export function getMatchPatterns(match) {
+  if (match == null) return [];
+  if (typeof match === 'string') {
+    const s = match.trim();
+    return s === '' ? [] : [s];
+  }
+  if (!Array.isArray(match)) return [];
+  return match
+    .filter(m => typeof m === 'string' && m.trim() !== '')
+    .map(m => m.trim());
+}
+
+// Find first rule that matches the doc (by id or name). Doc matches if it matches any entry in rule.match (string or array; exact or glob */?).
+export function findMatchingDocRule(doc, rules) {
+  if (!Array.isArray(rules) || !rules.length) return null;
+  return rules.find(rule => {
+    const patterns = getMatchPatterns(rule.match);
+    if (!patterns.length) return false;
+    return patterns.some(p => matchDocId(doc.id, doc.name, p));
+  }) ?? null;
+}
+
+// Returns snapshot config options for a doc merged with rule options and global config.
+// Rule options have priority over global config. Validation error messages will be added
+// to the provided invalid map.
+export function getDocSnapshotConfig(doc, ruleOptions, config, invalid) {
+  let { id, name, type, tags, ...docPercy } = doc;
+  let { match, capture, ...storyParams } = ruleOptions || {};
+  let base = { id, name, type: type || 'docs' };
+  let options = PercyConfig.migrate({ ...base, ...docPercy, ...storyParams }, '/storybook');
+  let errors = PercyConfig.validate(options, '/storybook');
+  for (let e of (errors || [])) invalid.set(e.path, e.message);
+  // Merge order: config (.percy.yml storybook) first, then rule options (higher priority)
+  return PercyConfig.merge([config, options, { id, name, type: type || 'docs' }]);
 }

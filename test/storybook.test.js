@@ -364,7 +364,7 @@ describe('percy storybook', () => {
     expect(callArgs[1][0].domSnapshot).toEqual(previewDOM);
   });
 
-  it('uses the preview dom when javascript is enabled', async () => {
+  it('logs debug messages when javascript is enabled with verbose flag', async () => {
     fs.writeFileSync('.percy.yml', [
       'version: 2',
       'snapshot:',
@@ -886,6 +886,299 @@ describe('percy storybook', () => {
         '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/',
         "[percy] Error: The provided '--shard-index' (7) is out of range. Found 2 shards of 2 snapshots each (3 total)"
       ]));
+    });
+  });
+
+  describe('docs capture rules', () => {
+    beforeEach(() => {
+      // Reset any existing percy.yml
+      try { fs.unlinkSync('.percy.yml'); } catch {}
+    });
+
+    it('captures autodocs per rules and includes percyCSS', async () => {
+      // Configure autodocs rule with percyCSS
+      fs.writeFileSync('.percy.yml', [
+        'version: 2',
+        'storybook:',
+        '  captureAutodocs: true',
+        '  docs:',
+        '    autodocs:',
+        '      rules:',
+        '        - match: "*--docs"',
+        '          capture: true',
+        '          percyCSS: |',
+        '            body { background: red !important; }'
+      ].join('\n'));
+
+      // Mock a doc entry in Storybook preview
+      const docsEntries = [
+        { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
+      ];
+      const FAKE_PREVIEW = `{ async extract() { return ${JSON.stringify(docsEntries)} }, ` +
+        'channel: { emit() {}, on: (a, c) => a === "docsRendered" && c() }' +
+        ' }';
+
+      server.reply('/iframe.html', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(docsEntries)} }</script>`
+      ].join('')]);
+
+      // eslint-disable-next-line import/no-extraneous-dependencies
+      let { Percy } = await import('@percy/core');
+      spyOn(Percy.prototype, 'snapshot').and.callThrough();
+
+      await storybook(['http://localhost:8000']);
+
+      // Assert a docs snapshot was taken
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        '[percy] Snapshot taken: TodoItem: Docs'
+      ]));
+
+      // Verify percyCSS was passed to snapshot options
+      const callArgs = Percy.prototype.snapshot.calls.allArgs();
+      const docSnapshotOptions = callArgs.find(args => args[0].name === 'TodoItem: Docs')?.[0];
+      expect(docSnapshotOptions?.percyCSS).toContain('background: red');
+    });
+
+    it('captures doc when global capture is false but rule capture=true', async () => {
+      fs.writeFileSync('.percy.yml', [
+        'version: 2',
+        'storybook:',
+        '  captureAutodocs: false',
+        '  docs:',
+        '    autodocs:',
+        '      rules:',
+        '        - match: "todoitem--docs"',
+        '          capture: true'
+      ].join('\n'));
+
+      const docsEntries = [
+        { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
+      ];
+      const FAKE_PREVIEW = `{ async extract() { return ${JSON.stringify(docsEntries)} }, ` +
+        'channel: { emit() {}, on: (a, c) => a === "docsRendered" && c() }' +
+        ' }';
+
+      server.reply('/iframe.html', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(docsEntries)} }</script>`
+      ].join('')]);
+
+      await storybook(['http://localhost:8000', '--dry-run']);
+
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        '[percy] Snapshot found: TodoItem: Docs'
+      ]));
+    });
+
+    it('skips doc when global capture is true but rule capture=false', async () => {
+      fs.writeFileSync('.percy.yml', [
+        'version: 2',
+        'storybook:',
+        '  captureAutodocs: true',
+        '  docs:',
+        '    autodocs:',
+        '      rules:',
+        '        - match: "todoitem--docs"',
+        '          capture: false'
+      ].join('\n'));
+
+      const docsEntries = [
+        { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
+      ];
+      const FAKE_PREVIEW = `{ async extract() { return ${JSON.stringify(docsEntries)} }, ` +
+        'channel: { emit() {}, on: (a, c) => a === "docsRendered" && c() }' +
+        ' }';
+
+      server.reply('/iframe.html', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(docsEntries)} }</script>`
+      ].join('')]);
+
+      await storybook(['http://localhost:8000', '--dry-run']);
+
+      // Should not include docs snapshot
+      expect(logger.stdout).not.toEqual(jasmine.arrayContaining([
+        '[percy] Snapshot found: TodoItem: Docs'
+      ]));
+    });
+
+    it('warns when using precapture options in doc rules with JavaScript enabled', async () => {
+      fs.writeFileSync('.percy.yml', [
+        'version: 2',
+        'snapshot:',
+        '  enableJavaScript: true',
+        'storybook:',
+        '  captureAutodocs: true',
+        '  docs:',
+        '    autodocs:',
+        '      rules:',
+        '        - match: "*--docs"',
+        '          capture: true',
+        '          waitForSelector: "#root"'
+      ].join('\n'));
+
+      const docsEntries = [
+        { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
+      ];
+      const FAKE_PREVIEW = `{ async extract() { return ${JSON.stringify(docsEntries)} }, ` +
+        'channel: { emit() {}, on: (a, c) => a === "docsRendered" && c() }' +
+        ' }';
+
+      server.reply('/iframe.html', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(docsEntries)} }</script>`
+      ].join('')]);
+
+      await storybook(['http://localhost:8000']);
+
+      expect(logger.stderr).toEqual(jasmine.arrayContaining([
+        '[percy] Invalid config:',
+        jasmine.stringMatching(/storybook\.docs\.autodocs\.rules\[0\]\.waitForSelector: not used with JavaScript enabled/)
+      ]));
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        '[percy] Snapshot taken: TodoItem: Docs'
+      ]));
+    });
+  });
+
+  describe('doc rule matching helpers', () => {
+    beforeEach(() => {
+      try { fs.unlinkSync('.percy.yml'); } catch {}
+    });
+
+    const docsEntries = [
+      { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
+    ];
+    const FAKE_PREVIEW = `{ async extract() { return ${JSON.stringify(docsEntries)} }, ` +
+      'channel: { emit() {}, on: (a, c) => a === "docsRendered" && c() }' +
+      ' }';
+
+    function mockPreviewServer() {
+      server.reply('/iframe.html', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(docsEntries)} }</script>`
+      ].join('')]);
+    }
+
+    it('matches glob * on doc name', async () => {
+      fs.writeFileSync('.percy.yml', [
+        'version: 2',
+        'storybook:',
+        '  captureAutodocs: true',
+        '  docs:',
+        '    autodocs:',
+        '      rules:',
+        '        - match: "*Docs"',
+        '          capture: true'
+      ].join('\n'));
+
+      mockPreviewServer();
+
+      await storybook(['http://localhost:8000', '--dry-run']);
+
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        '[percy] Snapshot found: TodoItem: Docs'
+      ]));
+    });
+
+    it('matches ? single-char pattern on id', async () => {
+      fs.writeFileSync('.percy.yml', [
+        'version: 2',
+        'storybook:',
+        '  captureAutodocs: true',
+        '  docs:',
+        '    autodocs:',
+        '      rules:',
+        '        - match: "?odoitem--docs"',
+        '          capture: true'
+      ].join('\n'));
+
+      mockPreviewServer();
+
+      await storybook(['http://localhost:8000', '--dry-run']);
+
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        '[percy] Snapshot found: TodoItem: Docs'
+      ]));
+    });
+
+    it('trims match patterns and ignores invalid/empty entries', async () => {
+      fs.writeFileSync('.percy.yml', [
+        'version: 2',
+        'storybook:',
+        '  captureAutodocs: true',
+        '  docs:',
+        '    autodocs:',
+        '      rules:',
+        '        - match: ["   ", "", null, " *--docs "]',
+        '          capture: true'
+      ].join('\n'));
+
+      mockPreviewServer();
+
+      await storybook(['http://localhost:8000', '--dry-run']);
+
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        '[percy] Snapshot found: TodoItem: Docs'
+      ]));
+    });
+
+    it('selects first matching rule when multiple match', async () => {
+      fs.writeFileSync('.percy.yml', [
+        'version: 2',
+        'storybook:',
+        '  captureAutodocs: true',
+        '  docs:',
+        '    autodocs:',
+        '      rules:',
+        '        - match: "todoitem--docs"',
+        '          capture: true',
+        '          widths: [600]',
+        '        - match: "*--docs"',
+        '          capture: true',
+        '          widths: [1024]'
+      ].join('\n'));
+
+      mockPreviewServer();
+
+      // eslint-disable-next-line import/no-extraneous-dependencies
+      let { Percy } = await import('@percy/core');
+      spyOn(Percy.prototype, 'snapshot').and.callThrough();
+
+      await storybook(['http://localhost:8000']);
+
+      const callArgs = Percy.prototype.snapshot.calls.allArgs();
+      const docSnapshotOptions = callArgs.find(args => args[0].name === 'TodoItem: Docs')?.[0];
+      expect(docSnapshotOptions?.widths).toEqual([600]);
+    });
+
+    it('rule widths override storybook-level widths via getDocSnapshotConfig merge', async () => {
+      fs.writeFileSync('.percy.yml', [
+        'version: 2',
+        'snapshot:',
+        '  widths: [1280]',
+        'storybook:',
+        '  captureAutodocs: true',
+        '  docs:',
+        '    autodocs:',
+        '      rules:',
+        '        - match: "todoitem--docs"',
+        '          capture: true',
+        '          widths: [640]'
+      ].join('\n'));
+
+      mockPreviewServer();
+
+      // eslint-disable-next-line import/no-extraneous-dependencies
+      let { Percy } = await import('@percy/core');
+      spyOn(Percy.prototype, 'snapshot').and.callThrough();
+
+      await storybook(['http://localhost:8000']);
+
+      const callArgs = Percy.prototype.snapshot.calls.allArgs();
+      const docSnapshotOptions = callArgs.find(args => args[0].name === 'TodoItem: Docs')?.[0];
+      expect(docSnapshotOptions?.widths).toEqual([640]);
     });
   });
 });
