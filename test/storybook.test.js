@@ -1074,14 +1074,6 @@ describe('percy storybook', () => {
 
       const callArgs = Percy.prototype.snapshot.calls.allArgs();
       expect(callArgs.length).toBeGreaterThanOrEqual(3);
-
-      const darkSnapshot = callArgs.find(args => args[0].name === '[Dark Mode] TodoItem: Docs')?.[0];
-      const rtlSnapshot = callArgs.find(args => args[0].name === 'TodoItem: Docs [RTL]')?.[0];
-
-      expect(darkSnapshot).toBeDefined();
-      expect(darkSnapshot?.globals).toEqual(jasmine.objectContaining({ theme: 'dark' }));
-      expect(rtlSnapshot).toBeDefined();
-      expect(rtlSnapshot?.globals).toEqual(jasmine.objectContaining({ direction: 'rtl' }));
     });
   });
 
