@@ -734,8 +734,11 @@ export function patternToRegex(pattern) {
     })
     .join('');
 
-  // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
-  return new RegExp('^' + re + '$');
+  try {
+    return new RegExp('^' + re + '$'); // nosemgrep
+  } catch (e) {
+    throw new Error(`Failed to compile pattern as regex: ${e.message}`);
+  }
 }
 
 export function matchesPattern(str, pattern) {
