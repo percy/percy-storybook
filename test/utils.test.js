@@ -867,3 +867,199 @@ describe('evalSetCurrentStory event handling', () => {
     await expectAsync(promise).toBeResolved();
   });
 });
+
+// ============ Doc Rule Matching Helpers ============
+
+describe('GLOB_CHARS regex', () => {
+  it('matches * and ? patterns', () => {
+    expect(utils.GLOB_CHARS.test('*')).toBe(true);
+    expect(utils.GLOB_CHARS.test('?')).toBe(true);
+    expect(utils.GLOB_CHARS.test('exact')).toBe(false);
+    expect(utils.GLOB_CHARS.test('*--docs')).toBe(true);
+    expect(utils.GLOB_CHARS.test('button?')).toBe(true);
+  });
+});
+
+describe('patternToRegex and matchesPattern', () => {
+  it('converts * to .* for glob matching', () => {
+    const regex = utils.patternToRegex('*--docs');
+    expect(regex.test('todoitem--docs')).toBe(true);
+    expect(regex.test('button--docs')).toBe(true);
+    expect(regex.test('--docs')).toBe(true);
+    expect(regex.test('docs')).toBe(false);
+  });
+
+  it('converts ? to . for single-char matching', () => {
+    const regex = utils.patternToRegex('?odoitem--docs');
+    expect(regex.test('Todoitem--docs')).toBe(true);
+    expect(regex.test('Xodoitem--docs')).toBe(true);
+    expect(regex.test('odoitem--docs')).toBe(false);
+    expect(regex.test('TodoItem--docs')).toBe(false);
+  });
+
+  it('escapes regex special characters', () => {
+    const regex = utils.patternToRegex('test.docs+item');
+    expect(regex.test('test.docs+item')).toBe(true);
+    expect(regex.test('testXdocsXitem')).toBe(false);
+  });
+
+  it('matchesPattern uses glob when * or ? present', () => {
+    expect(utils.matchesPattern('todoitem--docs', '*--docs')).toBe(true);
+    expect(utils.matchesPattern('button--docs', '*--docs')).toBe(true);
+    expect(utils.matchesPattern('button--docs', 'button--docs')).toBe(true);
+    expect(utils.matchesPattern('button--story', '*--docs')).toBe(false);
+  });
+
+  it('matchesPattern uses exact match when no glob chars', () => {
+    expect(utils.matchesPattern('exact-match', 'exact-match')).toBe(true);
+    expect(utils.matchesPattern('exact-match', 'not-exact')).toBe(false);
+  });
+
+  it('handles invalid regex gracefully', () => {
+    expect(utils.matchesPattern('test', '[')).toBe(false);
+  });
+});
+
+describe('matchDocId', () => {
+  it('matches doc by id when pattern matches id', () => {
+    expect(utils.matchDocId('todoitem--docs', 'TodoItem', 'todoitem--docs')).toBe(true);
+  });
+
+  it('matches doc by name when pattern matches name', () => {
+    expect(utils.matchDocId('todoitem--docs', 'Docs', '*Docs')).toBe(true);
+  });
+
+  it('returns false when neither id nor name matches', () => {
+    expect(utils.matchDocId('todoitem--docs', 'TodoItem', 'button--docs')).toBe(false);
+  });
+
+  it('returns false for null/undefined patterns', () => {
+    expect(utils.matchDocId('todoitem--docs', 'TodoItem', null)).toBe(false);
+    expect(utils.matchDocId('todoitem--docs', 'TodoItem', undefined)).toBe(false);
+  });
+
+  it('returns false for non-string patterns', () => {
+    expect(utils.matchDocId('todoitem--docs', 'TodoItem', 123)).toBe(false);
+    expect(utils.matchDocId('todoitem--docs', 'TodoItem', {})).toBe(false);
+  });
+
+  it('trims whitespace from patterns', () => {
+    expect(utils.matchDocId('todoitem--docs', 'TodoItem', '  todoitem--docs  ')).toBe(true);
+  });
+
+  it('returns false for empty patterns after trim', () => {
+    expect(utils.matchDocId('todoitem--docs', 'TodoItem', '   ')).toBe(false);
+  });
+
+  it('handles null/undefined id and name gracefully', () => {
+    expect(utils.matchDocId(null, 'TodoItem', 'TodoItem')).toBe(true);
+    expect(utils.matchDocId(undefined, 'TodoItem', 'TodoItem')).toBe(true);
+    expect(utils.matchDocId('todoitem--docs', null, 'null')).toBe(false);
+    expect(utils.matchDocId('todoitem--docs', undefined, 'undefined')).toBe(false);
+  });
+});
+
+describe('getMatchPatterns', () => {
+  it('returns array with single string when input is string', () => {
+    expect(utils.getMatchPatterns('test-pattern')).toEqual(['test-pattern']);
+  });
+
+  it('trims whitespace from string patterns', () => {
+    expect(utils.getMatchPatterns('  test-pattern  ')).toEqual(['test-pattern']);
+  });
+
+  it('returns empty array for empty string', () => {
+    expect(utils.getMatchPatterns('')).toEqual([]);
+  });
+
+  it('returns empty array for null/undefined', () => {
+    expect(utils.getMatchPatterns(null)).toEqual([]);
+    expect(utils.getMatchPatterns(undefined)).toEqual([]);
+  });
+
+  it('filters out non-string entries from arrays', () => {
+    expect(utils.getMatchPatterns([null, 'pattern1', undefined, 'pattern2'])).toEqual(['pattern1', 'pattern2']);
+  });
+
+  it('trims entries in arrays', () => {
+    expect(utils.getMatchPatterns(['  pattern1  ', 'pattern2'])).toEqual(['pattern1', 'pattern2']);
+  });
+
+  it('filters out empty strings after trimming', () => {
+    expect(utils.getMatchPatterns(['pattern1', '   ', '', 'pattern2'])).toEqual(['pattern1', 'pattern2']);
+  });
+
+  it('returns empty array for non-string, non-array inputs', () => {
+    expect(utils.getMatchPatterns(123)).toEqual([]);
+    expect(utils.getMatchPatterns({})).toEqual([]);
+  });
+});
+
+describe('findMatchingDocRule', () => {
+  const mockRules = [
+    { match: 'exact-match', capture: true },
+    { match: '*--docs', capture: true },
+    { match: ['glob?', 'other*'], capture: false }
+  ];
+
+  it('returns first matching rule', () => {
+    const doc = { id: 'exact-match', name: 'Test' };
+    const result = utils.findMatchingDocRule(doc, mockRules);
+    expect(result).toEqual(mockRules[0]);
+  });
+
+  it('matches by id when glob pattern matches id', () => {
+    const doc = { id: 'button--docs', name: 'Button' };
+    const result = utils.findMatchingDocRule(doc, mockRules);
+    expect(result).toEqual(mockRules[1]);
+  });
+
+  it('matches by name when pattern matches name', () => {
+    const doc = { id: 'some-id', name: 'exact-match' };
+    const result = utils.findMatchingDocRule(doc, mockRules);
+    expect(result).toEqual(mockRules[0]);
+  });
+
+  it('returns null when no rule matches', () => {
+    const doc = { id: 'no-match', name: 'NoMatch' };
+    const result = utils.findMatchingDocRule(doc, mockRules);
+    expect(result).toBeNull();
+  });
+
+  it('returns null for null/undefined rules', () => {
+    const doc = { id: 'test', name: 'Test' };
+    expect(utils.findMatchingDocRule(doc, null)).toBeNull();
+    expect(utils.findMatchingDocRule(doc, undefined)).toBeNull();
+  });
+
+  it('returns null for empty rules array', () => {
+    const doc = { id: 'test', name: 'Test' };
+    expect(utils.findMatchingDocRule(doc, [])).toBeNull();
+  });
+
+  it('selects first match when multiple rules match', () => {
+    const doc = { id: 'test--docs', name: 'Test Docs' };
+    const rules = [
+      { match: 'test--docs', capture: true },
+      { match: '*--docs', capture: false }
+    ];
+    const result = utils.findMatchingDocRule(doc, rules);
+    expect(result).toEqual(rules[0]);
+  });
+
+  it('handles rules with invalid match patterns', () => {
+    const doc = { id: 'test', name: 'Test' };
+    const rules = [
+      { match: null, capture: true },
+      { match: '*test', capture: false }
+    ];
+    const result = utils.findMatchingDocRule(doc, rules);
+    expect(result).toEqual(rules[1]);
+  });
+
+  it('matches array of patterns', () => {
+    const doc = { id: 'globx', name: 'Test' };
+    const result = utils.findMatchingDocRule(doc, mockRules);
+    expect(result).toEqual(mockRules[2]);
+  });
+});
