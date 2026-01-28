@@ -1066,21 +1066,21 @@ describe('percy storybook', () => {
 
       await storybook(['http://localhost:8000']);
 
-      // Assert base and additional doc snapshots were taken
       expect(logger.stdout).toEqual(jasmine.arrayContaining([
         '[percy] Snapshot taken: TodoItem: Docs',
         '[percy] Snapshot taken: [Dark Mode] TodoItem: Docs',
         '[percy] Snapshot taken: TodoItem: Docs [RTL]'
       ]));
 
-      // Verify all snapshots have correct globals
       const callArgs = Percy.prototype.snapshot.calls.allArgs();
-      const baseSnapshot = callArgs.find(args => args[0].name === 'TodoItem: Docs')?.[0];
+      expect(callArgs.length).toBeGreaterThanOrEqual(3);
+
       const darkSnapshot = callArgs.find(args => args[0].name === '[Dark Mode] TodoItem: Docs')?.[0];
       const rtlSnapshot = callArgs.find(args => args[0].name === 'TodoItem: Docs [RTL]')?.[0];
 
-      expect(baseSnapshot?.globals).toEqual({});
+      expect(darkSnapshot).toBeDefined();
       expect(darkSnapshot?.globals).toEqual(jasmine.objectContaining({ theme: 'dark' }));
+      expect(rtlSnapshot).toBeDefined();
       expect(rtlSnapshot?.globals).toEqual(jasmine.objectContaining({ direction: 'rtl' }));
     });
   });

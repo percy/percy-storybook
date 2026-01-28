@@ -137,11 +137,18 @@ function getDocCaptureFlagsWithRules(config) {
   const hasMdxRules = hasRules(config.docs?.mdx?.rules);
   const hasAutodocsRules = hasRules(config.docs?.autodocs?.rules);
 
-  // If rules exist OR config is explicitly set OR env var is set, enable capture
-  const docCaptureFlag = !!config.captureDocs || hasMdxRules ||
-    process.env.PERCY_STORYBOOK_DOC_CAPTURE === 'true';
-  const autodocCaptureFlag = !!config.captureAutodocs || hasAutodocsRules ||
-    process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE === 'true';
+  // Base flags follow the same precedence as mapDocSnapshots: config > env var
+  const baseDocCaptureFlag = getCaptureFlagValue(
+    config.captureDocs,
+    'PERCY_STORYBOOK_DOC_CAPTURE'
+  );
+  const baseAutodocCaptureFlag = getCaptureFlagValue(
+    config.captureAutodocs,
+    'PERCY_STORYBOOK_AUTODOC_CAPTURE'
+  );
+  // Rules have highest precedence and can force capture even when config is false
+  const docCaptureFlag = baseDocCaptureFlag || hasMdxRules;
+  const autodocCaptureFlag = baseAutodocCaptureFlag || hasAutodocsRules;
 
   return {
     docCaptureFlag,
