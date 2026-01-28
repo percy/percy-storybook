@@ -911,16 +911,17 @@ describe('percy storybook', () => {
       ].join('\n'));
 
       // Mock a doc entry in Storybook preview
-      const docsEntries = [
-        { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
-      ];
-      const FAKE_PREVIEW = `{ async extract() { return ${JSON.stringify(docsEntries)} }, ` +
-        'channel: { emit() {}, on: (a, c) => a === "docsRendered" && c() }' +
+      const docsEntries = {
+        'todoitem--docs': { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
+      };
+      const FAKE_PREVIEW = '{ ' +
+        'async extract() { return {} }, ' +
+        `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(docsEntries)} } }, ` +
+        'channel: { emit() {}, on: (a, c) => a === \'docsRendered\' && c() }' +
         ' }';
 
       server.reply('/iframe.html', () => [200, 'text/html', [
-        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
-        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(docsEntries)} }</script>`
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`
       ].join('')]);
 
       // eslint-disable-next-line import/no-extraneous-dependencies
@@ -952,16 +953,17 @@ describe('percy storybook', () => {
         '          capture: true'
       ].join('\n'));
 
-      const docsEntries = [
-        { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
-      ];
-      const FAKE_PREVIEW = `{ async extract() { return ${JSON.stringify(docsEntries)} }, ` +
-        'channel: { emit() {}, on: (a, c) => a === "docsRendered" && c() }' +
+      const docsEntries = {
+        'todoitem--docs': { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
+      };
+      const FAKE_PREVIEW = '{ ' +
+        'async extract() { return {} }, ' +
+        `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(docsEntries)} } }, ` +
+        'channel: { emit() {}, on: (a, c) => a === \'docsRendered\' && c() }' +
         ' }';
 
       server.reply('/iframe.html', () => [200, 'text/html', [
-        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
-        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(docsEntries)} }</script>`
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`
       ].join('')]);
 
       await storybook(['http://localhost:8000', '--dry-run']);
@@ -983,16 +985,17 @@ describe('percy storybook', () => {
         '          capture: false'
       ].join('\n'));
 
-      const docsEntries = [
-        { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
-      ];
-      const FAKE_PREVIEW = `{ async extract() { return ${JSON.stringify(docsEntries)} }, ` +
-        'channel: { emit() {}, on: (a, c) => a === "docsRendered" && c() }' +
+      const docsEntries = {
+        'todoitem--docs': { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
+      };
+      const FAKE_PREVIEW = '{ ' +
+        'async extract() { return {} }, ' +
+        `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(docsEntries)} } }, ` +
+        'channel: { emit() {}, on: (a, c) => a === \'docsRendered\' && c() }' +
         ' }';
 
       server.reply('/iframe.html', () => [200, 'text/html', [
-        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
-        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(docsEntries)} }</script>`
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`
       ].join('')]);
 
       await storybook(['http://localhost:8000', '--dry-run']);
@@ -1018,16 +1021,17 @@ describe('percy storybook', () => {
         '          waitForSelector: "#root"'
       ].join('\n'));
 
-      const docsEntries = [
-        { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
-      ];
-      const FAKE_PREVIEW = `{ async extract() { return ${JSON.stringify(docsEntries)} }, ` +
-        'channel: { emit() {}, on: (a, c) => a === "docsRendered" && c() }' +
+      const docsEntries = {
+        'todoitem--docs': { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
+      };
+      const FAKE_PREVIEW = '{ ' +
+        'async extract() { return {} }, ' +
+        `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(docsEntries)} } }, ` +
+        'channel: { emit() {}, on: (a, c) => a === \'docsRendered\' && c() }' +
         ' }';
 
       server.reply('/iframe.html', () => [200, 'text/html', [
-        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
-        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(docsEntries)} }</script>`
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`
       ].join('')]);
 
       await storybook(['http://localhost:8000']);
@@ -1047,17 +1051,18 @@ describe('percy storybook', () => {
       try { fs.unlinkSync('.percy.yml'); } catch {}
     });
 
-    const docsEntries = [
-      { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
-    ];
-    const FAKE_PREVIEW = `{ async extract() { return ${JSON.stringify(docsEntries)} }, ` +
-      'channel: { emit() {}, on: (a, c) => a === "docsRendered" && c() }' +
+    const docsEntries = {
+      'todoitem--docs': { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
+    };
+    const FAKE_PREVIEW = '{ ' +
+      'async extract() { return {} }, ' +
+      `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(docsEntries)} } }, ` +
+      'channel: { emit() {}, on: (a, c) => a === \'docsRendered\' && c() }' +
       ' }';
 
     function mockPreviewServer() {
       server.reply('/iframe.html', () => [200, 'text/html', [
-        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
-        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(docsEntries)} }</script>`
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`
       ].join('')]);
     }
 
