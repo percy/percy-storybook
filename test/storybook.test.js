@@ -921,7 +921,8 @@ describe('percy storybook', () => {
         ' }';
 
       server.reply('/iframe.html', () => [200, 'text/html', [
-        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
 
       // eslint-disable-next-line import/no-extraneous-dependencies
@@ -963,7 +964,8 @@ describe('percy storybook', () => {
         ' }';
 
       server.reply('/iframe.html', () => [200, 'text/html', [
-        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
 
       await storybook(['http://localhost:8000', '--dry-run']);
@@ -988,14 +990,18 @@ describe('percy storybook', () => {
       const docsEntries = {
         'todoitem--docs': { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
       };
+      const stories = [
+        { id: 'todoitem--default', kind: 'TodoItem', name: 'Default' }
+      ];
       const FAKE_PREVIEW = '{ ' +
-        'async extract() { return {} }, ' +
+        `async extract() { return ${JSON.stringify(stories)} }, ` +
         `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(docsEntries)} } }, ` +
         'channel: { emit() {}, on: (a, c) => a === \'docsRendered\' && c() }' +
         ' }';
 
       server.reply('/iframe.html', () => [200, 'text/html', [
-        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(stories)} }</script>`
       ].join('')]);
 
       await storybook(['http://localhost:8000', '--dry-run']);
@@ -1003,6 +1009,10 @@ describe('percy storybook', () => {
       // Should not include docs snapshot
       expect(logger.stdout).not.toEqual(jasmine.arrayContaining([
         '[percy] Snapshot found: TodoItem: Docs'
+      ]));
+      // But should include the story
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        '[percy] Snapshot found: TodoItem: Default'
       ]));
     });
 
@@ -1024,14 +1034,18 @@ describe('percy storybook', () => {
       const docsEntries = {
         'todoitem--docs': { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
       };
+      const stories = [
+        { id: 'todoitem--default', kind: 'TodoItem', name: 'Default' }
+      ];
       const FAKE_PREVIEW = '{ ' +
-        'async extract() { return {} }, ' +
+        `async extract() { return ${JSON.stringify(stories)} }, ` +
         `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(docsEntries)} } }, ` +
         'channel: { emit() {}, on: (a, c) => a === \'docsRendered\' && c() }' +
         ' }';
 
       server.reply('/iframe.html', () => [200, 'text/html', [
-        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(stories)} }</script>`
       ].join('')]);
 
       await storybook(['http://localhost:8000']);
@@ -1062,7 +1076,8 @@ describe('percy storybook', () => {
 
     function mockPreviewServer() {
       server.reply('/iframe.html', () => [200, 'text/html', [
-        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
     }
 
