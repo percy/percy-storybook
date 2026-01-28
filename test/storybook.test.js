@@ -1001,7 +1001,7 @@ describe('percy storybook', () => {
       const FAKE_PREVIEW = '{ ' +
         `async extract() { return ${JSON.stringify(stories)} }, ` +
         `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(docsEntries)} } }, ` +
-        'channel: { emit() {}, on: (a, c) => a === \'docsRendered\' && c() }' +
+        'channel: { emit() {}, on: (a, c) => (a === \'docsRendered\' || a === \'storyRendered\') && c() }' +
         ' }';
 
       server.reply('/iframe.html', () => [200, 'text/html', [
@@ -1086,7 +1086,7 @@ describe('percy storybook', () => {
     const FAKE_PREVIEW = '{ ' +
       'async extract() { return {} }, ' +
       `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(docsEntries)} } }, ` +
-      'channel: { emit() {}, on: (a, c) => a === \'docsRendered\' && c() }' +
+      'channel: { emit() {}, on: (a, c) => (a === \'docsRendered\' || a === \'storyRendered\') && c() }' +
       ' }';
 
     function mockPreviewServer() {
