@@ -246,6 +246,9 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config }) {
   let invalid = new Map(stories.invalid);
   let conf = encodeStorybookConfig(config, invalid);
 
+  // Extract snapshot options only, exclude doc config metadata
+  const { captureDocs, captureAutodocs, docs, ...confOptions } = conf;
+
   // Separate stories from docs: extract() may return docs without type='docs', so check id suffix
   const storyEntries = stories.data.filter(s => s.type !== 'docs' && !String(s.id || '').endsWith('--docs'));
   const docCandidates = stories.data.filter(s => s.type === 'docs' || String(s.id || '').endsWith('--docs'));
@@ -258,7 +261,7 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config }) {
     }
 
     let { additionalSnapshots = [], ...options } =
-      getSnapshotConfig(story, conf, invalid);
+      getSnapshotConfig(story, confOptions, invalid);
 
     return all.concat(
       options,
@@ -266,7 +269,7 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config }) {
     );
   }, []);
 
-  const docSnapshots = mapDocSnapshots(docEntries, config, conf, invalid, log);
+  const docSnapshots = mapDocSnapshots(docEntries, config, confOptions, invalid, log);
   snapshots = snapshots.concat(docSnapshots);
 
   // log validation warnings

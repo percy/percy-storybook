@@ -1020,6 +1020,69 @@ describe('percy storybook', () => {
         '[percy] Snapshot found: TodoItem: Default'
       ]));
     });
+
+    it('captures doc with additionalSnapshots using different globals', async () => {
+      fs.writeFileSync('.percy.yml', [
+        'version: 2',
+        'storybook:',
+        '  captureAutodocs: true',
+        '  docs:',
+        '    autodocs:',
+        '      rules:',
+        '        - match: "todoitem--docs"',
+        '          capture: true',
+        '          additionalSnapshots:',
+        '            - prefix: "[Dark Mode] "',
+        '              globals:',
+        '                theme: dark',
+        '            - suffix: " [RTL]"',
+        '              globals:',
+        '                direction: rtl'
+      ].join('\n'));
+
+      // Mock a doc entry in Storybook preview
+      const docsEntries = {
+        'todoitem--docs': { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
+      };
+      const FAKE_PREVIEW = '{ ' +
+        'async extract() { return {} }, ' +
+        `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(docsEntries)} } }, ` +
+        'channel: { emit() {}, on: (a, c) => a === \'docsRendered\' && c() }' +
+        ' }';
+
+      server.reply('/iframe.html', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
+      ].join('')]);
+
+      server.reply('/iframe.html?id=todoitem--docs&viewMode=story', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
+      ].join('')]);
+
+      // eslint-disable-next-line import/no-extraneous-dependencies
+      let { Percy } = await import('@percy/core');
+      spyOn(Percy.prototype, 'snapshot').and.callThrough();
+
+      await storybook(['http://localhost:8000']);
+
+      // Assert base and additional doc snapshots were taken
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        '[percy] Snapshot taken: TodoItem: Docs',
+        '[percy] Snapshot taken: [Dark Mode] TodoItem: Docs',
+        '[percy] Snapshot taken: TodoItem: Docs [RTL]'
+      ]));
+
+      // Verify all snapshots have correct globals
+      const callArgs = Percy.prototype.snapshot.calls.allArgs();
+      const baseSnapshot = callArgs.find(args => args[0].name === 'TodoItem: Docs')?.[0];
+      const darkSnapshot = callArgs.find(args => args[0].name === '[Dark Mode] TodoItem: Docs')?.[0];
+      const rtlSnapshot = callArgs.find(args => args[0].name === 'TodoItem: Docs [RTL]')?.[0];
+
+      expect(baseSnapshot?.globals).toEqual({});
+      expect(darkSnapshot?.globals).toEqual(jasmine.objectContaining({ theme: 'dark' }));
+      expect(rtlSnapshot?.globals).toEqual(jasmine.objectContaining({ direction: 'rtl' }));
+    });
   });
 
   describe('doc rule matching helpers', () => {

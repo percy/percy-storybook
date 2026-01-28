@@ -121,6 +121,7 @@ export const storybookSchema = {
       allOf: [
         { $ref: '/snapshot#/$defs/common' },
         { $ref: '/storybook#/$defs/common' },
+        { $ref: '/storybook#/$defs/additionalSnapshots/property' },
         {
           if: { $ref: '/storybook#/$defs/enableJavaScript/isTrue' },
           then: { $ref: '/storybook#/$defs/enableJavaScript/disallowedProperties' }
