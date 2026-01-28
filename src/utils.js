@@ -717,8 +717,13 @@ export const GLOB_CHARS = /[*?]/;
 // Maximum allowed pattern length to prevent ReDoS attacks
 const MAX_PATTERN_LENGTH = 500;
 
-function buildRegexPattern(pattern) {
-  const escapedPattern = pattern
+export function patternToRegex(pattern) {
+  // Validate pattern length to prevent ReDoS
+  if (typeof pattern !== 'string' || pattern.length > MAX_PATTERN_LENGTH) {
+    throw new Error('Invalid pattern: must be a string with max length of 500 characters');
+  }
+
+  const re = pattern
     .split('')
     .map(c => {
       if (c === '*') return '.*';
@@ -729,26 +734,8 @@ function buildRegexPattern(pattern) {
     })
     .join('');
 
-  return '^' + escapedPattern + '$';
-}
-
-// Pre-compile a safe regex constructor wrapper
-const createSafeRegex = (patternStr) => {
-  try {
-    return new RegExp(patternStr);
-  } catch (e) {
-    throw new Error(`Failed to compile pattern as regex: ${e.message}`);
-  }
-};
-
-export function patternToRegex(pattern) {
-  // Validate pattern length to prevent ReDoS
-  if (typeof pattern !== 'string' || pattern.length > MAX_PATTERN_LENGTH) {
-    throw new Error('Invalid pattern: must be a string with max length of 500 characters');
-  }
-
-  const regexPattern = buildRegexPattern(pattern);
-  return createSafeRegex(regexPattern);
+  // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
+  return new RegExp('^' + re + '$');
 }
 
 export function matchesPattern(str, pattern) {
