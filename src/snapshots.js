@@ -173,17 +173,6 @@ function mapDocSnapshots(docs, config, conf, invalid, log) {
     return tags.includes('autodocs');
   };
 
-  // Log available doc ids once when we have rules, so users can fix .percy.yml match patterns
-  if (docs.length > 0 && (hasMdxRules || hasAutodocsRules)) {
-    const byType = { mdx: [], autodocs: [] };
-    docs.forEach(doc => {
-      const key = isDocAutodoc(doc) ? 'autodocs' : 'mdx';
-      byType[key].push({ id: doc.id, name: doc.name });
-    });
-    if (byType.mdx.length) log.info(`MDX doc IDs available for match: ${byType.mdx.map(d => d.id).join(', ')}`);
-    if (byType.autodocs.length) log.info(`Autodoc IDs available for match: ${byType.autodocs.map(d => d.id).join(', ')}`);
-  }
-
   return docs.reduce((all, doc) => {
     const isAutodoc = isDocAutodoc(doc);
     const captureAll = isAutodoc ? captureAutodocs : captureDocs;
@@ -224,8 +213,6 @@ function mapDocSnapshots(docs, config, conf, invalid, log) {
     } else {
       ruleOptions = {};
     }
-
-    log.info(`Capturing doc: id=${doc.id} name=${doc.name}`);
 
     let { additionalSnapshots = [], ...options } =
       getDocSnapshotConfig(doc, ruleOptions, conf, invalid);
