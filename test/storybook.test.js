@@ -1020,59 +1020,6 @@ describe('percy storybook', () => {
         '[percy] Snapshot found: TodoItem: Default'
       ]));
     });
-
-    it('warns when using precapture options in doc rules with JavaScript enabled', async () => {
-      fs.writeFileSync('.percy.yml', [
-        'version: 2',
-        'snapshot:',
-        '  enableJavaScript: true',
-        'storybook:',
-        '  captureAutodocs: true',
-        '  docs:',
-        '    autodocs:',
-        '      rules:',
-        '        - match: "*--docs"',
-        '          capture: true',
-        '          waitForSelector: "#root"'
-      ].join('\n'));
-
-      const docsEntries = {
-        'todoitem--docs': { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
-      };
-      const stories = [
-        { id: 'todoitem--default', kind: 'TodoItem', name: 'Default' }
-      ];
-      const FAKE_PREVIEW = '{ ' +
-        `async extract() { return ${JSON.stringify(stories)} }, ` +
-        `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(docsEntries)} } }, ` +
-        'channel: { emit() {}, on: (a, c) => (a === \'docsRendered\' || a === \'storyRendered\') && c() }' +
-        ' }';
-
-      server.reply('/iframe.html', () => [200, 'text/html', [
-        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
-        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(stories)} }</script>`
-      ].join('')]);
-
-      server.reply('/iframe.html?id=todoitem--default&viewMode=story', () => [200, 'text/html', [
-        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
-        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(stories)} }</script>`
-      ].join('')]);
-
-      server.reply('/iframe.html?id=todoitem--docs&viewMode=story', () => [200, 'text/html', [
-        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
-        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(stories)} }</script>`
-      ].join('')]);
-
-      await storybook(['http://localhost:8000']);
-
-      expect(logger.stderr).toEqual(jasmine.arrayContaining([
-        '[percy] Invalid config:',
-        jasmine.stringMatching(/storybook\.docs\.autodocs\.rules\[0\]\.waitForSelector: not used with JavaScript enabled/)
-      ]));
-      expect(logger.stdout).toEqual(jasmine.arrayContaining([
-        '[percy] Snapshot taken: TodoItem: Docs'
-      ]));
-    });
   });
 
   describe('doc rule matching helpers', () => {

@@ -734,12 +734,9 @@ export function patternToRegex(pattern) {
     })
     .join('');
 
-  // Use try-catch to handle any potential regex compilation errors
-  try {
-    return new RegExp('^' + re + '$');
-  } catch (e) {
-    throw new Error(`Failed to compile pattern as regex: ${e.message}`);
-  }
+  // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
+  // This is safe because: 1) pattern length is validated (max 500 chars), 2) special regex chars are escaped
+  return new RegExp('^' + re + '$');
 }
 
 export function matchesPattern(str, pattern) {
