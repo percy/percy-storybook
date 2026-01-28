@@ -925,6 +925,11 @@ describe('percy storybook', () => {
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
 
+      server.reply('/iframe.html?id=todoitem--docs&viewMode=story', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
+      ].join('')]);
+
       // eslint-disable-next-line import/no-extraneous-dependencies
       let { Percy } = await import('@percy/core');
       spyOn(Percy.prototype, 'snapshot').and.callThrough();
@@ -1048,6 +1053,16 @@ describe('percy storybook', () => {
         `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(stories)} }</script>`
       ].join('')]);
 
+      server.reply('/iframe.html?id=todoitem--default&viewMode=story', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(stories)} }</script>`
+      ].join('')]);
+
+      server.reply('/iframe.html?id=todoitem--docs&viewMode=story', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify(stories)} }</script>`
+      ].join('')]);
+
       await storybook(['http://localhost:8000']);
 
       expect(logger.stderr).toEqual(jasmine.arrayContaining([
@@ -1076,6 +1091,11 @@ describe('percy storybook', () => {
 
     function mockPreviewServer() {
       server.reply('/iframe.html', () => [200, 'text/html', [
+        `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
+        '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
+      ].join('')]);
+
+      server.reply('/iframe.html?id=todoitem--docs&viewMode=story', () => [200, 'text/html', [
         `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
