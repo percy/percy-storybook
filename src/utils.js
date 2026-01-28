@@ -733,7 +733,7 @@ export function patternToRegex(pattern) {
       return c;
     })
     .join('');
-  
+
   // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
   return new RegExp('^' + re + '$');
 }
