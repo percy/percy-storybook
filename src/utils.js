@@ -733,11 +733,7 @@ export function patternToRegex(pattern) {
       return c;
     })
     .join('');
-
-  // Security: This is safe because:
-  // 1. Pattern length is validated above (max 500 chars) preventing exponential backtracking
-  // 2. All special regex chars are escaped above, only allowing literal matches and .* / . wildcards
-  // 3. The resulting pattern is anchored (^...$) and uses simple constructs
+  
   // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
   return new RegExp('^' + re + '$');
 }
