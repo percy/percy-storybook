@@ -160,29 +160,6 @@ export const storybookSchema = {
         tags: {
           type: 'array',
           items: { type: 'string' }
-        },
-        docs: {
-          type: 'object',
-          properties: {
-            mdx: {
-              type: 'object',
-              properties: {
-                rules: {
-                  type: 'array',
-                  items: { $ref: '/storybook#/$defs/docsRule' }
-                }
-              }
-            },
-            autodocs: {
-              type: 'object',
-              properties: {
-                rules: {
-                  type: 'array',
-                  items: { $ref: '/storybook#/$defs/docsRule' }
-                }
-              }
-            }
-          }
         }
       }
     }
