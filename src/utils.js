@@ -291,14 +291,18 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
     let docsEntries = [];
     const entries = window.__STORYBOOK_PREVIEW__?.storyStoreValue?.storyIndex?.entries;
     if ((docCapture || autodocCapture) && entries) {
-      docsEntries = Object.values(entries).filter(entry => {
-        if (entry.type !== 'docs') return false;
-        if (entry.tags && entry.tags.includes('autodocs')) {
-          return !!autodocCapture;
-        } else {
-          return !!docCapture;
-        }
-      });
+      docsEntries = Object.values(entries)
+        .filter(entry => {
+          if (entry.type !== 'docs') return false;
+          if (entry.tags && entry.tags.includes('unattached-mdx')) {
+            return !!docCapture;
+          } else if (entry.tags && entry.tags.includes('autodocs')) {
+            return !!autodocCapture;
+          } else {
+            return !!docCapture;
+          }
+        })
+        .map(entry => ({ ...entry }));
     }
 
     const storiesObj = await (window.__STORYBOOK_PREVIEW__?.extract?.());
@@ -710,17 +714,32 @@ export function hasRules(rules) {
 // Glob chars in pattern: * = any characters, ? = single character. Otherwise exact match.
 export const GLOB_CHARS = /[*?]/;
 
+// Maximum allowed pattern length to prevent ReDoS attacks
+const MAX_PATTERN_LENGTH = 500;
+
 export function patternToRegex(pattern) {
+  // Validate pattern length to prevent ReDoS
+  if (typeof pattern !== 'string' || pattern.length > MAX_PATTERN_LENGTH) {
+    throw new Error('Invalid pattern: must be a string with max length of 500 characters');
+  }
+
   const re = pattern
     .split('')
     .map(c => {
       if (c === '*') return '.*';
       if (c === '?') return '.';
+      // Escape special regex characters to prevent injection
       if (/[.+^${}()|[\]\\]/.test(c)) return '\\' + c;
       return c;
     })
     .join('');
-  return new RegExp('^' + re + '$');
+
+  // Use try-catch to handle any potential regex compilation errors
+  try {
+    return new RegExp('^' + re + '$');
+  } catch (e) {
+    throw new Error(`Failed to compile pattern as regex: ${e.message}`);
+  }
 }
 
 export function matchesPattern(str, pattern) {

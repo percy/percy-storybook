@@ -54,6 +54,14 @@ export const storybookSchema = {
             minimum: 1
           },
           default: [375, 1280]
+        },
+        captureDocs: {
+          type: 'boolean',
+          default: true
+        },
+        captureAutodocs: {
+          type: 'boolean',
+          default: true
         }
       }
     },
@@ -107,6 +115,30 @@ export const storybookSchema = {
         }
       }
     },
+    docsRule: {
+      type: 'object',
+      unevaluatedProperties: false,
+      allOf: [
+        { $ref: '/snapshot#/$defs/common' },
+        { $ref: '/storybook#/$defs/common' },
+        {
+          if: { $ref: '/storybook#/$defs/enableJavaScript/isTrue' },
+          then: { $ref: '/storybook#/$defs/enableJavaScript/disallowedProperties' }
+        }
+      ],
+      properties: {
+        match: {
+          oneOf: [
+            { type: 'string' },
+            {
+              type: 'array',
+              items: { type: 'string' }
+            }
+          ]
+        },
+        capture: { type: 'boolean' }
+      }
+    },
     params: {
       type: 'object',
       unevaluatedProperties: false,
@@ -120,88 +152,34 @@ export const storybookSchema = {
         }
       ],
       properties: {
-        id: {
-          type: 'string',
-          description: 'Storybook story or doc id (e.g. component--story or component--docs); used for URL'
-        },
+        id: { type: 'string' },
         name: { type: 'string' },
         skip: { type: 'boolean' },
         type: { type: 'string', enum: ['story', 'docs'] },
         tags: {
           type: 'array',
-          items: { type: 'string' },
-          description: 'Storybook entry tags (e.g. autodocs); used to distinguish doc types'
-        }
-      }
-    },
-    commonDocRule: {
-      type: 'object',
-      allOf: [
-        { $ref: '/snapshot#/$defs/precapture' },
-        {
-          if: { $ref: '/storybook#/$defs/enableJavaScript/isTrue' },
-          then: { $ref: '/storybook#/$defs/enableJavaScript/disallowedProperties' }
-        }
-      ],
-      properties: {
-        args: { type: 'object', normalize: false },
-        globals: { type: 'object', normalize: false },
-        queryParams: { type: 'object', normalize: false },
-        responsiveSnapshotCapture: { type: 'boolean', default: false },
-        widths: {
-          type: 'array',
-          items: { type: 'integer', minimum: 1 },
-          default: [375, 1280]
-        }
-      }
-    },
-    docRule: {
-      type: 'object',
-      unevaluatedProperties: false,
-      allOf: [
-        { $ref: '/storybook#/$defs/commonDocRule' },
-        { $ref: '/storybook#/$defs/additionalSnapshots/property' },
-        {
-          if: { $ref: '/storybook#/$defs/enableJavaScript/isTrue' },
-          then: { $ref: '/storybook#/$defs/enableJavaScript/disallowedProperties' }
-        }
-      ],
-      required: ['match'],
-      properties: {
-        match: {
-          description: 'Doc id or name(s). String or array. Exact match, or glob: * (any chars), ? (one char). Doc matches if it matches any entry.',
-          oneOf: [
-            { type: 'string', minLength: 1 },
-            { type: 'array', items: { type: 'string', minLength: 1 }, minItems: 1 }
-          ]
+          items: { type: 'string' }
         },
-        capture: {
-          type: 'boolean',
-          description: 'When captureDocs/captureAutodocs is true: set false to exclude. When false: set true to include.'
-        }
-      }
-    },
-    docsConfig: {
-      type: 'object',
-      unevaluatedProperties: false,
-      properties: {
-        mdx: {
+        docs: {
           type: 'object',
-          unevaluatedProperties: false,
           properties: {
-            rules: {
-              type: 'array',
-              items: { $ref: '/storybook#/$defs/docRule' }
-            }
-          }
-        },
-        autodocs: {
-          type: 'object',
-          unevaluatedProperties: false,
-          properties: {
-            rules: {
-              type: 'array',
-              items: { $ref: '/storybook#/$defs/docRule' }
+            mdx: {
+              type: 'object',
+              properties: {
+                rules: {
+                  type: 'array',
+                  items: { $ref: '/storybook#/$defs/docsRule' }
+                }
+              }
+            },
+            autodocs: {
+              type: 'object',
+              properties: {
+                rules: {
+                  type: 'array',
+                  items: { $ref: '/storybook#/$defs/docsRule' }
+                }
+              }
             }
           }
         }
@@ -217,20 +195,34 @@ export const configSchema = {
     allOf: [
       { $ref: '/storybook#/$defs/common' },
       { $ref: '/storybook#/$defs/additionalSnapshots/property' },
-      { $ref: '/storybook#/$defs/docsConfig' },
       {
         if: { $ref: '/storybook#/$defs/enableJavaScript/isTrue' },
         then: { $ref: '/storybook#/$defs/additionalSnapshots/enabledJavaScript' }
       }
     ],
     properties: {
-      captureDocs: {
-        type: 'boolean',
-        description: 'Capture all MDX docs when true'
-      },
-      captureAutodocs: {
-        type: 'boolean',
-        description: 'Capture all autodocs when true'
+      docs: {
+        type: 'object',
+        properties: {
+          mdx: {
+            type: 'object',
+            properties: {
+              rules: {
+                type: 'array',
+                items: { $ref: '/storybook#/$defs/docsRule' }
+              }
+            }
+          },
+          autodocs: {
+            type: 'object',
+            properties: {
+              rules: {
+                type: 'array',
+                items: { $ref: '/storybook#/$defs/docsRule' }
+              }
+            }
+          }
+        }
       }
     }
   },

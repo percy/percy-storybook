@@ -181,10 +181,10 @@ function mapDocSnapshots(docs, config, conf, invalid, log) {
     const isAutodoc = isDocAutodoc(doc);
     const captureAll = isAutodoc ? captureAutodocs : captureDocs;
     const rules = isAutodoc ? autodocsRules : mdxRules;
-    const hasRules = isAutodoc ? hasAutodocsRules : hasMdxRules;
+    const hasTypeRules = isAutodoc ? hasAutodocsRules : hasMdxRules;
 
     let ruleOptions = null;
-    if (hasRules) {
+    if (hasTypeRules) {
       const rule = findMatchingDocRule(doc, rules);
       if (!rule) {
         // No matching rule: if captureAll is true (from .percy.yml or env var), capture with default options
