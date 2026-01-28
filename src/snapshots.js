@@ -44,6 +44,7 @@ function shouldSkipStory(name, options, config) {
     /* istanbul ignore else: sanity check */
     if (typeof regexp === 'string') {
       let [, parsed, flags] = /^\/(.+)\/(\w+)?$/.exec(regexp) || [];
+      // nosemgrep: javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp
       regexp = new RegExp(parsed ?? regexp, flags);
     }
 
