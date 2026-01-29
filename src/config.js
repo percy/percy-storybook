@@ -57,11 +57,11 @@ export const storybookSchema = {
         },
         captureDocs: {
           type: 'boolean',
-          default: true
+          default: false
         },
         captureAutodocs: {
           type: 'boolean',
-          default: true
+          default: false
         }
       }
     },
@@ -135,7 +135,8 @@ export const storybookSchema = {
               type: 'array',
               items: { type: 'string' }
             }
-          ]
+          ],
+          default: []
         },
         capture: { type: 'boolean' }
       }
@@ -153,7 +154,6 @@ export const storybookSchema = {
         }
       ],
       properties: {
-        id: { type: 'string' },
         name: { type: 'string' },
         skip: { type: 'boolean' },
         type: { type: 'string', enum: ['story', 'docs'] },
@@ -181,22 +181,27 @@ export const configSchema = {
     properties: {
       docs: {
         type: 'object',
+        default: {},
         properties: {
           mdx: {
             type: 'object',
+            default: {},
             properties: {
               rules: {
                 type: 'array',
-                items: { $ref: '/storybook#/$defs/docsRule' }
+                items: { $ref: '/storybook#/$defs/docsRule' },
+                default: []
               }
             }
           },
           autodocs: {
             type: 'object',
+            default: {},
             properties: {
               rules: {
                 type: 'array',
-                items: { $ref: '/storybook#/$defs/docsRule' }
+                items: { $ref: '/storybook#/$defs/docsRule' },
+                default: []
               }
             }
           }

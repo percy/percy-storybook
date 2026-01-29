@@ -1063,3 +1063,189 @@ describe('findMatchingDocRule', () => {
     expect(result).toEqual(mockRules[2]);
   });
 });
+
+describe('isDocAutodoc', () => {
+  it('returns true when doc has autodocs tag', () => {
+    const doc = { id: 'test', tags: ['autodocs'] };
+    expect(utils.isDocAutodoc(doc)).toBe(true);
+  });
+
+  it('returns false when doc does not have autodocs tag', () => {
+    const doc = { id: 'test', tags: ['unattached-mdx'] };
+    expect(utils.isDocAutodoc(doc)).toBe(false);
+  });
+
+  it('returns false when doc has no tags', () => {
+    const doc = { id: 'test' };
+    expect(utils.isDocAutodoc(doc)).toBe(false);
+  });
+
+  it('returns false when tags is empty array', () => {
+    const doc = { id: 'test', tags: [] };
+    expect(utils.isDocAutodoc(doc)).toBe(false);
+  });
+
+  it('returns true when doc has multiple tags including autodocs', () => {
+    const doc = { id: 'test', tags: ['autodocs', 'other-tag'] };
+    expect(utils.isDocAutodoc(doc)).toBe(true);
+  });
+});
+
+describe('getDocCaptureFlagsWithRules', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    delete process.env.PERCY_STORYBOOK_DOC_CAPTURE;
+    delete process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE;
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('returns flags from config when set', () => {
+    const config = {
+      captureDocs: true,
+      captureAutodocs: false
+    };
+    const result = utils.getDocCaptureFlagsWithRules(config);
+    expect(result.isDocDiscoveryEnabled).toBe(true);
+    expect(result.isAutodocDiscoveryEnabled).toBe(false);
+  });
+
+  it('returns flags from env vars when config not set', () => {
+    process.env.PERCY_STORYBOOK_DOC_CAPTURE = 'true';
+    process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE = 'true';
+    const config = {};
+    const result = utils.getDocCaptureFlagsWithRules(config);
+    expect(result.isDocDiscoveryEnabled).toBe(true);
+    expect(result.isAutodocDiscoveryEnabled).toBe(true);
+  });
+
+  it('forces capture when rules exist even if config is false', () => {
+    const config = {
+      captureDocs: false,
+      captureAutodocs: false,
+      docs: {
+        mdx: { rules: [{ match: 'test--docs' }] },
+        autodocs: { rules: [{ match: 'test--docs' }] }
+      }
+    };
+    const result = utils.getDocCaptureFlagsWithRules(config);
+    expect(result.isDocDiscoveryEnabled).toBe(true);
+    expect(result.isAutodocDiscoveryEnabled).toBe(true);
+  });
+
+  it('forces capture when mdx rules exist', () => {
+    const config = {
+      captureDocs: false,
+      docs: {
+        mdx: { rules: [{ match: 'test--docs' }] }
+      }
+    };
+    const result = utils.getDocCaptureFlagsWithRules(config);
+    expect(result.isDocDiscoveryEnabled).toBe(true);
+  });
+
+  it('forces capture when autodocs rules exist', () => {
+    const config = {
+      captureAutodocs: false,
+      docs: {
+        autodocs: { rules: [{ match: 'test--docs' }] }
+      }
+    };
+    const result = utils.getDocCaptureFlagsWithRules(config);
+    expect(result.isAutodocDiscoveryEnabled).toBe(true);
+  });
+
+  it('returns false when no config and no rules', () => {
+    const config = {};
+    const result = utils.getDocCaptureFlagsWithRules(config);
+    expect(result.isDocDiscoveryEnabled).toBe(false);
+    expect(result.isAutodocDiscoveryEnabled).toBe(false);
+  });
+
+  it('handles empty rules arrays', () => {
+    const config = {
+      docs: {
+        mdx: { rules: [] },
+        autodocs: { rules: [] }
+      }
+    };
+    const result = utils.getDocCaptureFlagsWithRules(config);
+    expect(result.isDocDiscoveryEnabled).toBe(false);
+    expect(result.isAutodocDiscoveryEnabled).toBe(false);
+  });
+});
+
+describe('generateDocRuleOptions', () => {
+  describe('when no rules defined (hasRules is false)', () => {
+    it('returns null when captureAll is false', () => {
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, [], false, false);
+      expect(result).toBe(null);
+    });
+
+    it('returns empty object when captureAll is true', () => {
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, [], false, true);
+      expect(result).toEqual({});
+    });
+  });
+
+  describe('when rules exist but no match', () => {
+    const rules = [{ match: 'other--docs', capture: true }];
+
+    it('returns null when captureAll is false', () => {
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, rules, true, false);
+      expect(result).toBe(null);
+    });
+
+    it('returns empty object when captureAll is true', () => {
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, rules, true, true);
+      expect(result).toEqual({});
+    });
+  });
+
+  describe('when rule matches and captureAll is true', () => {
+    it('returns rule when capture is true', () => {
+      const rules = [{ match: 'test--docs', capture: true }];
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, rules, true, true);
+      expect(result).toEqual(rules[0]);
+    });
+
+    it('returns null when capture is false', () => {
+      const rules = [{ match: 'test--docs', capture: false }];
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, rules, true, true);
+      expect(result).toBe(null);
+    });
+  });
+
+  describe('when rule matches and captureAll is false', () => {
+    it('returns rule when capture is true', () => {
+      const rules = [{ match: 'test--docs', capture: true }];
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, rules, true, false);
+      expect(result).toEqual(rules[0]);
+    });
+
+    it('returns null when capture is false', () => {
+      const rules = [{ match: 'test--docs', capture: false }];
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, rules, true, false);
+      expect(result).toBe(null);
+    });
+
+    it('returns null when capture is undefined', () => {
+      const rules = [{ match: 'test--docs' }];
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, rules, true, false);
+      expect(result).toBe(null);
+    });
+  });
+});
