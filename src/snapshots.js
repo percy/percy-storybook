@@ -209,14 +209,12 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config, globalDocSe
   // error when missing snapshots
   if (!snapshots.length) throw new Error('No snapshots found');
 
-  // remove filter options and generate story snapshot URLs (docs use viewMode=docs, stories use viewMode=story)
+  // remove filter options and generate story snapshot URLs
   return snapshots.map(({ skip, include, exclude, ...story }) => {
     let url = `${previewUrl}?id=${story.id}`;
     if (story.args) url += `&args=${buildStorybookArgsParam(story.args)}`;
     if (story.globals) url += `&globals=${buildStorybookArgsParam(story.globals)}`;
     for (let [k, v] of Object.entries(story.queryParams ?? {})) url += `&${k}=${v}`;
-    const viewMode = story.type || 'story';
-    url += `&viewMode=${viewMode}`;
     return Object.assign(story, { url });
   });
 }
@@ -323,7 +321,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
 
       try {
         // Use a single page for as many stories as possible until a context error occurs
-        yield* withPage(percy, snapshots[0].url, async function*(page) {
+        yield* withPage(percy, `${previewUrl}?id=${snapshots[0].id}&viewMode=${snapshots[0].type || 'story'}`, async function*(page) {
           // Process snapshots one by one with the current page
           while (snapshots.length) {
             try {
