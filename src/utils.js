@@ -661,10 +661,10 @@ export async function captureResponsiveDOM(page, options, percy, log, story) {
 
     // PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE: If set, reloads the page and re-applies story state
     if (process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE) {
-      // Build the complete URL with all story parameters (docs use viewMode=docs, stories use viewMode=story)
+      // Build the complete URL with all story parameters
       const url = new URL(story.url);
       if (!url.searchParams.has('viewMode')) {
-        url.searchParams.set('viewMode', story.type || 'story');
+        url.searchParams.set('viewMode', 'story');
       }
       const reloadUrl = url.toString();
 

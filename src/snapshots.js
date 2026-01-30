@@ -321,7 +321,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
 
       try {
         // Use a single page for as many stories as possible until a context error occurs
-        yield* withPage(percy, `${previewUrl}?id=${snapshots[0].id}&viewMode=${snapshots[0].type || 'story'}`, async function*(page) {
+        yield* withPage(percy, `${previewUrl}?id=${snapshots[0].id}&viewMode=story`, async function*(page) {
           // Process snapshots one by one with the current page
           while (snapshots.length) {
             try {
