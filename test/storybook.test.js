@@ -915,7 +915,9 @@ describe('percy storybook', () => {
         'todoitem--docs': { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
       };
       const FAKE_PREVIEW = '{ ' +
+        'async ready() { return Promise.resolve(); }, ' +
         'async extract() { return {} }, ' +
+        'async cacheAllCSFFiles() { return Promise.resolve(); }, ' +
         `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(docsEntries)} } }, ` +
         'channel: { emit() {}, on: (a, c) => a === \'docsRendered\' && c() }' +
         ' }';
@@ -1045,7 +1047,9 @@ describe('percy storybook', () => {
         'todoitem--docs': { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
       };
       const FAKE_PREVIEW = '{ ' +
+        'async ready() { return Promise.resolve(); }, ' +
         'async extract() { return {} }, ' +
+        'async cacheAllCSFFiles() { return Promise.resolve(); }, ' +
         `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(docsEntries)} } }, ` +
         'channel: { emit() {}, on: (a, c) => a === \'docsRendered\' && c() }' +
         ' }';
@@ -1086,7 +1090,9 @@ describe('percy storybook', () => {
       'todoitem--docs': { id: 'todoitem--docs', title: 'TodoItem', name: 'Docs', type: 'docs', tags: ['autodocs'] }
     };
     const FAKE_PREVIEW = '{ ' +
+      'async ready() { return Promise.resolve(); }, ' +
       'async extract() { return {} }, ' +
+      'async cacheAllCSFFiles() { return Promise.resolve(); }, ' +
       `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(docsEntries)} } }, ` +
       'channel: { emit() {}, on: (a, c) => (a === \'docsRendered\' || a === \'storyRendered\') && c() }' +
       ' }';
