@@ -661,10 +661,10 @@ export async function captureResponsiveDOM(page, options, percy, log, story) {
 
     // PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE: If set, reloads the page and re-applies story state
     if (process.env.PERCY_RESPONSIVE_CAPTURE_RELOAD_PAGE) {
-      // Build the complete URL with all story parameters
+      // Build the complete URL with all story parameters (docs use viewMode=docs, stories use viewMode=story)
       const url = new URL(story.url);
       if (!url.searchParams.has('viewMode')) {
-        url.searchParams.set('viewMode', 'story');
+        url.searchParams.set('viewMode', story.type || 'story');
       }
       const reloadUrl = url.toString();
 
@@ -779,7 +779,7 @@ export function getDocSnapshotConfig(doc, ruleOptions, config, invalid) {
   let errors = PercyConfig.validate(options, '/storybook');
   for (let e of (errors || [])) invalid.set(e.path, e.message);
   // Merge order: config (.percy.yml storybook) first, then rule options (higher priority)
-  return PercyConfig.merge([config, options, { name, type: type || 'docs' }]);
+  return PercyConfig.merge([config, options, { id, name, type: type || 'docs' }]);
 }
 
 // Helper function to determine doc capture flags considering config, rules, and env vars
