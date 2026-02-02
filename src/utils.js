@@ -739,7 +739,7 @@ export function matchesPattern(str, pattern) {
 }
 
 // Match doc id (or name) against rule.match. Exact match, or glob if pattern contains * or ?.
-export function matchDocId(id, name, matchPattern) {
+export function matchDoc(id, name, matchPattern) {
   const s = matchPattern?.trim?.();
   if (!s) return false;
 
@@ -748,11 +748,11 @@ export function matchDocId(id, name, matchPattern) {
 }
 
 // Normalizes input into an array of trimmed, non-empty strings.
-export function getMatchPatterns(match) {
-  if (!match) return [];
+export function normalizeToArray(input) {
+  if (!input) return [];
 
-  const matchArray = Array.isArray(match) ? match : [match];
-  return matchArray
+  const array = Array.isArray(input) ? input : [input];
+  return array
     .map(m => m?.trim?.())
     .filter(Boolean);
 }
@@ -762,9 +762,9 @@ export function findMatchingDocRule(doc, rules) {
   if (!rules?.length) return null;
 
   return rules.find(rule => {
-    const patterns = getMatchPatterns(rule.match);
+    const patterns = normalizeToArray(rule.match);
     if (!patterns.length) return false;
-    return patterns.some(p => matchDocId(doc.id, doc.name, p));
+    return patterns.some(p => matchDoc(doc.id, doc.name, p));
   }) ?? null;
 }
 
@@ -789,6 +789,8 @@ export function getDocCaptureFlagsWithRules(storybookConfig = {}) {
 
   const extract = (val, env) => val ?? (process.env[env] === 'true');
 
+  // PERCY_STORYBOOK_DOC_CAPTURE and PERCY_STORYBOOK_AUTODOC_CAPTURE have been kept here for backward compatibility.
+  // To-Do: to be removed in later releases.
   const globalDocCapture = extract(storybookConfig.captureDocs, 'PERCY_STORYBOOK_DOC_CAPTURE');
   const globalAutodocCapture = extract(storybookConfig.captureAutodocs, 'PERCY_STORYBOOK_AUTODOC_CAPTURE');
 

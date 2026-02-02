@@ -920,78 +920,78 @@ describe('patternToRegex and matchesPattern', () => {
   });
 });
 
-describe('matchDocId', () => {
+describe('matchDoc', () => {
   it('matches doc by id when pattern matches id', () => {
-    expect(utils.matchDocId('todoitem--docs', 'TodoItem', 'todoitem--docs')).toBe(true);
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', 'todoitem--docs')).toBe(true);
   });
 
   it('matches doc by name when pattern matches name', () => {
-    expect(utils.matchDocId('todoitem--docs', 'Docs', '*Docs')).toBe(true);
+    expect(utils.matchDoc('todoitem--docs', 'Docs', '*Docs')).toBe(true);
   });
 
   it('returns false when neither id nor name matches', () => {
-    expect(utils.matchDocId('todoitem--docs', 'TodoItem', 'button--docs')).toBe(false);
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', 'button--docs')).toBe(false);
   });
 
   it('returns false for null/undefined patterns', () => {
-    expect(utils.matchDocId('todoitem--docs', 'TodoItem', null)).toBe(false);
-    expect(utils.matchDocId('todoitem--docs', 'TodoItem', undefined)).toBe(false);
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', null)).toBe(false);
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', undefined)).toBe(false);
   });
 
   it('returns false for non-string patterns', () => {
-    expect(utils.matchDocId('todoitem--docs', 'TodoItem', 123)).toBe(false);
-    expect(utils.matchDocId('todoitem--docs', 'TodoItem', {})).toBe(false);
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', 123)).toBe(false);
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', {})).toBe(false);
   });
 
   it('trims whitespace from patterns', () => {
-    expect(utils.matchDocId('todoitem--docs', 'TodoItem', '  todoitem--docs  ')).toBe(true);
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', '  todoitem--docs  ')).toBe(true);
   });
 
   it('returns false for empty patterns after trim', () => {
-    expect(utils.matchDocId('todoitem--docs', 'TodoItem', '   ')).toBe(false);
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', '   ')).toBe(false);
   });
 
   it('handles null/undefined id and name gracefully', () => {
-    expect(utils.matchDocId(null, 'TodoItem', 'TodoItem')).toBe(true);
-    expect(utils.matchDocId(undefined, 'TodoItem', 'TodoItem')).toBe(true);
-    expect(utils.matchDocId('todoitem--docs', null, 'null')).toBe(false);
-    expect(utils.matchDocId('todoitem--docs', undefined, 'undefined')).toBe(false);
+    expect(utils.matchDoc(null, 'TodoItem', 'TodoItem')).toBe(true);
+    expect(utils.matchDoc(undefined, 'TodoItem', 'TodoItem')).toBe(true);
+    expect(utils.matchDoc('todoitem--docs', null, 'null')).toBe(false);
+    expect(utils.matchDoc('todoitem--docs', undefined, 'undefined')).toBe(false);
   });
 });
 
-describe('getMatchPatterns', () => {
+describe('normalizeToArray', () => {
   it('returns array with single string when input is string', () => {
-    expect(utils.getMatchPatterns('test-pattern')).toEqual(['test-pattern']);
+    expect(utils.normalizeToArray('test-pattern')).toEqual(['test-pattern']);
   });
 
   it('trims whitespace from string patterns', () => {
-    expect(utils.getMatchPatterns('  test-pattern  ')).toEqual(['test-pattern']);
+    expect(utils.normalizeToArray('  test-pattern  ')).toEqual(['test-pattern']);
   });
 
   it('returns empty array for empty string', () => {
-    expect(utils.getMatchPatterns('')).toEqual([]);
+    expect(utils.normalizeToArray('')).toEqual([]);
   });
 
   it('returns empty array for null/undefined', () => {
-    expect(utils.getMatchPatterns(null)).toEqual([]);
-    expect(utils.getMatchPatterns(undefined)).toEqual([]);
+    expect(utils.normalizeToArray(null)).toEqual([]);
+    expect(utils.normalizeToArray(undefined)).toEqual([]);
   });
 
   it('filters out non-string entries from arrays', () => {
-    expect(utils.getMatchPatterns([null, 'pattern1', undefined, 'pattern2'])).toEqual(['pattern1', 'pattern2']);
+    expect(utils.normalizeToArray([null, 'pattern1', undefined, 'pattern2'])).toEqual(['pattern1', 'pattern2']);
   });
 
   it('trims entries in arrays', () => {
-    expect(utils.getMatchPatterns(['  pattern1  ', 'pattern2'])).toEqual(['pattern1', 'pattern2']);
+    expect(utils.normalizeToArray(['  pattern1  ', 'pattern2'])).toEqual(['pattern1', 'pattern2']);
   });
 
   it('filters out empty strings after trimming', () => {
-    expect(utils.getMatchPatterns(['pattern1', '   ', '', 'pattern2'])).toEqual(['pattern1', 'pattern2']);
+    expect(utils.normalizeToArray(['pattern1', '   ', '', 'pattern2'])).toEqual(['pattern1', 'pattern2']);
   });
 
   it('returns empty array for non-string, non-array inputs', () => {
-    expect(utils.getMatchPatterns(123)).toEqual([]);
-    expect(utils.getMatchPatterns({})).toEqual([]);
+    expect(utils.normalizeToArray(123)).toEqual([]);
+    expect(utils.normalizeToArray({})).toEqual([]);
   });
 });
 
