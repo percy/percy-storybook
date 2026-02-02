@@ -1201,7 +1201,7 @@ describe('percy storybook', () => {
       expect(docSnapshotOptions?.widths).toEqual([600]);
     });
 
-    it('rule widths override storybook-level widths via getDocSnapshotConfig merge', async () => {
+    it('rule widths override storybook-level widths via getSnapshotConfig merge', async () => {
       fs.writeFileSync('.percy.yml', [
         'version: 2',
         'snapshot:',

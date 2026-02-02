@@ -1,5 +1,5 @@
 import { request, createRootResource, yieldTo } from '@percy/cli-command/utils';
-import { logger, PercyConfig } from '@percy/cli-command';
+import { logger } from '@percy/cli-command';
 import spawn from 'cross-spawn';
 
 // check storybook version
@@ -766,20 +766,6 @@ export function findMatchingDocRule(doc, rules) {
     if (!patterns.length) return false;
     return patterns.some(p => matchDoc(doc.id, doc.name, p));
   }) ?? null;
-}
-
-// Returns snapshot config options for a doc merged with rule options and global config.
-// Rule options have priority over global config. Validation error messages will be added
-// to the provided invalid map.
-export function getDocSnapshotConfig(doc, ruleOptions, config, invalid) {
-  let { id, name, type, tags, ...docPercy } = doc;
-  let { match, capture, ...storyParams } = ruleOptions || {};
-  let base = { name, type: type || 'docs' };
-  let options = PercyConfig.migrate({ ...base, ...docPercy, ...storyParams }, '/storybook');
-  let errors = PercyConfig.validate(options, '/storybook');
-  for (let e of (errors || [])) invalid.set(e.path, e.message);
-  // Merge order: config (.percy.yml storybook) first, then rule options (higher priority)
-  return PercyConfig.merge([config, options, { id, name, type: type || 'docs' }]);
 }
 
 // Helper function to determine doc capture flags considering config, rules, and env vars

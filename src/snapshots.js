@@ -13,7 +13,6 @@ import {
   isResponsiveSnapshotCaptureEnabled,
   captureSerializedDOM,
   captureResponsiveDOM,
-  getDocSnapshotConfig,
   hasRules,
   getDocCaptureFlagsWithRules,
   generateDocRuleOptions,
@@ -148,8 +147,24 @@ function mapDocSnapshots(docs, config = {}, conf, invalid, log, globalDocSetting
     const ruleOptions = generateDocRuleOptions(doc, rules, hasTypeRules, captureAll, log);
     if (!ruleOptions) return all;
 
-    let { additionalSnapshots = [], ...options } = getDocSnapshotConfig(doc, ruleOptions, conf, invalid);
-    return all.concat(options, processAdditionalSnapshots(additionalSnapshots, options, doc.name));
+    const { id, name, type, ...docPercy } = doc;
+    const { match, capture, ...storyParams } = ruleOptions || {};
+
+    const docStoryConfig = {
+      id,
+      name,
+      type: type || 'docs',
+      ...docPercy,
+      ...storyParams
+    };
+
+    let { additionalSnapshots = [], ...options } =
+      getSnapshotConfig(docStoryConfig, conf, invalid);
+
+    return all.concat(
+      options,
+      processAdditionalSnapshots(additionalSnapshots, options, doc.name)
+    );
   }, []);
 }
 
