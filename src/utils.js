@@ -1,6 +1,7 @@
 import { request, createRootResource, yieldTo } from '@percy/cli-command/utils';
 import { logger } from '@percy/cli-command';
 import spawn from 'cross-spawn';
+import globToRegExp from 'glob-to-regexp';
 
 // check storybook version
 export function checkStorybookVersion() {
@@ -719,12 +720,7 @@ export function patternToRegex(pattern) {
     throw new Error('Invalid pattern: must be a string with max length of 500 characters');
   }
 
-  const re = pattern
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*/g, '.*')
-    .replace(/\?/g, '.');
-
-  return new RegExp('^' + re + '$'); // nosemgrep
+  return globToRegExp(pattern, { extended: true, globstar: false });
 }
 
 export function matchesPattern(str, pattern) {
