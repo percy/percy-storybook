@@ -724,8 +724,7 @@ export function patternToRegex(pattern) {
     .replace(/\*/g, '.*')
     .replace(/\?/g, '.');
 
-  // nosemgrep
-  return new RegExp('^' + re + '$');
+  return new RegExp('^' + re + '$'); // nosemgrep
 }
 
 export function matchesPattern(str, pattern) {
