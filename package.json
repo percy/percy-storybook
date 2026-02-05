@@ -1,6 +1,6 @@
 {
   "name": "@percy/storybook",
-  "version": "10.0.0-beta.1",
+  "version": "10.0.0",
   "description": "Storybook addons for visual testing with Percy",
   "keywords": [
     "storybook",
@@ -19,7 +19,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "beta"
+    "tag": "latest"
   },
   "engines": {
     "node": ">=22.12"
