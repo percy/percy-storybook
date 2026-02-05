@@ -1,6 +1,7 @@
 import { request, createRootResource, yieldTo } from '@percy/cli-command/utils';
 import { logger } from '@percy/cli-command';
 import spawn from 'cross-spawn';
+import globToRegExp from 'glob-to-regexp';
 
 // check storybook version
 export function checkStorybookVersion() {
@@ -66,6 +67,12 @@ export async function fetchStorybookPreviewResource(percy, previewUrl) {
     retries: 30
   }));
 }
+
+// Glob chars in pattern: * = any characters, ? = single character. Otherwise exact match.
+export const GLOB_CHARS = /[*?]/;
+
+// Maximum allowed pattern length for doc rules
+const MAX_PATTERN_LENGTH = 500;
 
 // Used during args/globals validation, encoding, and decoding
 const VAL_REG = /^[a-zA-Z0-9 _-]*$/;
@@ -319,7 +326,8 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       name: story.kind ? `${story.kind}: ${story.name}` : `${story.title}: ${story.name}`,
       ...story.parameters?.percy,
       id: story.id,
-      type: story.type ? story.type : 'story'
+      type: story.type ? story.type : 'story',
+      tags: story.tags
     }, invalid));
 
     return {
@@ -697,4 +705,105 @@ export async function captureResponsiveDOM(page, options, percy, log, story) {
   await changeViewportDimensionAndWait(page, currentWidth, currentHeight, resizeCount + 1, log);
   log.debug('Responsive DOM capture complete');
   return domSnapshots;
+}
+
+export function hasRules(rules) {
+  return !!rules?.length;
+}
+
+export function isDocAutodoc(doc) {
+  return !!doc.tags?.includes('autodocs');
+}
+
+export function patternToRegex(pattern) {
+  if (typeof pattern !== 'string' || pattern.length > MAX_PATTERN_LENGTH) {
+    throw new Error('Invalid pattern: must be a string with max length of 500 characters');
+  }
+
+  return globToRegExp(pattern, { extended: true, globstar: false });
+}
+
+export function matchesPattern(str, pattern) {
+  if (GLOB_CHARS.test(pattern)) {
+    try {
+      return patternToRegex(pattern).test(str);
+    } catch {
+      return false;
+    }
+  }
+  return str === pattern;
+}
+
+// Match doc id (or name) against rule.match. Exact match, or glob if pattern contains * or ?.
+export function matchDoc(id, name, matchPattern) {
+  const s = matchPattern?.trim?.();
+  if (!s) return false;
+
+  return matchesPattern(String(id ?? ''), s) ||
+         matchesPattern(String(name ?? ''), s);
+}
+
+// Normalizes input into an array of trimmed, non-empty strings.
+export function normalizeToArray(input) {
+  if (!input) return [];
+
+  const array = Array.isArray(input) ? input : [input];
+  return array
+    .map(m => m?.trim?.())
+    .filter(Boolean);
+}
+
+// Find first rule that matches the doc (by id or name). Doc matches if it matches any entry in rule.match (string or array; exact or glob */?).
+export function findMatchingDocRule(doc, rules) {
+  if (!rules?.length) return null;
+
+  return rules.find(rule => {
+    const patterns = normalizeToArray(rule.match);
+    if (!patterns.length) return false;
+    return patterns.some(p => matchDoc(doc.id, doc.name, p));
+  }) ?? null;
+}
+
+// Helper function to determine doc capture flags considering config, rules, and env vars
+export function getDocCaptureFlagsWithRules(storybookConfig = {}) {
+  const mdxRules = storybookConfig.docs?.mdx?.rules;
+  const autodocsRules = storybookConfig.docs?.autodocs?.rules;
+
+  const extract = (val, env) => val ?? (process.env[env] === 'true');
+
+  // PERCY_STORYBOOK_DOC_CAPTURE and PERCY_STORYBOOK_AUTODOC_CAPTURE have been kept here for backward compatibility.
+  // To-Do: to be removed in later releases.
+  const globalDocCapture = extract(storybookConfig.captureDocs, 'PERCY_STORYBOOK_DOC_CAPTURE');
+  const globalAutodocCapture = extract(storybookConfig.captureAutodocs, 'PERCY_STORYBOOK_AUTODOC_CAPTURE');
+
+  return {
+    isDocDiscoveryEnabled: globalDocCapture || hasRules(mdxRules),
+    isAutodocDiscoveryEnabled: globalAutodocCapture || hasRules(autodocsRules),
+    globalDocSettings: { captureDocs: globalDocCapture, captureAutodocs: globalAutodocCapture }
+  };
+}
+
+// Determines rule options for a doc. Returns rule options object or null if doc should be skipped.
+// Logic: rule-level capture > .percy.yml > env var
+export function generateDocRuleOptions(doc, rules, hasRules, captureAll, log) {
+  // Case 1: No rules defined
+  if (!hasRules && !captureAll) return null;
+  if (!hasRules) return {}; // Capture with defaults
+
+  // Case 2: Rules exist - find matching rule
+  const rule = findMatchingDocRule(doc, rules);
+
+  // Case 2a: No matching rule found
+  if (!rule && !captureAll) return null;
+  if (!rule) return {}; // Capture with defaults
+
+  // Case 2b: Matching rule found - check capture logic
+  // When captureAll is true: skip if rule says capture: false
+  if (captureAll && rule.capture === false) return null;
+
+  // When captureAll is false: skip if rule doesn't say capture: true
+  if (!captureAll && rule.capture !== true) return null;
+
+  // Capture with rule options
+  return rule;
 }

@@ -867,3 +867,385 @@ describe('evalSetCurrentStory event handling', () => {
     await expectAsync(promise).toBeResolved();
   });
 });
+
+// ============ Doc Rule Matching Helpers ============
+
+describe('GLOB_CHARS regex', () => {
+  it('matches * and ? patterns', () => {
+    expect(utils.GLOB_CHARS.test('*')).toBe(true);
+    expect(utils.GLOB_CHARS.test('?')).toBe(true);
+    expect(utils.GLOB_CHARS.test('exact')).toBe(false);
+    expect(utils.GLOB_CHARS.test('*--docs')).toBe(true);
+    expect(utils.GLOB_CHARS.test('button?')).toBe(true);
+  });
+});
+
+describe('patternToRegex and matchesPattern', () => {
+  it('converts * to .* for glob matching', () => {
+    const regex = utils.patternToRegex('*--docs');
+    expect(regex.test('todoitem--docs')).toBe(true);
+    expect(regex.test('button--docs')).toBe(true);
+    expect(regex.test('--docs')).toBe(true);
+    expect(regex.test('docs')).toBe(false);
+  });
+
+  it('converts ? to . for single-char matching', () => {
+    const regex = utils.patternToRegex('?odoitem--docs');
+    expect(regex.test('Todoitem--docs')).toBe(true);
+    expect(regex.test('Xodoitem--docs')).toBe(true);
+    expect(regex.test('odoitem--docs')).toBe(false);
+    expect(regex.test('TodoItem--docs')).toBe(false);
+  });
+
+  it('escapes regex special characters', () => {
+    const regex = utils.patternToRegex('test.docs+item');
+    expect(regex.test('test.docs+item')).toBe(true);
+    expect(regex.test('testXdocsXitem')).toBe(false);
+  });
+
+  it('matchesPattern uses glob when * or ? present', () => {
+    expect(utils.matchesPattern('todoitem--docs', '*--docs')).toBe(true);
+    expect(utils.matchesPattern('button--docs', '*--docs')).toBe(true);
+    expect(utils.matchesPattern('button--docs', 'button--docs')).toBe(true);
+    expect(utils.matchesPattern('button--story', '*--docs')).toBe(false);
+  });
+
+  it('matchesPattern uses exact match when no glob chars', () => {
+    expect(utils.matchesPattern('exact-match', 'exact-match')).toBe(true);
+    expect(utils.matchesPattern('exact-match', 'not-exact')).toBe(false);
+  });
+
+  it('handles invalid regex gracefully', () => {
+    expect(utils.matchesPattern('test', '[')).toBe(false);
+  });
+});
+
+describe('matchDoc', () => {
+  it('matches doc by id when pattern matches id', () => {
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', 'todoitem--docs')).toBe(true);
+  });
+
+  it('matches doc by name when pattern matches name', () => {
+    expect(utils.matchDoc('todoitem--docs', 'Docs', '*Docs')).toBe(true);
+  });
+
+  it('returns false when neither id nor name matches', () => {
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', 'button--docs')).toBe(false);
+  });
+
+  it('returns false for null/undefined patterns', () => {
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', null)).toBe(false);
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', undefined)).toBe(false);
+  });
+
+  it('returns false for non-string patterns', () => {
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', 123)).toBe(false);
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', {})).toBe(false);
+  });
+
+  it('trims whitespace from patterns', () => {
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', '  todoitem--docs  ')).toBe(true);
+  });
+
+  it('returns false for empty patterns after trim', () => {
+    expect(utils.matchDoc('todoitem--docs', 'TodoItem', '   ')).toBe(false);
+  });
+
+  it('handles null/undefined id and name gracefully', () => {
+    expect(utils.matchDoc(null, 'TodoItem', 'TodoItem')).toBe(true);
+    expect(utils.matchDoc(undefined, 'TodoItem', 'TodoItem')).toBe(true);
+    expect(utils.matchDoc('todoitem--docs', null, 'null')).toBe(false);
+    expect(utils.matchDoc('todoitem--docs', undefined, 'undefined')).toBe(false);
+  });
+});
+
+describe('normalizeToArray', () => {
+  it('returns array with single string when input is string', () => {
+    expect(utils.normalizeToArray('test-pattern')).toEqual(['test-pattern']);
+  });
+
+  it('trims whitespace from string patterns', () => {
+    expect(utils.normalizeToArray('  test-pattern  ')).toEqual(['test-pattern']);
+  });
+
+  it('returns empty array for empty string', () => {
+    expect(utils.normalizeToArray('')).toEqual([]);
+  });
+
+  it('returns empty array for null/undefined', () => {
+    expect(utils.normalizeToArray(null)).toEqual([]);
+    expect(utils.normalizeToArray(undefined)).toEqual([]);
+  });
+
+  it('filters out non-string entries from arrays', () => {
+    expect(utils.normalizeToArray([null, 'pattern1', undefined, 'pattern2'])).toEqual(['pattern1', 'pattern2']);
+  });
+
+  it('trims entries in arrays', () => {
+    expect(utils.normalizeToArray(['  pattern1  ', 'pattern2'])).toEqual(['pattern1', 'pattern2']);
+  });
+
+  it('filters out empty strings after trimming', () => {
+    expect(utils.normalizeToArray(['pattern1', '   ', '', 'pattern2'])).toEqual(['pattern1', 'pattern2']);
+  });
+
+  it('returns empty array for non-string, non-array inputs', () => {
+    expect(utils.normalizeToArray(123)).toEqual([]);
+    expect(utils.normalizeToArray({})).toEqual([]);
+  });
+});
+
+describe('findMatchingDocRule', () => {
+  const mockRules = [
+    { match: 'exact-match', capture: true },
+    { match: '*--docs', capture: true },
+    { match: ['glob?', 'other*'], capture: false }
+  ];
+
+  it('returns first matching rule', () => {
+    const doc = { id: 'exact-match', name: 'Test' };
+    const result = utils.findMatchingDocRule(doc, mockRules);
+    expect(result).toEqual(mockRules[0]);
+  });
+
+  it('matches by id when glob pattern matches id', () => {
+    const doc = { id: 'button--docs', name: 'Button' };
+    const result = utils.findMatchingDocRule(doc, mockRules);
+    expect(result).toEqual(mockRules[1]);
+  });
+
+  it('matches by name when pattern matches name', () => {
+    const doc = { id: 'some-id', name: 'exact-match' };
+    const result = utils.findMatchingDocRule(doc, mockRules);
+    expect(result).toEqual(mockRules[0]);
+  });
+
+  it('returns null when no rule matches', () => {
+    const doc = { id: 'no-match', name: 'NoMatch' };
+    const result = utils.findMatchingDocRule(doc, mockRules);
+    expect(result).toBeNull();
+  });
+
+  it('returns null for null/undefined rules', () => {
+    const doc = { id: 'test', name: 'Test' };
+    expect(utils.findMatchingDocRule(doc, null)).toBeNull();
+    expect(utils.findMatchingDocRule(doc, undefined)).toBeNull();
+  });
+
+  it('returns null for empty rules array', () => {
+    const doc = { id: 'test', name: 'Test' };
+    expect(utils.findMatchingDocRule(doc, [])).toBeNull();
+  });
+
+  it('selects first match when multiple rules match', () => {
+    const doc = { id: 'test--docs', name: 'Test Docs' };
+    const rules = [
+      { match: 'test--docs', capture: true },
+      { match: '*--docs', capture: false }
+    ];
+    const result = utils.findMatchingDocRule(doc, rules);
+    expect(result).toEqual(rules[0]);
+  });
+
+  it('handles rules with invalid match patterns', () => {
+    const doc = { id: 'test', name: 'Test' };
+    const rules = [
+      { match: null, capture: true },
+      { match: '*test', capture: false }
+    ];
+    const result = utils.findMatchingDocRule(doc, rules);
+    expect(result).toEqual(rules[1]);
+  });
+
+  it('matches array of patterns', () => {
+    const doc = { id: 'globx', name: 'Test' };
+    const result = utils.findMatchingDocRule(doc, mockRules);
+    expect(result).toEqual(mockRules[2]);
+  });
+});
+
+describe('isDocAutodoc', () => {
+  it('returns true when doc has autodocs tag', () => {
+    const doc = { id: 'test', tags: ['autodocs'] };
+    expect(utils.isDocAutodoc(doc)).toBe(true);
+  });
+
+  it('returns false when doc does not have autodocs tag', () => {
+    const doc = { id: 'test', tags: ['unattached-mdx'] };
+    expect(utils.isDocAutodoc(doc)).toBe(false);
+  });
+
+  it('returns false when doc has no tags', () => {
+    const doc = { id: 'test' };
+    expect(utils.isDocAutodoc(doc)).toBe(false);
+  });
+
+  it('returns false when tags is empty array', () => {
+    const doc = { id: 'test', tags: [] };
+    expect(utils.isDocAutodoc(doc)).toBe(false);
+  });
+
+  it('returns true when doc has multiple tags including autodocs', () => {
+    const doc = { id: 'test', tags: ['autodocs', 'other-tag'] };
+    expect(utils.isDocAutodoc(doc)).toBe(true);
+  });
+});
+
+describe('getDocCaptureFlagsWithRules', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    delete process.env.PERCY_STORYBOOK_DOC_CAPTURE;
+    delete process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE;
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('returns flags from config when set', () => {
+    const config = {
+      captureDocs: true,
+      captureAutodocs: false
+    };
+    const result = utils.getDocCaptureFlagsWithRules(config);
+    expect(result.isDocDiscoveryEnabled).toBe(true);
+    expect(result.isAutodocDiscoveryEnabled).toBe(false);
+  });
+
+  it('returns flags from env vars when config not set', () => {
+    process.env.PERCY_STORYBOOK_DOC_CAPTURE = 'true';
+    process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE = 'true';
+    const config = {};
+    const result = utils.getDocCaptureFlagsWithRules(config);
+    expect(result.isDocDiscoveryEnabled).toBe(true);
+    expect(result.isAutodocDiscoveryEnabled).toBe(true);
+  });
+
+  it('forces capture when rules exist even if config is false', () => {
+    const config = {
+      captureDocs: false,
+      captureAutodocs: false,
+      docs: {
+        mdx: { rules: [{ match: 'test--docs' }] },
+        autodocs: { rules: [{ match: 'test--docs' }] }
+      }
+    };
+    const result = utils.getDocCaptureFlagsWithRules(config);
+    expect(result.isDocDiscoveryEnabled).toBe(true);
+    expect(result.isAutodocDiscoveryEnabled).toBe(true);
+  });
+
+  it('forces capture when mdx rules exist', () => {
+    const config = {
+      captureDocs: false,
+      docs: {
+        mdx: { rules: [{ match: 'test--docs' }] }
+      }
+    };
+    const result = utils.getDocCaptureFlagsWithRules(config);
+    expect(result.isDocDiscoveryEnabled).toBe(true);
+  });
+
+  it('forces capture when autodocs rules exist', () => {
+    const config = {
+      captureAutodocs: false,
+      docs: {
+        autodocs: { rules: [{ match: 'test--docs' }] }
+      }
+    };
+    const result = utils.getDocCaptureFlagsWithRules(config);
+    expect(result.isAutodocDiscoveryEnabled).toBe(true);
+  });
+
+  it('returns false when no config and no rules', () => {
+    const config = {};
+    const result = utils.getDocCaptureFlagsWithRules(config);
+    expect(result.isDocDiscoveryEnabled).toBe(false);
+    expect(result.isAutodocDiscoveryEnabled).toBe(false);
+  });
+
+  it('handles empty rules arrays', () => {
+    const config = {
+      docs: {
+        mdx: { rules: [] },
+        autodocs: { rules: [] }
+      }
+    };
+    const result = utils.getDocCaptureFlagsWithRules(config);
+    expect(result.isDocDiscoveryEnabled).toBe(false);
+    expect(result.isAutodocDiscoveryEnabled).toBe(false);
+  });
+});
+
+describe('generateDocRuleOptions', () => {
+  describe('when no rules defined (hasRules is false)', () => {
+    it('returns null when captureAll is false', () => {
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, [], false, false);
+      expect(result).toBe(null);
+    });
+
+    it('returns empty object when captureAll is true', () => {
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, [], false, true);
+      expect(result).toEqual({});
+    });
+  });
+
+  describe('when rules exist but no match', () => {
+    const rules = [{ match: 'other--docs', capture: true }];
+
+    it('returns null when captureAll is false', () => {
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, rules, true, false);
+      expect(result).toBe(null);
+    });
+
+    it('returns empty object when captureAll is true', () => {
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, rules, true, true);
+      expect(result).toEqual({});
+    });
+  });
+
+  describe('when rule matches and captureAll is true', () => {
+    it('returns rule when capture is true', () => {
+      const rules = [{ match: 'test--docs', capture: true }];
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, rules, true, true);
+      expect(result).toEqual(rules[0]);
+    });
+
+    it('returns null when capture is false', () => {
+      const rules = [{ match: 'test--docs', capture: false }];
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, rules, true, true);
+      expect(result).toBe(null);
+    });
+  });
+
+  describe('when rule matches and captureAll is false', () => {
+    it('returns rule when capture is true', () => {
+      const rules = [{ match: 'test--docs', capture: true }];
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, rules, true, false);
+      expect(result).toEqual(rules[0]);
+    });
+
+    it('returns null when capture is false', () => {
+      const rules = [{ match: 'test--docs', capture: false }];
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, rules, true, false);
+      expect(result).toBe(null);
+    });
+
+    it('returns null when capture is undefined', () => {
+      const rules = [{ match: 'test--docs' }];
+      const doc = { id: 'test--docs', name: 'Test' };
+      const result = utils.generateDocRuleOptions(doc, rules, true, false);
+      expect(result).toBe(null);
+    });
+  });
+});

@@ -54,6 +54,14 @@ export const storybookSchema = {
             minimum: 1
           },
           default: [375, 1280]
+        },
+        captureDocs: {
+          type: 'boolean',
+          default: false
+        },
+        captureAutodocs: {
+          type: 'boolean',
+          default: false
         }
       }
     },
@@ -107,6 +115,32 @@ export const storybookSchema = {
         }
       }
     },
+    docsRule: {
+      type: 'object',
+      unevaluatedProperties: false,
+      allOf: [
+        { $ref: '/snapshot#/$defs/common' },
+        { $ref: '/storybook#/$defs/common' },
+        { $ref: '/storybook#/$defs/additionalSnapshots/property' },
+        {
+          if: { $ref: '/storybook#/$defs/enableJavaScript/isTrue' },
+          then: { $ref: '/storybook#/$defs/enableJavaScript/disallowedProperties' }
+        }
+      ],
+      properties: {
+        match: {
+          oneOf: [
+            { type: 'string' },
+            {
+              type: 'array',
+              items: { type: 'string' }
+            }
+          ],
+          default: []
+        },
+        capture: { type: 'boolean' }
+      }
+    },
     params: {
       type: 'object',
       unevaluatedProperties: false,
@@ -122,7 +156,11 @@ export const storybookSchema = {
       properties: {
         name: { type: 'string' },
         skip: { type: 'boolean' },
-        type: { type: 'string', enum: ['story', 'docs'] }
+        type: { type: 'string', enum: ['story', 'docs'] },
+        tags: {
+          type: 'array',
+          items: { type: 'string' }
+        }
       }
     }
   }
@@ -139,7 +177,37 @@ export const configSchema = {
         if: { $ref: '/storybook#/$defs/enableJavaScript/isTrue' },
         then: { $ref: '/storybook#/$defs/additionalSnapshots/enabledJavaScript' }
       }
-    ]
+    ],
+    properties: {
+      docs: {
+        type: 'object',
+        default: {},
+        properties: {
+          mdx: {
+            type: 'object',
+            default: {},
+            properties: {
+              rules: {
+                type: 'array',
+                items: { $ref: '/storybook#/$defs/docsRule' },
+                default: []
+              }
+            }
+          },
+          autodocs: {
+            type: 'object',
+            default: {},
+            properties: {
+              rules: {
+                type: 'array',
+                items: { $ref: '/storybook#/$defs/docsRule' },
+                default: []
+              }
+            }
+          }
+        }
+      }
+    }
   },
   $config: schema => ({
     allOf: [...(schema.allOf ?? []), {

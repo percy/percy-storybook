@@ -12,7 +12,11 @@ import {
   getWidthsForDomCapture,
   isResponsiveSnapshotCaptureEnabled,
   captureSerializedDOM,
-  captureResponsiveDOM
+  captureResponsiveDOM,
+  hasRules,
+  getDocCaptureFlagsWithRules,
+  generateDocRuleOptions,
+  isDocAutodoc
 } from './utils.js';
 
 // Main capture function
@@ -124,31 +128,86 @@ function buildStorybookArgsParam(args) {
     .replace(/=/g, ':');
 }
 
+// Priority: rule-level capture > .percy.yml > env var
+function mapDocSnapshots(docs, config = {}, conf, invalid, log, globalDocSettings) {
+  const { captureDocs, captureAutodocs } = globalDocSettings;
+  const mdxRules = config.docs?.mdx?.rules;
+  const autodocsRules = config.docs?.autodocs?.rules;
+  const hasMdxRules = hasRules(mdxRules);
+  const hasAutodocsRules = hasRules(autodocsRules);
+
+  const getDocTypeConfig = (isAutodoc) => isAutodoc
+    ? { captureAll: captureAutodocs, rules: autodocsRules, hasTypeRules: hasAutodocsRules }
+    : { captureAll: captureDocs, rules: mdxRules, hasTypeRules: hasMdxRules };
+
+  return docs.reduce((all, doc) => {
+    const isAutodoc = isDocAutodoc(doc);
+    const { captureAll, rules, hasTypeRules } = getDocTypeConfig(isAutodoc);
+
+    const ruleOptions = generateDocRuleOptions(doc, rules, hasTypeRules, captureAll, log);
+    if (!ruleOptions) return all;
+
+    const { id, name, type, ...docPercy } = doc;
+    const { match, capture, ...storyParams } = ruleOptions || {};
+
+    const docStoryConfig = {
+      id,
+      name,
+      type: type || 'docs',
+      ...docPercy,
+      ...storyParams
+    };
+
+    let { additionalSnapshots = [], ...options } =
+      getSnapshotConfig(docStoryConfig, conf, invalid);
+
+    return all.concat(
+      options,
+      processAdditionalSnapshots(additionalSnapshots, options, doc.name)
+    );
+  }, []);
+}
+
+function processAdditionalSnapshots(additionalSnapshots, baseOptions, storyName, skipCallback = null) {
+  return (additionalSnapshots || []).reduce((add, { prefix = '', suffix = '', ...snap }) => {
+    const snapshot = PercyConfig.merge([baseOptions, {
+      name: `${prefix}${storyName}${suffix}`
+    }, snap]);
+
+    return skipCallback?.(snap) ? add : add.concat(snapshot);
+  }, []);
+}
+
 // Map and reduce collected Storybook stories into an array of snapshot options
-function mapStorybookSnapshots(stories, { previewUrl, flags, config }) {
+function mapStorybookSnapshots(stories, { previewUrl, flags, config, globalDocSettings }) {
   let log = logger('storybook:config');
   let invalid = new Map(stories.invalid);
   let conf = encodeStorybookConfig(config, invalid);
 
-  let snapshots = stories.data.reduce((all, story) => {
+  // Extract snapshot options only, exclude doc config metadata
+  const { captureDocs, captureAutodocs, docs, ...confOptions } = conf;
+
+  // Separate stories from docs: extract() may return docs without type='docs', so check id suffix
+  const storyEntries = stories.data.filter(s => s.type !== 'docs' && !String(s.id || '').endsWith('--docs'));
+  const docEntries = stories.data.filter(s => s.type === 'docs' || String(s.id || '').endsWith('--docs'));
+
+  let snapshots = storyEntries.reduce((all, story) => {
     if (shouldSkipStory(story.name, story, config)) {
       log.debug(`Skipping story: ${story.name}`);
       return all;
     }
 
     let { additionalSnapshots = [], ...options } =
-      getSnapshotConfig(story, conf, invalid);
+      getSnapshotConfig(story, confOptions, invalid);
 
-    return all.concat(options, (
-      additionalSnapshots.reduce((add, {
-        prefix = '', suffix = '', ...snap
-      }) => shouldSkipStory(story.name, snap) ? add : (
-        add.concat(PercyConfig.merge([options, {
-          name: `${prefix}${story.name}${suffix}`
-        }, snap]))
-      ), [])
-    ));
+    return all.concat(
+      options,
+      processAdditionalSnapshots(additionalSnapshots, options, story.name, (snap) => shouldSkipStory(story.name, snap))
+    );
   }, []);
+
+  const docSnapshots = mapDocSnapshots(docEntries, config, confOptions, invalid, log, globalDocSettings);
+  snapshots = snapshots.concat(docSnapshots);
 
   // log validation warnings
   if (invalid.size) {
@@ -229,9 +288,9 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     // launch the percy browser if not launched during dry-runs
     yield percy.browser.launch();
 
-    // gather storybook data in parallel
-    const docCaptureFlag = process.env.PERCY_STORYBOOK_DOC_CAPTURE === 'true';
-    const autodocCaptureFlag = process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE === 'true';
+    const storybookConfig = percy.config.storybook;
+    const { isDocDiscoveryEnabled, isAutodocDiscoveryEnabled, globalDocSettings } = getDocCaptureFlagsWithRules(storybookConfig);
+
     let [environmentInfo, stories] = yield* yieldAll([
       withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo), undefined, { from: 'about url' }),
       withPage(
@@ -240,8 +299,8 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
         p => p.eval(
           evalStorybookStorySnapshots,
           {
-            docCapture: docCaptureFlag,
-            autodocCapture: autodocCaptureFlag
+            docCapture: isDocDiscoveryEnabled,
+            autodocCapture: isAutodocDiscoveryEnabled
           }
         ),
         undefined,
@@ -251,9 +310,10 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
 
     // map stories to snapshot options
     let snapshots = mapStorybookSnapshots(stories, {
-      config: percy.config.storybook,
+      config: storybookConfig,
       previewUrl,
-      flags
+      flags,
+      globalDocSettings
     });
 
     // set storybook environment info
