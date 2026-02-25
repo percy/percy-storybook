@@ -26,13 +26,23 @@
   },
   "files": [
     "bin",
-    "dist"
+    "dist",
+    "manager.js",
+    "preset.cjs",
+    "src/components",
+    "src/constants.js",
+    "src/constants.cjs"
   ],
   "bin": {
     "percy-storybook": "./bin/percy-storybook.cjs"
   },
   "main": "./dist/index.js",
-  "exports": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./preset": "./preset.cjs",
+    "./manager": "./manager.js",
+    "./package.json": "./package.json"
+  },
   "type": "module",
   "scripts": {
     "build": "babel src --out-dir dist",
@@ -46,12 +56,23 @@
   },
   "storybook": {
     "displayName": "Percy",
-    "icon": "https://avatars.githubusercontent.com/u/12260884"
+    "icon": "https://avatars.githubusercontent.com/u/12260884",
+    "preset": "./preset.cjs"
   },
   "@percy/cli": {
     "commands": [
       "./dist/storybook.js"
     ]
+  },
+  "peerDependencies": {
+    "storybook": ">=8.x",
+    "react": "^18.x || ^19.x",
+    "react-dom": "^18.x || ^19.x"
+  },
+  "peerDependenciesMeta": {
+    "storybook": { "optional": true },
+    "react": { "optional": true },
+    "react-dom": { "optional": true }
   },
   "dependencies": {
     "@percy/cli-command": "^1.30.7",

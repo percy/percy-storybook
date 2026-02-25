@@ -1,6 +1,12 @@
+const path = require('path');
+
 module.exports = {
-  stories: ['*.stories.js'],
-  addons: ['@storybook/addon-webpack5-compiler-babel'],
+  stories: ['../*.stories.js'],
+  addons: [
+    // Load the Percy preset directly from the local source tree
+    // (no publish / npm link needed)
+    { name: path.resolve(__dirname, '../../preset.cjs') },
+  ],
   features: {
     postcss: false
   },

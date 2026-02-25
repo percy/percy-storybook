@@ -1,10 +1,18 @@
 parser: '@babel/eslint-parser'
+parserOptions:
+  requireConfigFile: false
+  babelOptions:
+    presets:
+      - '@babel/preset-react'
 extends: standard
 plugins:
   - '@babel/eslint-plugin'
+  - react
 rules:
   prefer-const: off
   no-unused-expressions: off
+  react/jsx-uses-react: error
+  react/jsx-uses-vars: error
   import/no-extraneous-dependencies: error
   promise/param-names: off
   multiline-ternary: off
@@ -20,3 +28,13 @@ rules:
     - anonymous: never
       asyncArrow: always
       named: never
+
+overrides:
+  - files: ['*.cjs']
+    parserOptions:
+      sourceType: script
+      requireConfigFile: false
+    env:
+      commonjs: true
+    rules:
+      '@babel/no-invalid-this': off
