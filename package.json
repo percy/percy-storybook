@@ -81,10 +81,18 @@
     }
   },
   "dependencies": {
+    "@amplitude/analytics-browser": "2.35.4",
+    "@amplitude/plugin-session-replay-browser": "1.25.16",
+    "@browserstack/design-stack": "8.17.0",
+    "@browserstack/design-stack-icons": "2.8.0",
+    "@browserstack/hooks": "2.5.1",
+    "@browserstack/utils": "5.10.0",
     "@percy/cli-command": "^1.30.7",
+    "axios": "1.13.5",
     "cross-spawn": "^7.0.3",
     "glob-to-regexp": "^0.4.1",
-    "qs": "^6.11.0"
+    "qs": "^6.11.0",
+    "react-router-dom": "7.13.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.23.0",

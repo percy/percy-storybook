@@ -15,11 +15,18 @@ export const PERCY_EVENTS = {
   SNAPSHOT_SUCCESS: `${ADDON_ID}/snapshot-success`,
   SNAPSHOT_ERROR: `${ADDON_ID}/snapshot-error`,
   SNAPSHOT_STOPPED: `${ADDON_ID}/snapshot-stopped`,
-  LOG: `${ADDON_ID}/log`
+  LOG: `${ADDON_ID}/log`,
+  // BrowserStack credentials
+  LOAD_BS_CREDENTIALS: `${ADDON_ID}/load-bs-credentials`,
+  BS_CREDENTIALS_LOADED: `${ADDON_ID}/bs-credentials-loaded`,
+  SAVE_BS_CREDENTIALS: `${ADDON_ID}/save-bs-credentials`,
+  BS_CREDENTIALS_SAVED: `${ADDON_ID}/bs-credentials-saved`
 };
 
 export const STORAGE_KEYS = {
-  PERCY_TOKEN: 'percy_token'
+  PERCY_TOKEN: 'percy_token',
+  BS_USERNAME: 'browserstack_username',
+  BS_ACCESS_KEY: 'browserstack_access_key'
 };
 
 export const SNAPSHOT_STATUS = {

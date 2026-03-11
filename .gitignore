@@ -6,3 +6,4 @@ coverage
 dist
 oclif.manifest.json
 test/.storybook-build
+percy-storybook-addon

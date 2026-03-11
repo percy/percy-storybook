@@ -38,3 +38,6 @@ overrides:
       commonjs: true
     rules:
       '@babel/no-invalid-this': off
+  - files: ['*.jsx', '*.js']
+    env:
+      browser: true

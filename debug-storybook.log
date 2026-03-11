@@ -1,0 +1,24 @@
+[10:59:14.387] [INFO] storybook v10.1.11
+[10:59:16.519] [DEBUG] Getting package.json info for /Users/pradumkumar/percyApps/percy-storybook/package.json...
+[10:59:17.006] [INFO] Starting...
+[10:59:17.350] [ERROR] [38;2;241;97;97mSB_CORE-SERVER_0004 (NoMatchingExportError): There was an exports mismatch error when trying to build Storybook.
+Please check whether the versions of your Storybook packages match whenever possible, as this might be the cause.
+
+Problematic example:
+{ "@storybook/react": "7.5.3", "@storybook/react-vite": "7.4.5", "storybook": "7.3.0" }
+
+Correct example:
+{ "@storybook/react": "7.5.3", "@storybook/react-vite": "7.5.3", "storybook": "7.5.3" }
+
+Please run `npx storybook doctor` for guidance on how to fix this issue.
+
+More info: 
+[39m
+    at buildOrThrow (file://./node_modules/storybook/dist/core-server/index.js:5560:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async buildDevStandalone (file://./node_modules/storybook/dist/core-server/index.js:7208:66)
+    at async withTelemetry (file://./node_modules/storybook/dist/_node-chunks/chunk-2372JZ52.js:209:12)
+    at async dev (file://./node_modules/storybook/dist/bin/core.js:2734:3)
+    at async _Command.<anonymous> (file://./node_modules/storybook/dist/bin/core.js:2801:92)
+[10:59:17.353] [WARN] Broken build, fix the error above.
+You may need to refresh the browser.
