@@ -1,206 +1,146 @@
-import React, { useState } from 'react';
-import { styled } from 'storybook/theming';
-import { Command } from '@browserstack/design-stack';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useChannel } from 'storybook/manager-api';
+import { usePercyProjects, formatRelativeTime } from '../hooks/usePercyProjects.js';
+import { PERCY_EVENTS } from '../constants.js';
+import {
+  Container, Title, Subtitle, SearchRow, SearchInputWrapper, SearchInput,
+  ClearButton, GoButton, ResultsList, ResultItem, ProjectName, ProjectMeta,
+  Divider, CreateButton, EmptyState, EmptyTitle, EmptyDesc, CreateLink,
+  LoadingRow
+} from './ProjectSetup.styles.js';
 
-// REWRITTEN: uses base Command (not Command.Dialog) to avoid portal/CSS issues
+/* ─── Icons ────────────────────────────────────────────────────────────── */
 
-/* ─── Styled components ─────────────────────────────────────────────────── */
+const SearchIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+  </svg>
+);
 
-const Container = styled.div`
-  width: 100%;
-  max-width: 640px;
-`;
+const ClearIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
 
-const Title = styled.h2`
-  margin: 0 0 8px;
-  font-size: 24px;
-  font-weight: 700;
-  text-align: center;
-  color: ${p => p.theme.color.defaultText};
-`;
+const PlusIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+);
 
-const Subtitle = styled.p`
-  margin: 0 0 28px;
-  font-size: 14px;
-  text-align: center;
-  color: ${p => p.theme.color.mediumdark};
-  line-height: 1.5;
-`;
+const ArrowIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+  </svg>
+);
 
-/*
-  SearchRow — flex row placing CommandRoot and GoButton side-by-side.
-  align-items: flex-start keeps GoButton at the top edge even when
-  the results list expands below.
-*/
-const SearchRow = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-`;
+const Spinner = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 1s linear infinite', display: 'inline-block', verticalAlign: 'middle', marginRight: 6 }}>
+    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+  </svg>
+);
 
-/*
-  CommandRoot — styled(Command) renders inline as a normal div, NO portal.
-  Because the cmdk elements are real DOM descendants we can target them
-  with plain CSS descendant selectors — no global styles, no !important hacks.
-*/
-const CommandRoot = styled(Command)`
-  flex: 1;
-  min-width: 0; /* prevent flex overflow */
+const SpinnerWhite = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 1s linear infinite' }}>
+    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+  </svg>
+);
 
-  /* ── Search bar pill ── */
-  [cmdk-input-wrapper] {
-    display: flex;
-    align-items: center;
-    height: 48px;
-    padding: 0 12px;
-    border: 1px solid ${p => p.theme.appBorderColor};
-    border-radius: 8px;
-    background: ${p => p.theme.background.content};
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
-    gap: 8px;
-  }
-
-  /* Reset the <input> itself — flex:1 makes it fill all available space,
-     pushing the clear button to the far right end */
-  [cmdk-input] {
-    flex: 1;
-    min-width: 0;
-    border: none;
-    outline: none;
-    background: transparent;
-    font-size: 14px;
-    color: ${p => p.theme.color.defaultText};
-    &::placeholder {
-      color: ${p => p.theme.color.mediumdark};
-    }
-  }
-
-  /* Clear (×) button — cmdk renders this as a plain <button> inside the
-     input wrapper. Reset all browser defaults (border-box outline, padding,
-     background) and pin it to the right with margin-left: auto so it always
-     sits at the far edge regardless of input content length. */
-  [cmdk-input-wrapper] button {
-    margin-left: auto;
-    flex-shrink: 0;
-    border: none;
-    background: transparent;
-    outline: none;
-    cursor: pointer;
-    padding: 4px 6px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: ${p => p.theme.color.mediumdark};
-    &:hover {
-      color: ${p => p.theme.color.defaultText};
-      background: ${p => p.theme.background.hoverable};
-    }
-  }
-
-  /* ── Results card below the pill ── */
-  [cmdk-list] {
-    margin-top: 8px;
-    border: 1px solid ${p => p.theme.appBorderColor};
-    border-radius: 8px;
-    background: ${p => p.theme.background.content};
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-    max-height: 380px;
-    overflow-y: auto;
-  }
-
-  /* ── Individual result row ── */
-  [cmdk-item] {
-    padding: 10px 16px;
-    cursor: pointer;
-    border-bottom: 1px solid ${p => p.theme.appBorderColor};
-    &:last-child {
-      border-bottom: none;
-    }
-    &[aria-selected='true'],
-    &:hover {
-      background: ${p => p.theme.background.hoverable};
-    }
-  }
-
-  /* No group heading text needed */
-  [cmdk-group-heading] {
-    display: none;
-  }
-`;
-
-/*
-  GoButton — blue arrow CTA aligned flush with the 48px input pill.
-*/
-const GoButton = styled.button`
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  padding: 0;
-  border: none;
-  border-radius: 8px;
-  background: #4f6ef2;
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s ease;
-  &:hover { background: #3d5ce0; }
-  &:active { background: #2e4dcc; }
-`;
-
-const CreateProjectOption = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 4px;
-  &:hover {
-    background: ${p => p.theme.background.hoverable};
-  }
-`;
-
-const CreateProjectLabel = styled.span`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: ${p => p.theme.color.defaultText};
-`;
-
-const EmptyState = styled.div`
-  padding: 20px;
-  text-align: center;
-  color: ${p => p.theme.color.defaultText};
-`;
-
-const EmptyStateText = styled.p`
-  margin: 0 0 12px;
-  font-size: 14px;
-  color: ${p => p.theme.color.mediumdark};
-`;
-
-const MOCK_PROJECTS = [
-  { id: '1', name: 'PR-12632 - Ubuntu v2.0', updated: 'Updated 5 mins ago' },
-  { id: '2', name: 'PR-12632 - Ubuntu dashboard v1.4', updated: 'Updated 12 mins ago' },
-  { id: '3', name: 'PR-13521 - Ubuntu SSO login new', updated: 'Updated 1 day ago' },
-  { id: '4', name: 'PR-12632 - Ubuntu checkout revamp', updated: 'Updated 2 days ago' },
-  { id: '5', name: 'PR-13521 - Ubuntu v1.9', updated: 'Updated 4 days ago' },
-  { id: '6', name: 'PR-12632 - Ubuntu v1.7', updated: 'Updated 12 days ago' }
-];
+const EmptyIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+);
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
-export function ProjectSetup() {
-  const [search, setSearch] = useState('');
+export function ProjectSetup({ username, accessKey, initialSearch, onProjectConfirmed }) {
+  const {
+    projects, loading, initialLoading, hasMore, error, search, setSearch, loadMore, cancel
+  } = usePercyProjects(username, accessKey, initialSearch);
 
-  const filteredProjects = MOCK_PROJECTS.filter(project =>
-    project.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  const listRef = useRef(null);
+  const observerRef = useRef(null);
+  const selectedProjectRef = useRef(null);
+  const onProjectConfirmedRef = useRef(onProjectConfirmed);
+
+  // Keep refs in sync so the channel callback always has current values
+  useEffect(() => { selectedProjectRef.current = selectedProject; }, [selectedProject]);
+  useEffect(() => { onProjectConfirmedRef.current = onProjectConfirmed; }, [onProjectConfirmed]);
+
+  // Channel for server communication
+  const emit = useChannel({
+    [PERCY_EVENTS.PROJECT_CONFIG_SAVED]: ({ success, error: errMsg }) => {
+      setSaving(false);
+      if (success) {
+        const project = selectedProjectRef.current;
+        if (onProjectConfirmedRef.current && project) {
+          onProjectConfirmedRef.current(project);
+        }
+      } else {
+        setSaveError(errMsg || 'Failed to save project configuration');
+      }
+    }
+  });
+
+  // Stable sentinel callback using refs to avoid observer recreation
+  const sentinelCallback = useCallback(node => {
+    if (observerRef.current) observerRef.current.disconnect();
+    if (!node) return;
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && !loadingRef.current) loadMore();
+    }, { root: listRef.current, threshold: 0.1 });
+    observerRef.current.observe(node);
+  }, [loadMore]);
+
+  // Refs for observer callback stability
+  const loadingRef = useRef(loading);
+  useEffect(() => { loadingRef.current = loading; }, [loading]);
+
+  // Cleanup observer on unmount
+  useEffect(() => {
+    return () => {
+      if (observerRef.current) observerRef.current.disconnect();
+    };
+  }, []);
+
+  const handleSelectProject = (project) => {
+    setSelectedProject(project);
+    setSearch(project.name);
+    setSaveError('');
+    cancel(); // Kill in-flight searches and debounce
+  };
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    if (selectedProject) {
+      setSelectedProject(null); // Clear selection when user edits
+    }
+    setSaveError('');
+  };
+
+  const handleClearSearch = () => {
+    setSearch('');
+    setSelectedProject(null);
+    setSaveError('');
+  };
+
+  const handleConfirm = () => {
+    if (!selectedProject || saving) return;
+    setSaving(true);
+    setSaveError('');
+    emit(PERCY_EVENTS.SAVE_PROJECT_CONFIG, {
+      projectId: selectedProject.id,
+      projectName: selectedProject.name
+    });
+  };
+
+  const showResults = !selectedProject && (search || projects.length > 0 || loading);
 
   return (
     <Container>
@@ -208,57 +148,80 @@ export function ProjectSetup() {
       <Subtitle>Search an existing project or create a new</Subtitle>
 
       <SearchRow>
-        <CommandRoot label="Project Search">
-          <Command.Input
-            placeholder="Search across all projects (Search specific items via /)"
+        <SearchInputWrapper>
+          <SearchIcon />
+          <SearchInput
+            placeholder="Search across all projects"
             value={search}
+            onChange={handleSearchChange}
             autoFocus
-            onValueChange={(val) => {
-              if (typeof val === 'string') {
-                setSearch(val);
-              } else if (val && typeof val.value === 'string') {
-                setSearch(val.value);
-              }
-            }}
           />
-          <Command.List>
-            <Command.Empty>
-              <EmptyState>
-                <EmptyStateText>
-                  No result found <br />
-                  Try another search or create a new project
-                </EmptyStateText>
-                <CreateProjectOption role="button">
-                  <CreateProjectLabel>Create new project</CreateProjectLabel>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14"/>
-                    <path d="M12 5l7 7-7 7"/>
-                  </svg>
-                </CreateProjectOption>
-              </EmptyState>
-            </Command.Empty>
-            <Command.Group>
-              {filteredProjects.map(project => (
-                <Command.Item
-                  key={project.id}
-                  value={project.name}
-                  onSelect={() => console.log('Selected', project.name)}
-                >
-                  <div style={{ fontWeight: 600 }}>{project.name}</div>
-                  <div style={{ fontSize: '12px', color: '#888', marginTop: '2px' }}>{project.updated}</div>
-                </Command.Item>
-              ))}
-            </Command.Group>
-          </Command.List>
-        </CommandRoot>
-
-        <GoButton aria-label="Search">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 12h14"/>
-            <path d="M12 5l7 7-7 7"/>
-          </svg>
+          {search && (
+            <ClearButton onClick={handleClearSearch} aria-label="Clear search">
+              <ClearIcon />
+            </ClearButton>
+          )}
+        </SearchInputWrapper>
+        <GoButton
+          onClick={handleConfirm}
+          disabled={!selectedProject || saving}
+          aria-label="Confirm project selection"
+        >
+          {saving ? <SpinnerWhite /> : <ArrowIcon />}
         </GoButton>
       </SearchRow>
+
+      {saveError && (
+        <LoadingRow style={{ color: '#dc2626', marginTop: 8 }}>{saveError}</LoadingRow>
+      )}
+
+      {showResults && (
+        <ResultsList ref={listRef}>
+          {(initialLoading || (loading && projects.length === 0)) && (
+            <LoadingRow>
+              <Spinner /> Loading projects…
+            </LoadingRow>
+          )}
+
+          {!initialLoading && !loading && projects.length === 0 && (
+            <>
+              <EmptyState>
+                <EmptyIcon />
+                <div>
+                  <EmptyTitle>No result found</EmptyTitle>
+                  <EmptyDesc>Try another search or create a new project</EmptyDesc>
+                </div>
+              </EmptyState>
+              <CreateLink onClick={() => console.log('Create new project')}>
+                Create new project →
+              </CreateLink>
+            </>
+          )}
+
+          {projects.map(project => (
+            <ResultItem
+              key={project.id}
+              selected={selectedProject?.id === project.id}
+              onClick={() => handleSelectProject(project)}
+            >
+              <ProjectName>{project.name}</ProjectName>
+              <ProjectMeta>{formatRelativeTime(project.updatedAt)}</ProjectMeta>
+            </ResultItem>
+          ))}
+
+          {loading && !initialLoading && projects.length > 0 && (
+            <LoadingRow><Spinner /> Loading more…</LoadingRow>
+          )}
+          {hasMore && !loading && projects.length > 0 && <div ref={sentinelCallback} style={{ height: 1 }} />}
+          {error && <LoadingRow style={{ color: '#dc2626' }}>{error}</LoadingRow>}
+        </ResultsList>
+      )}
+
+      <Divider>OR</Divider>
+
+      <CreateButton onClick={() => console.log('Create new project')}>
+        <PlusIcon /> Create new project
+      </CreateButton>
     </Container>
   );
 }

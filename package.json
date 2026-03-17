@@ -27,9 +27,7 @@
   "files": [
     "bin",
     "dist",
-    "manager.js",
     "preset.cjs",
-    "src/components",
     "src/constants.js",
     "src/constants.cjs"
   ],
@@ -40,12 +38,13 @@
   "exports": {
     ".": "./dist/index.js",
     "./preset": "./preset.cjs",
-    "./manager": "./manager.js",
+    "./manager": "./dist/manager.js",
     "./package.json": "./package.json"
   },
   "type": "module",
   "scripts": {
-    "build": "babel src --out-dir dist",
+    "build:css": "sass src/styles/manager.scss src/styles/_compiled.css --load-path=node_modules --load-path=node_modules/@browserstack/tailwind-config --no-source-map && tailwindcss -i src/styles/_compiled.css -o dist/manager.css -c tailwind.config.cjs --minify",
+    "build": "yarn --ignore-engines run build:css && babel src --out-dir dist && rollup -c",
     "clean": "git clean -Xdf -e !node_modules -e !node_modules/**",
     "lint": "eslint --ignore-path .gitignore .",
     "readme": "percy-cli-readme",
@@ -83,10 +82,6 @@
   "dependencies": {
     "@amplitude/analytics-browser": "2.35.4",
     "@amplitude/plugin-session-replay-browser": "1.25.16",
-    "@browserstack/design-stack": "8.17.0",
-    "@browserstack/design-stack-icons": "2.8.0",
-    "@browserstack/hooks": "2.5.1",
-    "@browserstack/utils": "5.10.0",
     "@percy/cli-command": "^1.30.7",
     "axios": "1.13.5",
     "cross-spawn": "^7.0.3",
@@ -101,8 +96,20 @@
     "@babel/eslint-plugin": "^7.19.1",
     "@babel/preset-env": "^7.22.9",
     "@babel/preset-react": "^7.23.3",
+    "@browserstack/design-stack": "8.17.0",
+    "@browserstack/design-stack-icons": "2.8.0",
+    "@browserstack/hooks": "2.5.1",
+    "@browserstack/tailwind-config": "1.2.0",
+    "@browserstack/utils": "5.10.0",
+    "@rollup/plugin-babel": "^6",
+    "@rollup/plugin-commonjs": "^25",
+    "@rollup/plugin-node-resolve": "^15",
     "@storybook/react": "^10.1.11",
     "@storybook/react-webpack5": "^10.1.11",
+    "@tailwindcss/aspect-ratio": "0.4.2",
+    "@tailwindcss/container-queries": "0.1.1",
+    "@tailwindcss/forms": "0.5.7",
+    "autoprefixer": "10.4.27",
     "babel-eslint": "^10.0.3",
     "babel-loader": "^10.0.0",
     "babel-plugin-istanbul": "^6.1.1",
@@ -119,9 +126,15 @@
     "mock-require": "^3.0.3",
     "nock": "^13.2.9",
     "nyc": "^17.1.0",
+    "postcss": "8.5.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "storybook": "^10.1.11"
+    "rollup": "^3",
+    "rollup-plugin-postcss": "4.0.2",
+    "sass": "1.98.0",
+    "storybook": "^10.1.11",
+    "tailwind-scrollbar-hide": "1.1.7",
+    "tailwindcss": "3.4.3"
   },
   "resolutions": {
     "jackspeak": "2.1.1"

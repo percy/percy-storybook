@@ -5,6 +5,7 @@
  * It registers the Percy panel so it appears next to the Actions / Controls tabs.
  */
 
+import './src/styles/manager.scss';
 import React from 'react';
 import { addons, types } from 'storybook/manager-api';
 import { PercyPanel } from './src/components/PercyPanel';

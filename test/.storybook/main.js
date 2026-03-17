@@ -5,7 +5,7 @@ module.exports = {
   addons: [
     // Load the Percy preset directly from the local source tree
     // (no publish / npm link needed)
-    { name: path.resolve(__dirname, '../../preset.cjs') },
+    { name: path.resolve(__dirname, '../../preset.cjs') }
   ],
   features: {
     postcss: false
@@ -17,9 +17,15 @@ module.exports = {
   webpackFinal: async (config) => {
     config.module.rules.push({
       test: /\.(js|jsx|mjs|cjs)$/,
-      exclude: /node_modules/,
+      exclude: /node_modules\/(?!@browserstack)/,
       use: {
         loader: require.resolve('babel-loader'),
+        options: {
+          presets: [
+            ['@babel/preset-env', { modules: false }],
+            ['@babel/preset-react', { runtime: 'automatic' }]
+          ]
+        }
       },
     });
     return config;

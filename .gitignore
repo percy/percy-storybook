@@ -7,3 +7,13 @@ dist
 oclif.manifest.json
 test/.storybook-build
 percy-storybook-addon
+.env
+.percy.yml
+snapshot-viewer-addon
+.claude
+docs
+CLAUDE.md
+*.log
+log/
+.env
+.npmrc

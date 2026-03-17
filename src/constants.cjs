@@ -21,13 +21,24 @@ const PERCY_EVENTS = {
   LOAD_BS_CREDENTIALS: `${ADDON_ID}/load-bs-credentials`,
   BS_CREDENTIALS_LOADED: `${ADDON_ID}/bs-credentials-loaded`,
   SAVE_BS_CREDENTIALS: `${ADDON_ID}/save-bs-credentials`,
-  BS_CREDENTIALS_SAVED: `${ADDON_ID}/bs-credentials-saved`
+  BS_CREDENTIALS_SAVED: `${ADDON_ID}/bs-credentials-saved`,
+  // Project config
+  SAVE_PROJECT_CONFIG: `${ADDON_ID}/save-project-config`,
+  PROJECT_CONFIG_SAVED: `${ADDON_ID}/project-config-saved`,
+  LOAD_PROJECT_CONFIG: `${ADDON_ID}/load-project-config`,
+  PROJECT_CONFIG_LOADED: `${ADDON_ID}/project-config-loaded`
 };
 
 const STORAGE_KEYS = {
   PERCY_TOKEN: 'percy_token',
   BS_USERNAME: 'browserstack_username',
   BS_ACCESS_KEY: 'browserstack_access_key'
+};
+
+const SNAPSHOT_TYPES = {
+  FULL: 'full',
+  CURRENT_STORY: 'current_story',
+  CURRENT_TREE: 'current_tree'
 };
 
 const SNAPSHOT_STATUS = {
@@ -45,6 +56,7 @@ module.exports = {
   PANEL_TITLE,
   PERCY_EVENTS,
   STORAGE_KEYS,
+  SNAPSHOT_TYPES,
   SNAPSHOT_STATUS,
   DEFAULT_WIDTHS
 };
