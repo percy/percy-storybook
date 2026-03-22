@@ -41,6 +41,12 @@ export function usePercyProjects(username, accessKey, initialSearch = '') {
 
   // Fetch when debounced search changes
   useEffect(() => {
+    // Don't fetch without valid credentials
+    if (!username || !accessKey) {
+      setInitialLoading(false);
+      return;
+    }
+
     pageRef.current = 0;
 
     if (searchAbortRef.current) searchAbortRef.current.abort();

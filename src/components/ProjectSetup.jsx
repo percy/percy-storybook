@@ -1,18 +1,17 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useChannel } from 'storybook/manager-api';
 import { Button, Alert, AlertDescription, LoaderV2 } from '@browserstack/design-stack';
 import {
   MdOutlineSearch, MdClose, MdAdd, MdArrowForward, MdOutlineInfo
 } from '@browserstack/design-stack-icons';
 import { usePercyProjects, formatRelativeTime } from '../hooks/usePercyProjects.js';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll.js';
 import { PERCY_EVENTS } from '../constants.js';
 import {
   Container, Title, Subtitle, SearchRow, SearchInputWrapper, SearchInput,
   ClearButton, ResultsList, ResultItem, ProjectName, ProjectMeta,
   Divider, CreateLink, LoadingRow
 } from './ProjectSetup.styles.js';
-
-/* ─── Component ─────────────────────────────────────────────────────────── */
 
 export function ProjectSetup({ username, accessKey, initialSearch, onProjectConfirmed }) {
   const {
@@ -23,16 +22,13 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
-  const listRef = useRef(null);
-  const observerRef = useRef(null);
+  const { listRef, sentinelRef } = useInfiniteScroll(loadMore, loading);
+
   const selectedProjectRef = useRef(null);
   const onProjectConfirmedRef = useRef(onProjectConfirmed);
-
-  // Keep refs in sync so the channel callback always has current values
   useEffect(() => { selectedProjectRef.current = selectedProject; }, [selectedProject]);
   useEffect(() => { onProjectConfirmedRef.current = onProjectConfirmed; }, [onProjectConfirmed]);
 
-  // Channel for server communication
   const emit = useChannel({
     [PERCY_EVENTS.PROJECT_CONFIG_SAVED]: ({ success, error: errMsg }) => {
       setSaving(false);
@@ -47,39 +43,16 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
     }
   });
 
-  // Stable sentinel callback using refs to avoid observer recreation
-  const sentinelCallback = useCallback(node => {
-    if (observerRef.current) observerRef.current.disconnect();
-    if (!node) return;
-    observerRef.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && !loadingRef.current) loadMore();
-    }, { root: listRef.current, threshold: 0.1 });
-    observerRef.current.observe(node);
-  }, [loadMore]);
-
-  // Refs for observer callback stability
-  const loadingRef = useRef(loading);
-  useEffect(() => { loadingRef.current = loading; }, [loading]);
-
-  // Cleanup observer on unmount
-  useEffect(() => {
-    return () => {
-      if (observerRef.current) observerRef.current.disconnect();
-    };
-  }, []);
-
   const handleSelectProject = (project) => {
     setSelectedProject(project);
     setSearch(project.name);
     setSaveError('');
-    cancel(); // Kill in-flight searches and debounce
+    cancel();
   };
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
-    if (selectedProject) {
-      setSelectedProject(null); // Clear selection when user edits
-    }
+    if (selectedProject) setSelectedProject(null);
     setSaveError('');
   };
 
@@ -181,7 +154,7 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
               <LoaderV2 size="small" showLabel label="Loading more…" />
             </LoadingRow>
           )}
-          {hasMore && !loading && projects.length > 0 && <div ref={sentinelCallback} style={{ height: 1 }} />}
+          {hasMore && !loading && projects.length > 0 && <div ref={sentinelRef} style={{ height: 1 }} />}
           {error && (
             <div className="px-4 py-3">
               <Alert variant="ERROR" density="compact">

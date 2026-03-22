@@ -1,52 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { styled } from 'storybook/theming';
-import { useChannel, useStorybookApi } from 'storybook/manager-api';
-import { PERCY_EVENTS, SNAPSHOT_STATUS } from '../constants.js';
-import { usePercyPanelState } from '../hooks/usePercyPanelState.js';
-import { getCurrentStory } from '../utils/storybookApi.js';
+import React from 'react';
 import { Button, LoaderV2 } from '@browserstack/design-stack';
 import { MdOutlineOpenInNew, MdOutlineVpnKey } from '@browserstack/design-stack-icons';
+import { usePercyPanelState } from '../hooks/usePercyPanelState.js';
+import { useSnapshotChannel } from '../hooks/useSnapshotChannel.js';
 import { BrowserStackConnect } from './BrowserStackConnect';
 import { ProjectSetup } from './ProjectSetup';
 import { TriggerBuild } from './TriggerBuild';
-
-/* ─── Styled components ─────────────────────────────────────────────────── */
-
-const Wrapper = styled.div`
-  display: flex; flex-direction: column; height: 100%;
-  overflow: hidden; background: ${p => p.theme.background.app};
-`;
-
-const Header = styled.div`
-  display: flex; align-items: center; padding: 10px 16px;
-  border-bottom: 1px solid ${p => p.theme.appBorderColor};
-  background: ${p => p.theme.background.content}; flex-shrink: 0;
-`;
-
-const LogoArea = styled.div`
-  display: flex; align-items: center; gap: 8px;
-  font-size: 14px; font-weight: 600; color: ${p => p.theme.color.defaultText};
-`;
-
-const HeaderActions = styled.div`
-  margin-left: auto; display: flex; align-items: center; gap: 8px;
-`;
-
-const ScrollBody = styled.div`
-  flex: 1; min-height: 0; overflow-y: auto;
-  display: flex; flex-direction: column; align-items: center;
-  padding: 40px 24px; box-sizing: border-box;
-`;
-
-const Card = styled.div`
-  background: ${p => p.theme.background.content};
-  border: 1px solid ${p => p.theme.appBorderColor};
-  border-radius: 12px; padding: 40px 32px;
-  width: 100%; max-width: 600px; box-sizing: border-box;
-`;
-
-
-/* ─── Icons ────────────────────────────────────────────────────────────── */
+import { Wrapper, Header, LogoArea, HeaderActions, ScrollBody, Card } from './PercyPanel.styles.js';
 
 const BrowserStackLogo = () => (
   <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
@@ -57,92 +17,17 @@ const BrowserStackLogo = () => (
   </svg>
 );
 
-
-/* ─── Component ─────────────────────────────────────────────────────────── */
-
 export function PercyPanel({ active }) {
-  const api = useStorybookApi();
   const { view, credentials, selectedProject, transition, VIEWS } = usePercyPanelState();
-  const [skipAutoValidate, setSkipAutoValidate] = useState(false);
-  const [snapshotStatus, setSnapshotStatus] = useState(SNAPSHOT_STATUS.IDLE);
-  const [buildId, setBuildId] = useState('');
-  const [buildUrl, setBuildUrl] = useState('');
-  const [snapshotError, setSnapshotError] = useState('');
-  const [currentStory, setCurrentStory] = useState(null);
-  const restoreAttempted = useRef(false);
-
-  const emit = useChannel({
-    [PERCY_EVENTS.PROJECT_CONFIG_LOADED]: ({ credentialsValid, project, hasValidToken }) => {
-      if (credentialsValid && project && hasValidToken) {
-        transition('RESTORE_FULL', {
-          credentials: { username: '', accessKey: '' },
-          project
-        });
-      } else if (credentialsValid) {
-        transition('RESTORE_CREDS_ONLY', { username: '', accessKey: '' });
-      } else {
-        transition('RESTORE_NONE');
-      }
-    },
-    [PERCY_EVENTS.SNAPSHOT_STARTED]: () => {
-      setSnapshotStatus(SNAPSHOT_STATUS.RUNNING);
-      setBuildId('');
-      setBuildUrl('');
-      setSnapshotError('');
-    },
-    [PERCY_EVENTS.SNAPSHOT_SUCCESS]: (data) => {
-      setSnapshotStatus(SNAPSHOT_STATUS.SUCCESS);
-      if (data?.buildId) setBuildId(data.buildId);
-      if (data?.buildUrl) setBuildUrl(data.buildUrl);
-    },
-    [PERCY_EVENTS.SNAPSHOT_ERROR]: (data) => {
-      setSnapshotStatus(SNAPSHOT_STATUS.ERROR);
-      setSnapshotError(data?.message || 'Snapshot failed');
-    }
-  });
-
-  // Track current story selection
-  useEffect(() => {
-    const update = () => setCurrentStory(getCurrentStory(api));
-    update();
-    const unsub = api.on('storyChanged', update);
-    return () => { if (unsub) unsub(); };
-  }, [api]);
-
-  // Startup restore: check for existing project config
-  useEffect(() => {
-    if (restoreAttempted.current) return;
-    restoreAttempted.current = true;
-    emit(PERCY_EVENTS.LOAD_PROJECT_CONFIG);
-
-    // Timeout fallback — if server never responds, show auth
-    const timeout = setTimeout(() => {
-      if (view === VIEWS.INITIALIZING) transition('RESTORE_NONE');
-    }, 10000);
-    return () => clearTimeout(timeout);
-  }, []);
+  const { emit, snapshotStatus, buildId, buildUrl, snapshotError, currentStory } =
+    useSnapshotChannel(transition, view, VIEWS);
 
   if (!active) return null;
 
-  const handleAuthenticated = (username, accessKey, projectName) => {
-    setSkipAutoValidate(false);
-    transition('AUTHENTICATED', { username, accessKey, projectName: projectName || '' });
+  const handleAuthenticated = (username, accessKey) => {
+    transition('AUTHENTICATED', { username, accessKey });
   };
 
-  const handleChangeCredentials = () => {
-    setSkipAutoValidate(true);
-    transition('CHANGE_CREDENTIALS');
-  };
-
-  const handleProjectConfirmed = (project) => {
-    transition('PROJECT_CONFIRMED', project);
-  };
-
-  const handleChangeProject = () => {
-    transition('CHANGE_PROJECT');
-  };
-
-  // Initializing state — brief spinner while checking saved config
   if (view === VIEWS.INITIALIZING) {
     return (
       <Wrapper>
@@ -170,11 +55,11 @@ export function PercyPanel({ active }) {
               </Button>
             </a>
             {view === VIEWS.TRIGGER_BUILD ? (
-              <Button variant="secondary" colors="white" size="small" onClick={handleChangeProject}>
+              <Button variant="secondary" colors="white" size="small" onClick={() => transition('CHANGE_PROJECT')}>
                 Change project
               </Button>
             ) : (
-              <Button variant="secondary" colors="white" size="small" icon={<MdOutlineVpnKey />} onClick={handleChangeCredentials}>
+              <Button variant="secondary" colors="white" size="small" icon={<MdOutlineVpnKey />} onClick={() => transition('CHANGE_CREDENTIALS')}>
                 Change credentials
               </Button>
             )}
@@ -186,7 +71,6 @@ export function PercyPanel({ active }) {
           {view === VIEWS.AUTH && (
             <BrowserStackConnect
               onAuthenticated={handleAuthenticated}
-              skipAutoValidate={skipAutoValidate}
             />
           )}
           {view === VIEWS.PROJECT_SETUP && (
@@ -194,7 +78,7 @@ export function PercyPanel({ active }) {
               username={credentials.username}
               accessKey={credentials.accessKey}
               initialSearch=""
-              onProjectConfirmed={handleProjectConfirmed}
+              onProjectConfirmed={(project) => transition('PROJECT_CONFIRMED', project)}
             />
           )}
           {view === VIEWS.TRIGGER_BUILD && (

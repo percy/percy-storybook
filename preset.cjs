@@ -335,11 +335,45 @@ const experimental_serverChannel = async function serverChannel(channel) {
     }
   });
 
-  // Load project config on startup (file-existence check only, no network calls)
-  channel.on(PERCY_EVENTS.LOAD_PROJECT_CONFIG, () => {
+  // Load project config on startup — validates credentials via Percy API
+  // so the browser-side never needs to re-validate on its own.
+  channel.on(PERCY_EVENTS.LOAD_PROJECT_CONFIG, async () => {
     try {
       const { username, accessKey } = readBsCredentials();
-      const credentialsValid = !!(username && accessKey);
+      const hasCredentials = !!(username && accessKey);
+
+      // No credentials saved — go straight to auth
+      if (!hasCredentials) {
+        channel.emit(PERCY_EVENTS.PROJECT_CONFIG_LOADED, {
+          credentialsValid: false,
+          project: null,
+          hasValidToken: false
+        });
+        return;
+      }
+
+      // Validate credentials via Percy API
+      let credentialsValid = false;
+      try {
+        const token = Buffer.from(`${username}:${accessKey}`).toString('base64');
+        const res = await fetch('https://percy.io/api/v1/user', {
+          headers: { Authorization: `Basic ${token}`, 'Content-Type': 'application/json' }
+        });
+        credentialsValid = res.ok;
+      } catch {
+        credentialsValid = false;
+      }
+
+      if (!credentialsValid) {
+        channel.emit(PERCY_EVENTS.PROJECT_CONFIG_LOADED, {
+          credentialsValid: false,
+          project: null,
+          hasValidToken: false
+        });
+        return;
+      }
+
+      // Credentials valid — check project + token
       const project = readPercyYml();
       const envPath = getEnvPath();
       let hasValidToken = false;
@@ -347,8 +381,11 @@ const experimental_serverChannel = async function serverChannel(channel) {
         const parsed = parseEnv(fs.readFileSync(envPath, 'utf8'));
         hasValidToken = !!(parsed.PERCY_TOKEN);
       }
+
       channel.emit(PERCY_EVENTS.PROJECT_CONFIG_LOADED, {
-        credentialsValid,
+        credentialsValid: true,
+        username,
+        accessKey,
         project,
         hasValidToken
       });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { styled } from 'storybook/theming';
 import { useChannel } from 'storybook/manager-api';
 import { Alert, AlertTitle, AlertDescription, Button, InputField } from '@browserstack/design-stack';
@@ -39,46 +39,25 @@ const EyeToggle = styled.button`
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
-export function BrowserStackConnect({ onAuthenticated, skipAutoValidate }) {
+export function BrowserStackConnect({ onAuthenticated }) {
   const [username, setUsername] = useState('');
   const [accessKey, setAccessKey] = useState('');
   const [showAccessKey, setShowAccessKey] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [validationError, setValidationError] = useState('');
-  const [loading, setLoading] = useState(!skipAutoValidate);
-  const autoValidated = useRef(false);
-  const projectNameRef = useRef('');
+  const [loading, setLoading] = useState(false);
   const usernameRef = useRef('');
   const accessKeyRef = useRef('');
 
-  const autoValidate = useCallback(async (user, key) => {
-    if (autoValidated.current || skipAutoValidate) {
-      autoValidated.current = true;
-      setLoading(false);
-      return;
-    }
-    autoValidated.current = true;
-    if (!user || !key) { setLoading(false); return; }
-    try {
-      await validateCredentials(user, key);
-      onAuthenticated && onAuthenticated(user, key, projectNameRef.current);
-    } catch {
-      setValidationError('Saved credentials are invalid. Please re-enter.');
-      setLoading(false);
-    }
-  }, [onAuthenticated]);
-
   const emit = useChannel({
-    [PERCY_EVENTS.BS_CREDENTIALS_LOADED]: ({ username: u, accessKey: k, projectName: p }) => {
+    [PERCY_EVENTS.BS_CREDENTIALS_LOADED]: ({ username: u, accessKey: k }) => {
       setUsername(u || '');
       setAccessKey(k || '');
       usernameRef.current = u || '';
       accessKeyRef.current = k || '';
-      projectNameRef.current = p || '';
-      autoValidate(u, k);
     },
     [PERCY_EVENTS.BS_CREDENTIALS_SAVED]: ({ success, error }) => {
-      if (success) { setSaveError(''); onAuthenticated && onAuthenticated(usernameRef.current, accessKeyRef.current, projectNameRef.current); }
+      if (success) { setSaveError(''); onAuthenticated && onAuthenticated(usernameRef.current, accessKeyRef.current); }
       else { setSaveError(error || 'Failed to save credentials'); }
     }
   });
@@ -98,15 +77,6 @@ export function BrowserStackConnect({ onAuthenticated, skipAutoValidate }) {
     } catch (err) {
       setValidationError(err.message);
     } finally { setLoading(false); }
-  }
-
-  if (loading && !validationError && !saveError) {
-    return (
-      <Container>
-        <Title>Connect to BrowserStack</Title>
-        <Subtitle>Verifying your credentials…</Subtitle>
-      </Container>
-    );
   }
 
   return (
