@@ -8,6 +8,7 @@ const VIEWS = {
   INITIALIZING: 'initializing',
   AUTH: 'auth',
   PROJECT_SETUP: 'project-setup',
+  CREATE_PROJECT: 'create-project',
   TRIGGER_BUILD: 'trigger-build'
 };
 
@@ -47,6 +48,16 @@ export function usePercyPanelState() {
         break;
       case 'CHANGE_PROJECT':
         setView(VIEWS.PROJECT_SETUP);
+        break;
+      case 'CREATE_NEW_PROJECT':
+        setView(VIEWS.CREATE_PROJECT);
+        break;
+      case 'BACK_TO_PROJECT_SETUP':
+        setView(VIEWS.PROJECT_SETUP);
+        break;
+      case 'PROJECT_CREATED':
+        setSelectedProject(payload);
+        setView(VIEWS.TRIGGER_BUILD);
         break;
       case 'CHANGE_CREDENTIALS':
         setView(VIEWS.AUTH);

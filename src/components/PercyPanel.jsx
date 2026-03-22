@@ -6,6 +6,7 @@ import { useSnapshotChannel } from '../hooks/useSnapshotChannel.js';
 import { BrowserStackConnect } from './BrowserStackConnect';
 import { ProjectSetup } from './ProjectSetup';
 import { TriggerBuild } from './TriggerBuild';
+import { CreateProject } from './CreateProject';
 import { Wrapper, Header, LogoArea, HeaderActions, ScrollBody, Card } from './PercyPanel.styles.js';
 
 const BrowserStackLogo = () => (
@@ -38,7 +39,7 @@ export function PercyPanel({ active }) {
     );
   }
 
-  const showHeader = view === VIEWS.PROJECT_SETUP || view === VIEWS.TRIGGER_BUILD;
+  const showHeader = view === VIEWS.PROJECT_SETUP || view === VIEWS.CREATE_PROJECT || view === VIEWS.TRIGGER_BUILD;
 
   return (
     <Wrapper>
@@ -79,6 +80,15 @@ export function PercyPanel({ active }) {
               accessKey={credentials.accessKey}
               initialSearch=""
               onProjectConfirmed={(project) => transition('PROJECT_CONFIRMED', project)}
+              onCreateProject={() => transition('CREATE_NEW_PROJECT')}
+            />
+          )}
+          {view === VIEWS.CREATE_PROJECT && (
+            <CreateProject
+              username={credentials.username}
+              accessKey={credentials.accessKey}
+              onProjectCreated={(project) => transition('PROJECT_CREATED', project)}
+              onBack={() => transition('BACK_TO_PROJECT_SETUP')}
             />
           )}
           {view === VIEWS.TRIGGER_BUILD && (

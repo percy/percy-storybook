@@ -13,7 +13,7 @@ import {
   Divider, CreateLink, LoadingRow
 } from './ProjectSetup.styles.js';
 
-export function ProjectSetup({ username, accessKey, initialSearch, onProjectConfirmed }) {
+export function ProjectSetup({ username, accessKey, initialSearch, onProjectConfirmed, onCreateProject }) {
   const {
     projects, loading, initialLoading, hasMore, error, search, setSearch, loadMore, cancel
   } = usePercyProjects(username, accessKey, initialSearch);
@@ -132,7 +132,7 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
                   <div className="text-xs text-neutral-500 mt-0.5">Try another search or create a new project</div>
                 </div>
               </div>
-              <CreateLink onClick={() => console.log('Create new project')}>
+              <CreateLink onClick={onCreateProject}>
                 Create new project →
               </CreateLink>
             </>
@@ -172,7 +172,7 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
         colors="brand"
         fullWidth
         icon={<MdAdd />}
-        onClick={() => console.log('Create new project')}
+        onClick={onCreateProject}
       >
         Create new project
       </Button>
