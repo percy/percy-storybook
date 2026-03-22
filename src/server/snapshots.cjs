@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { PERCY_EVENTS } = require('../constants.cjs');
-const { getEnvPath, parseEnv } = require('./env.cjs');
+const { getEnvPath, parseEnv, readEnvRaw, writeEnvRaw, setKey } = require('./env.cjs');
 
 /* ─── Logging helpers ──────────────────────────────────────────────────── */
 
@@ -132,6 +132,13 @@ async function runPercyBuild(channel, { baseUrl, include = [], exclude = [] }) {
     appendLog(`Build completed — ID: ${buildId}, Number: ${buildNumber}`);
     appendLog(`Build URL: ${buildUrl}`);
     appendLog('=== Percy build finished successfully ===');
+
+    // Fire-and-forget: save buildId to .env for reference
+    try {
+      let content = readEnvRaw();
+      content = setKey(content, 'PERCY_LAST_TRIGGER_BUILD', String(buildId));
+      writeEnvRaw(content);
+    } catch { /* ignore write errors */ }
 
     channel.emit(PERCY_EVENTS.SNAPSHOT_SUCCESS, {
       buildId,

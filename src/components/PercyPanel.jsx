@@ -8,11 +8,12 @@ import { BrowserStackConnect } from './BrowserStackConnect';
 import { ProjectSetup } from './ProjectSetup';
 import { TriggerBuild } from './TriggerBuild';
 import { CreateProject } from './CreateProject';
+import { BuildProgress } from './BuildProgress';
 import { Wrapper, Header, LogoArea, HeaderActions, ScrollBody, Card } from './PercyPanel.styles.js';
 
 export function PercyPanel({ active }) {
   const { view, credentials, selectedProject, transition, VIEWS } = usePercyPanelState();
-  const { emit, snapshotStatus, buildId, buildUrl, snapshotError, currentStory } =
+  const { emit, snapshotStatus, buildId, buildUrl, buildNumber, snapshotError, currentStory } =
     useSnapshotChannel(transition, view, VIEWS);
 
   if (!active) return null;
@@ -28,6 +29,18 @@ export function PercyPanel({ active }) {
           <LoaderV2 size="medium" showLabel label="Loading…" />
         </div>
       </Wrapper>
+    );
+  }
+
+  // BUILD_PROGRESS has its own header/layout
+  if (view === VIEWS.BUILD_PROGRESS) {
+    return (
+      <BuildProgress
+        buildId={buildId}
+        buildUrl={buildUrl}
+        buildNumber={buildNumber}
+        onBack={() => transition('BACK_TO_TRIGGER_BUILD')}
+      />
     );
   }
 

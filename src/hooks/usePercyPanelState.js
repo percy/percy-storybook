@@ -9,7 +9,8 @@ const VIEWS = {
   AUTH: 'auth',
   PROJECT_SETUP: 'project-setup',
   CREATE_PROJECT: 'create-project',
-  TRIGGER_BUILD: 'trigger-build'
+  TRIGGER_BUILD: 'trigger-build',
+  BUILD_PROGRESS: 'build-progress'
 };
 
 /**
@@ -61,6 +62,14 @@ export function usePercyPanelState() {
         break;
       case 'CHANGE_CREDENTIALS':
         setView(VIEWS.AUTH);
+        break;
+
+      // Build progress
+      case 'BUILD_STARTED':
+        setView(VIEWS.BUILD_PROGRESS);
+        break;
+      case 'BACK_TO_TRIGGER_BUILD':
+        setView(VIEWS.TRIGGER_BUILD);
         break;
       default:
         break;

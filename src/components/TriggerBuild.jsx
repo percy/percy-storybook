@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Button, RadioGroup, RadioItem,
-  Alert, AlertDescription, AlertLink
+  Button, RadioGroup, RadioItem
 } from '@browserstack/design-stack';
 import { MdPlayArrow } from '@browserstack/design-stack-icons';
 import { PERCY_EVENTS, SNAPSHOT_TYPES, SNAPSHOT_STATUS } from '../constants.js';
@@ -117,44 +116,22 @@ export function TriggerBuild({
       </Button>
 
       {needsStory && !currentStory && (
-        <div className="mt-3">
-          <Alert variant="ERROR" density="compact">
-            <AlertDescription>Select a story in the sidebar to use this scope.</AlertDescription>
-          </Alert>
+        <div className="mt-3 p-3 rounded-md bg-danger-weaker text-danger-default text-sm">
+          Select a story in the sidebar to use this scope.
         </div>
       )}
 
       {snapshotStatus === SNAPSHOT_STATUS.RUNNING && (
-        <div className="mt-4">
-          <Alert variant="INFO">
-            <AlertDescription>Capturing snapshots… This may take a few minutes.</AlertDescription>
-          </Alert>
+        <div className="mt-4 p-3 rounded-md bg-brand-weaker text-brand-default text-sm">
+          Capturing snapshots… This may take a few minutes.
         </div>
       )}
 
-      {snapshotStatus === SNAPSHOT_STATUS.SUCCESS && (
-        <div className="mt-4">
-          <Alert variant="SUCCESS">
-            <AlertDescription>
-              Snapshots captured successfully!
-              {buildId && <div className="mt-1">Build ID: <strong>{buildId}</strong></div>}
-            </AlertDescription>
-            {buildUrl && (
-              <AlertLink href={buildUrl} target="_blank" rel="noopener noreferrer">
-                View build on Percy
-              </AlertLink>
-            )}
-          </Alert>
-        </div>
-      )}
+      {/* SUCCESS state is handled by BuildProgress view */}
 
       {snapshotStatus === SNAPSHOT_STATUS.ERROR && (
-        <div className="mt-4">
-          <Alert variant="ERROR">
-            <AlertDescription>
-              {snapshotError || 'An error occurred during snapshot capture.'}
-            </AlertDescription>
-          </Alert>
+        <div className="mt-4 p-3 rounded-md bg-danger-weaker text-danger-default text-sm">
+          {snapshotError || 'An error occurred during snapshot capture.'}
         </div>
       )}
     </Container>

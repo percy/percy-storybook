@@ -12,6 +12,7 @@ export function useSnapshotChannel(transition, view, VIEWS) {
   const [snapshotStatus, setSnapshotStatus] = useState(SNAPSHOT_STATUS.IDLE);
   const [buildId, setBuildId] = useState('');
   const [buildUrl, setBuildUrl] = useState('');
+  const [buildNumber, setBuildNumber] = useState('');
   const [snapshotError, setSnapshotError] = useState('');
   const [currentStory, setCurrentStory] = useState(null);
   const restoreAttempted = useRef(false);
@@ -36,9 +37,13 @@ export function useSnapshotChannel(transition, view, VIEWS) {
       setSnapshotError('');
     },
     [PERCY_EVENTS.SNAPSHOT_SUCCESS]: (data) => {
-      setSnapshotStatus(SNAPSHOT_STATUS.SUCCESS);
       if (data?.buildId) setBuildId(data.buildId);
       if (data?.buildUrl) setBuildUrl(data.buildUrl);
+      if (data?.buildNumber) setBuildNumber(data.buildNumber);
+      setSnapshotStatus(SNAPSHOT_STATUS.SUCCESS);
+      // Transition immediately — before React re-renders TriggerBuild.
+      // This avoids the design-stack Alert crash in the RUNNING state render.
+      transition('BUILD_STARTED');
     },
     [PERCY_EVENTS.SNAPSHOT_ERROR]: (data) => {
       setSnapshotStatus(SNAPSHOT_STATUS.ERROR);
@@ -67,5 +72,5 @@ export function useSnapshotChannel(transition, view, VIEWS) {
     return () => clearTimeout(timeout);
   }, []);
 
-  return { emit, snapshotStatus, buildId, buildUrl, snapshotError, currentStory };
+  return { emit, snapshotStatus, buildId, buildUrl, buildNumber, snapshotError, currentStory };
 }

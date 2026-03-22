@@ -32,7 +32,12 @@ export const PERCY_EVENTS = {
   FETCH_PROJECTS: `${ADDON_ID}/fetch-projects`,
   PROJECTS_FETCHED: `${ADDON_ID}/projects-fetched`,
   CREATE_PROJECT: `${ADDON_ID}/create-project`,
-  PROJECT_CREATED: `${ADDON_ID}/project-created`
+  PROJECT_CREATED: `${ADDON_ID}/project-created`,
+  // Build progress polling
+  FETCH_BUILD_STATUS: `${ADDON_ID}/fetch-build-status`,
+  BUILD_STATUS_FETCHED: `${ADDON_ID}/build-status-fetched`,
+  FETCH_BUILD_LOGS: `${ADDON_ID}/fetch-build-logs`,
+  BUILD_LOGS_FETCHED: `${ADDON_ID}/build-logs-fetched`
 };
 
 export const STORAGE_KEYS = {
@@ -52,6 +57,13 @@ export const SNAPSHOT_STATUS = {
   RUNNING: 'running',
   SUCCESS: 'success',
   ERROR: 'error'
+};
+
+export const BUILD_STATES = {
+  PENDING: 'pending',
+  PROCESSING: 'processing',
+  FAILED: 'failed',
+  FINISHED: 'finished'
 };
 
 export const DEFAULT_WIDTHS = [375, 1280];
