@@ -3,55 +3,19 @@ import { useChannel } from 'storybook/manager-api';
 import { usePercyProjects, formatRelativeTime } from '../hooks/usePercyProjects.js';
 import { PERCY_EVENTS } from '../constants.js';
 import {
+  MdOutlineSearch, MdClose, MdAdd, MdArrowForward, MdRefresh, MdOutlineInfo
+} from '@browserstack/design-stack-icons';
+import {
   Container, Title, Subtitle, SearchRow, SearchInputWrapper, SearchInput,
   ClearButton, GoButton, ResultsList, ResultItem, ProjectName, ProjectMeta,
   Divider, CreateButton, EmptyState, EmptyTitle, EmptyDesc, CreateLink,
   LoadingRow
 } from './ProjectSetup.styles.js';
 
-/* ─── Icons ────────────────────────────────────────────────────────────── */
+/* ─── Spinner styles ───────────────────────────────────────────────────── */
 
-const SearchIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-  </svg>
-);
-
-const ClearIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-  </svg>
-);
-
-const PlusIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-);
-
-const ArrowIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-  </svg>
-);
-
-const Spinner = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 1s linear infinite', display: 'inline-block', verticalAlign: 'middle', marginRight: 6 }}>
-    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-  </svg>
-);
-
-const SpinnerWhite = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 1s linear infinite' }}>
-    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-  </svg>
-);
-
-const EmptyIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-  </svg>
-);
+const spinnerStyle = { animation: 'spin 1s linear infinite', display: 'inline-block', verticalAlign: 'middle', marginRight: 6 };
+const spinnerWhiteStyle = { animation: 'spin 1s linear infinite' };
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
@@ -149,7 +113,7 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
 
       <SearchRow>
         <SearchInputWrapper>
-          <SearchIcon />
+          <MdOutlineSearch style={{ width: 16, height: 16, color: '#9ca3af' }} />
           <SearchInput
             placeholder="Search across all projects"
             value={search}
@@ -158,7 +122,7 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
           />
           {search && (
             <ClearButton onClick={handleClearSearch} aria-label="Clear search">
-              <ClearIcon />
+              <MdClose style={{ width: 14, height: 14 }} />
             </ClearButton>
           )}
         </SearchInputWrapper>
@@ -167,7 +131,7 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
           disabled={!selectedProject || saving}
           aria-label="Confirm project selection"
         >
-          {saving ? <SpinnerWhite /> : <ArrowIcon />}
+          {saving ? <MdRefresh style={{ width: 18, height: 18, color: '#fff', ...spinnerWhiteStyle }} /> : <MdArrowForward style={{ width: 18, height: 18 }} />}
         </GoButton>
       </SearchRow>
 
@@ -179,14 +143,14 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
         <ResultsList ref={listRef}>
           {(initialLoading || (loading && projects.length === 0)) && (
             <LoadingRow>
-              <Spinner /> Loading projects…
+              <MdRefresh style={{ width: 16, height: 16, color: '#6b7280', ...spinnerStyle }} /> Loading projects…
             </LoadingRow>
           )}
 
           {!initialLoading && !loading && projects.length === 0 && (
             <>
               <EmptyState>
-                <EmptyIcon />
+                <MdOutlineInfo style={{ width: 18, height: 18, color: '#9ca3af' }} />
                 <div>
                   <EmptyTitle>No result found</EmptyTitle>
                   <EmptyDesc>Try another search or create a new project</EmptyDesc>
@@ -210,7 +174,7 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
           ))}
 
           {loading && !initialLoading && projects.length > 0 && (
-            <LoadingRow><Spinner /> Loading more…</LoadingRow>
+            <LoadingRow><MdRefresh style={{ width: 16, height: 16, color: '#6b7280', ...spinnerStyle }} /> Loading more…</LoadingRow>
           )}
           {hasMore && !loading && projects.length > 0 && <div ref={sentinelCallback} style={{ height: 1 }} />}
           {error && <LoadingRow style={{ color: '#dc2626' }}>{error}</LoadingRow>}
@@ -220,7 +184,7 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
       <Divider>OR</Divider>
 
       <CreateButton onClick={() => console.log('Create new project')}>
-        <PlusIcon /> Create new project
+        <MdAdd style={{ width: 16, height: 16 }} /> Create new project
       </CreateButton>
     </Container>
   );

@@ -4,6 +4,7 @@ import { useChannel, useStorybookApi } from 'storybook/manager-api';
 import { PERCY_EVENTS, SNAPSHOT_STATUS } from '../constants.js';
 import { usePercyPanelState } from '../hooks/usePercyPanelState.js';
 import { getCurrentStory } from '../utils/storybookApi.js';
+import { MdOutlineOpenInNew, MdOutlineVpnKey } from '@browserstack/design-stack-icons';
 import { BrowserStackConnect } from './BrowserStackConnect';
 import { ProjectSetup } from './ProjectSetup';
 import { TriggerBuild } from './TriggerBuild';
@@ -68,17 +69,6 @@ const BrowserStackLogo = () => (
   </svg>
 );
 
-const ExternalLinkIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-  </svg>
-);
-
-const KeyIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
-  </svg>
-);
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
@@ -185,7 +175,7 @@ export function PercyPanel({ active }) {
           </LogoArea>
           <HeaderActions>
             <HeaderButton as="a" href="https://www.browserstack.com/docs/percy/integrate/storybook" target="_blank" rel="noopener noreferrer">
-              View documentation <ExternalLinkIcon />
+              View documentation <MdOutlineOpenInNew style={{ width: 12, height: 12 }} />
             </HeaderButton>
             {view === VIEWS.TRIGGER_BUILD ? (
               <HeaderButton onClick={handleChangeProject}>
@@ -193,7 +183,7 @@ export function PercyPanel({ active }) {
               </HeaderButton>
             ) : (
               <HeaderButton onClick={handleChangeCredentials}>
-                <KeyIcon /> Change credentials
+                <MdOutlineVpnKey style={{ width: 14, height: 14 }} /> Change credentials
               </HeaderButton>
             )}
           </HeaderActions>

@@ -6,6 +6,7 @@ import {
   buildCurrentTreePattern,
   getStorybookBaseUrl
 } from '../utils/storybookApi.js';
+import { MdPlayArrow } from '@browserstack/design-stack-icons';
 import {
   Container, ProjectTitle, Description, ScopeSection, ScopeLabel,
   RadioCard, RadioDot, RadioContent, RadioLabel, RadioDesc,
@@ -54,13 +55,6 @@ const BuildLink = styled.a`
   &:hover { text-decoration: underline; }
 `;
 
-/* ─── Icons ─────────────────────────────────────────────────────────────── */
-
-const PlayIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-    <polygon points="5 3 19 12 5 21 5 3" />
-  </svg>
-);
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
@@ -141,7 +135,7 @@ export function TriggerBuild({
         disabled={disableRun}
         style={disableRun ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
       >
-        {isRunning ? <Spinner /> : <PlayIcon />}
+        {isRunning ? <Spinner /> : <MdPlayArrow style={{ width: 16, height: 16 }} />}
         {isRunning ? 'Running…' : 'Run visual test'}
       </RunButton>
 
