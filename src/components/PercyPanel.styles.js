@@ -17,7 +17,7 @@ export const LogoArea = styled.div`
 `;
 
 export const HeaderActions = styled.div`
-  margin-left: auto; display: flex; align-items: center; gap: 8px;
+  margin-left: auto; display: flex; align-items: center; gap: 12px;
 `;
 
 export const ScrollBody = styled.div`
