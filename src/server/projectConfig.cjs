@@ -4,6 +4,7 @@ const fs = require('fs');
 const { PERCY_EVENTS } = require('../constants.cjs');
 const { getEnvPath, getPercyYmlPath, readEnv, readEnvRaw, setKey, writeEnvRaw } = require('./env.cjs');
 const { readBsCredentials } = require('./credentials.cjs');
+const { loggedFetch } = require('./apiLogger.cjs');
 
 /* ─── .percy.yml helpers ───────────────────────────────────────────────── */
 
@@ -48,9 +49,11 @@ function writePercyYml(projectId, projectName) {
  */
 async function fetchPercyToken(projectId, username, accessKey) {
   const token = Buffer.from(`${username}:${accessKey}`).toString('base64');
-  const res = await fetch(`https://percy.io/api/v1/projects/${projectId}/tokens`, {
-    headers: { Authorization: `Basic ${token}` }
-  });
+  const res = await loggedFetch(
+    `https://percy.io/api/v1/projects/${projectId}/tokens`,
+    { headers: { Authorization: `Basic ${token}` } },
+    'fetch-percy-token'
+  );
   if (!res.ok) throw new Error(`Token fetch failed (${res.status})`);
   const json = await res.json();
   const tokens = json.data || [];
@@ -94,9 +97,11 @@ function registerProjectConfigHandlers(channel) {
       let credentialsValid = false;
       try {
         const token = Buffer.from(`${username}:${accessKey}`).toString('base64');
-        const res = await fetch('https://percy.io/api/v1/user', {
-          headers: { Authorization: `Basic ${token}`, 'Content-Type': 'application/json' }
-        });
+        const res = await loggedFetch(
+          'https://percy.io/api/v1/user',
+          { headers: { Authorization: `Basic ${token}`, 'Content-Type': 'application/json' } },
+          'startup-validate-credentials'
+        );
         credentialsValid = res.ok;
       } catch {
         credentialsValid = false;

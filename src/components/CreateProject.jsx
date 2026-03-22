@@ -5,47 +5,33 @@ import { MdArrowBack } from '@browserstack/design-stack-icons';
 import { PERCY_EVENTS } from '../constants.js';
 import { Container, BackLink, Title, AlertWrapper, FieldWrapper } from './CreateProject.styles.js';
 
-/**
- * Parse error message from Percy API error response.
- * Format: { errors: [{ status, source?, detail? }] }
- */
-function parseApiError(json) {
-  if (json?.errors?.length) {
-    const detailed = json.errors.find(e => e.detail);
-    if (detailed?.detail) return detailed.detail;
-  }
-  return 'Failed to create project. Please try again.';
-}
-
-/**
- * Map HTTP status to user-friendly error message.
- */
-function getHttpError(status) {
-  if (status === 401) return 'Authentication failed. Please update your credentials.';
-  if (status === 403) return 'You don\'t have permission to create projects.';
-  if (status === 429) return 'Too many requests. Please try again later.';
-  if (status >= 500) return 'Something went wrong. Please try again.';
-  return null;
-}
-
 export function CreateProject({ username, accessKey, onProjectCreated, onBack }) {
   const [projectName, setProjectName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [createdProject, setCreatedProject] = useState(null);
 
-  const abortRef = useRef(null);
   const createdProjectRef = useRef(null);
   const onProjectCreatedRef = useRef(onProjectCreated);
 
   useEffect(() => { onProjectCreatedRef.current = onProjectCreated; }, [onProjectCreated]);
   useEffect(() => { createdProjectRef.current = createdProject; }, [createdProject]);
 
-  useEffect(() => {
-    return () => { abortRef.current?.abort(); };
-  }, []);
-
   const emit = useChannel({
+    [PERCY_EVENTS.PROJECT_CREATED]: ({ project, error: errMsg }) => {
+      if (project) {
+        // Project created — now save config (write .percy.yml + fetch token)
+        setCreatedProject(project);
+        createdProjectRef.current = project;
+        emit(PERCY_EVENTS.SAVE_PROJECT_CONFIG, {
+          projectId: project.id,
+          projectName: project.name
+        });
+      } else {
+        setError(errMsg || 'Failed to create project. Please try again.');
+        setLoading(false);
+      }
+    },
     [PERCY_EVENTS.PROJECT_CONFIG_SAVED]: ({ success, error: errMsg }) => {
       if (success) {
         const project = createdProjectRef.current;
@@ -59,65 +45,22 @@ export function CreateProject({ username, accessKey, onProjectCreated, onBack })
     }
   });
 
-  const saveProjectConfig = (project) => {
-    emit(PERCY_EVENTS.SAVE_PROJECT_CONFIG, {
-      projectId: project.id,
-      projectName: project.name
-    });
-  };
-
-  const handleCreate = async () => {
+  const handleCreate = () => {
     const name = projectName.trim();
     if (!name || loading) return;
-
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
     setLoading(true);
     setError('');
-
-    try {
-      const response = await fetch('https://percy.io/api/v1/projects', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${btoa(`${username}:${accessKey}`)}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ data: { attributes: { name, type: 'web' } } }),
-        signal: controller.signal
-      });
-
-      if (!response.ok) {
-        const httpError = getHttpError(response.status);
-        if (httpError) {
-          setError(httpError);
-          setLoading(false);
-          return;
-        }
-        const json = await response.json().catch(() => null);
-        setError(parseApiError(json));
-        setLoading(false);
-        return;
-      }
-
-      const json = await response.json();
-      const project = { id: json.data.id, name: json.data.attributes.name };
-      setCreatedProject(project);
-      createdProjectRef.current = project;
-      saveProjectConfig(project);
-    } catch (err) {
-      if (err.name === 'AbortError') return;
-      setError('Network error. Please check your connection.');
-      setLoading(false);
-    }
+    emit(PERCY_EVENTS.CREATE_PROJECT, { username, accessKey, projectName: name });
   };
 
   const handleRetry = () => {
     if (!createdProject || loading) return;
     setLoading(true);
     setError('');
-    saveProjectConfig(createdProject);
+    emit(PERCY_EVENTS.SAVE_PROJECT_CONFIG, {
+      projectId: createdProject.id,
+      projectName: createdProject.name
+    });
   };
 
   const handleChange = (e) => {

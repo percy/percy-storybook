@@ -25,7 +25,14 @@ export const PERCY_EVENTS = {
   SAVE_PROJECT_CONFIG: `${ADDON_ID}/save-project-config`,
   PROJECT_CONFIG_SAVED: `${ADDON_ID}/project-config-saved`,
   LOAD_PROJECT_CONFIG: `${ADDON_ID}/load-project-config`,
-  PROJECT_CONFIG_LOADED: `${ADDON_ID}/project-config-loaded`
+  PROJECT_CONFIG_LOADED: `${ADDON_ID}/project-config-loaded`,
+  // Percy API (server-side)
+  VALIDATE_CREDENTIALS: `${ADDON_ID}/validate-credentials`,
+  CREDENTIALS_VALIDATED: `${ADDON_ID}/credentials-validated`,
+  FETCH_PROJECTS: `${ADDON_ID}/fetch-projects`,
+  PROJECTS_FETCHED: `${ADDON_ID}/projects-fetched`,
+  CREATE_PROJECT: `${ADDON_ID}/create-project`,
+  PROJECT_CREATED: `${ADDON_ID}/project-created`
 };
 
 export const STORAGE_KEYS = {

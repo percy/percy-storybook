@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useChannel } from 'storybook/manager-api';
+import { PERCY_EVENTS } from '../constants.js';
 
-const PAGE_LIMIT = 30;
-const BASE_URL = 'https://percy.io/api/v1/projects';
 const DEBOUNCE_MS = 350;
 
 /**
- * Hook to fetch Percy projects with debounced search and infinite scroll.
+ * Hook to fetch Percy projects via server channel with debounced search and pagination.
+ * All API calls are made server-side — no credentials leave Node.js.
+ *
  * @param {string} username - BrowserStack username
  * @param {string} accessKey - BrowserStack access key
+ * @param {string} [initialSearch] - Initial search term
  */
 export function usePercyProjects(username, accessKey, initialSearch = '') {
   const [projects, setProjects] = useState([]);
@@ -18,9 +21,6 @@ export function usePercyProjects(username, accessKey, initialSearch = '') {
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [error, setError] = useState('');
   const pageRef = useRef(0);
-  const searchAbortRef = useRef(null);
-  const paginationAbortRef = useRef(null);
-  const tokenRef = useRef(btoa(`${username}:${accessKey}`));
   const hasMoreRef = useRef(hasMore);
   const loadingRef = useRef(loading);
 
@@ -28,113 +28,74 @@ export function usePercyProjects(username, accessKey, initialSearch = '') {
   useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
   useEffect(() => { loadingRef.current = loading; }, [loading]);
 
-  // Update token if credentials change
-  useEffect(() => {
-    tokenRef.current = btoa(`${username}:${accessKey}`);
-  }, [username, accessKey]);
-
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [search]);
 
+  const emit = useChannel({
+    [PERCY_EVENTS.PROJECTS_FETCHED]: ({ projects: items, hasMore: more, error: errMsg, search: respSearch, page }) => {
+      // Ignore stale responses from a previous search term
+      if (respSearch !== undefined && respSearch !== debouncedSearch) return;
+
+      if (errMsg) {
+        setError(errMsg);
+        setLoading(false);
+        setInitialLoading(false);
+        return;
+      }
+
+      if (page === 0) {
+        setProjects(items || []);
+      } else {
+        setProjects(prev => [...prev, ...(items || [])]);
+      }
+      setHasMore(!!more);
+      setLoading(false);
+      setInitialLoading(false);
+    }
+  });
+
   // Fetch when debounced search changes
   useEffect(() => {
-    // Don't fetch without valid credentials
     if (!username || !accessKey) {
       setInitialLoading(false);
       return;
     }
 
     pageRef.current = 0;
-
-    if (searchAbortRef.current) searchAbortRef.current.abort();
-    const controller = new AbortController();
-    searchAbortRef.current = controller;
-
     setLoading(true);
     setError('');
 
-    fetchPage(tokenRef.current, debouncedSearch, 0, controller)
-      .then(items => {
-        if (controller.signal.aborted) return;
-        setProjects(items);
-        setHasMore(items.length >= PAGE_LIMIT);
-      })
-      .catch(err => {
-        if (err.name !== 'AbortError') setError(err.message);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) { setLoading(false); setInitialLoading(false); }
-      });
-
-    return () => controller.abort();
-  }, [debouncedSearch]);
+    emit(PERCY_EVENTS.FETCH_PROJECTS, {
+      username,
+      accessKey,
+      search: debouncedSearch,
+      page: 0
+    });
+  }, [debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMore = useCallback(() => {
     if (loadingRef.current || !hasMoreRef.current) return;
     pageRef.current += 1;
-    const page = pageRef.current;
-
-    if (paginationAbortRef.current) paginationAbortRef.current.abort();
-    const controller = new AbortController();
-    paginationAbortRef.current = controller;
 
     setLoading(true);
-    fetchPage(tokenRef.current, debouncedSearch, page, controller)
-      .then(items => {
-        if (controller.signal.aborted) return;
-        setProjects(prev => [...prev, ...items]);
-        setHasMore(items.length >= PAGE_LIMIT);
-      })
-      .catch(err => {
-        if (err.name !== 'AbortError') setError(err.message);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-  }, [debouncedSearch]);
+    emit(PERCY_EVENTS.FETCH_PROJECTS, {
+      username,
+      accessKey,
+      search: debouncedSearch,
+      page: pageRef.current
+    });
+  }, [debouncedSearch, username, accessKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /** Cancel all in-flight requests and clear debounce. */
   const cancel = useCallback(() => {
-    if (searchAbortRef.current) searchAbortRef.current.abort();
-    if (paginationAbortRef.current) paginationAbortRef.current.abort();
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (searchAbortRef.current) searchAbortRef.current.abort();
-      if (paginationAbortRef.current) paginationAbortRef.current.abort();
-    };
+    // Server-side requests can't be aborted via channel,
+    // but we stop processing responses by resetting loading state
+    setLoading(false);
   }, []);
 
   return { projects, loading, initialLoading, hasMore, error, search, setSearch, loadMore, cancel };
-}
-
-/** Fetch a single page of projects from the Percy API. */
-async function fetchPage(token, searchTerm, page, controller) {
-  const params = new URLSearchParams({
-    'filter[product]': 'web',
-    origin: 'percy_web',
-    'page[limit]': String(PAGE_LIMIT),
-    'page[offset]': String(page * PAGE_LIMIT)
-  });
-  if (searchTerm) params.set('filter[search]', searchTerm);
-
-  const res = await fetch(`${BASE_URL}?${params}`, {
-    headers: { Authorization: `Basic ${token}` },
-    signal: controller.signal
-  });
-  if (!res.ok) throw new Error('Failed to load projects');
-  const json = await res.json();
-
-  return (json.data || []).map(p => ({
-    id: p.id,
-    name: p.attributes?.name || p.attributes?.slug || `Project ${p.id}`,
-    updatedAt: p.attributes?.['updated-at'] || ''
-  }));
 }
 
 /**

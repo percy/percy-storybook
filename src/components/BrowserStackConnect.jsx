@@ -6,7 +6,6 @@ import MdOutlineVisibility from '@browserstack/design-stack-icons/dist/MdOutline
 import MdOutlineVisibilityOff from '@browserstack/design-stack-icons/dist/MdOutlineVisibilityOff';
 import ArrowTopRightOnSquareIcon from '@browserstack/design-stack-icons/dist/ArrowTopRightOnSquareIcon';
 import { PERCY_EVENTS } from '../constants.js';
-import { validateCredentials } from '../utils/validateCredentials.js';
 
 /* ─── Styled components (layout only) ──────────────────────────────────── */
 
@@ -56,27 +55,39 @@ export function BrowserStackConnect({ onAuthenticated }) {
       usernameRef.current = u || '';
       accessKeyRef.current = k || '';
     },
+    [PERCY_EVENTS.CREDENTIALS_VALIDATED]: ({ valid, error }) => {
+      if (valid) {
+        setValidationError('');
+        emit(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
+          username: usernameRef.current,
+          accessKey: accessKeyRef.current
+        });
+      } else {
+        setValidationError(error || 'Username/Access Key is incorrect');
+        setLoading(false);
+      }
+    },
     [PERCY_EVENTS.BS_CREDENTIALS_SAVED]: ({ success, error }) => {
-      if (success) { setSaveError(''); onAuthenticated && onAuthenticated(usernameRef.current, accessKeyRef.current); }
-      else { setSaveError(error || 'Failed to save credentials'); }
+      setLoading(false);
+      if (success) {
+        setSaveError('');
+        onAuthenticated && onAuthenticated(usernameRef.current, accessKeyRef.current);
+      } else {
+        setSaveError(error || 'Failed to save credentials');
+      }
     }
   });
 
   useEffect(() => { emit(PERCY_EVENTS.LOAD_BS_CREDENTIALS); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handleContinue() {
+  function handleContinue() {
     const user = username.trim();
     const key = accessKey.trim();
     if (!user || !key) return;
     usernameRef.current = user;
     accessKeyRef.current = key;
     setValidationError(''); setSaveError(''); setLoading(true);
-    try {
-      await validateCredentials(user, key);
-      emit(PERCY_EVENTS.SAVE_BS_CREDENTIALS, { username: user, accessKey: key });
-    } catch (err) {
-      setValidationError(err.message);
-    } finally { setLoading(false); }
+    emit(PERCY_EVENTS.VALIDATE_CREDENTIALS, { username: user, accessKey: key });
   }
 
   return (
