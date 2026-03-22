@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { styled } from 'storybook/theming';
 import { useChannel, useStorybookApi } from 'storybook/manager-api';
 import { PERCY_EVENTS, SNAPSHOT_STATUS } from '../constants.js';
 import { usePercyPanelState } from '../hooks/usePercyPanelState.js';
 import { getCurrentStory } from '../utils/storybookApi.js';
+import { Button, LoaderV2 } from '@browserstack/design-stack';
 import { MdOutlineOpenInNew, MdOutlineVpnKey } from '@browserstack/design-stack-icons';
 import { BrowserStackConnect } from './BrowserStackConnect';
 import { ProjectSetup } from './ProjectSetup';
@@ -31,15 +32,6 @@ const HeaderActions = styled.div`
   margin-left: auto; display: flex; align-items: center; gap: 8px;
 `;
 
-const HeaderButton = styled.button`
-  all: unset; display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 12px; font-size: 13px; font-weight: 500;
-  color: ${p => p.theme.color.defaultText};
-  border: 1px solid ${p => p.theme.appBorderColor}; border-radius: 6px;
-  cursor: pointer; background: ${p => p.theme.background.content};
-  &:hover { background: ${p => p.theme.background.hoverable}; }
-`;
-
 const ScrollBody = styled.div`
   flex: 1; min-height: 0; overflow-y: auto;
   display: flex; flex-direction: column; align-items: center;
@@ -53,10 +45,6 @@ const Card = styled.div`
   width: 100%; max-width: 600px; box-sizing: border-box;
 `;
 
-const LoadingCenter = styled.div`
-  display: flex; align-items: center; justify-content: center;
-  height: 100%; color: ${p => p.theme.color.mediumdark}; font-size: 14px;
-`;
 
 /* ─── Icons ────────────────────────────────────────────────────────────── */
 
@@ -158,7 +146,9 @@ export function PercyPanel({ active }) {
   if (view === VIEWS.INITIALIZING) {
     return (
       <Wrapper>
-        <LoadingCenter>Loading…</LoadingCenter>
+        <div className="flex items-center justify-center h-full">
+          <LoaderV2 size="medium" showLabel label="Loading…" />
+        </div>
       </Wrapper>
     );
   }
@@ -174,17 +164,19 @@ export function PercyPanel({ active }) {
             BrowserStack
           </LogoArea>
           <HeaderActions>
-            <HeaderButton as="a" href="https://www.browserstack.com/docs/percy/integrate/storybook" target="_blank" rel="noopener noreferrer">
-              View documentation <MdOutlineOpenInNew style={{ width: 12, height: 12 }} />
-            </HeaderButton>
+            <a href="https://www.browserstack.com/docs/percy/integrate/storybook" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <Button variant="secondary" colors="white" size="small" icon={<MdOutlineOpenInNew />} iconPlacement="right">
+                View documentation
+              </Button>
+            </a>
             {view === VIEWS.TRIGGER_BUILD ? (
-              <HeaderButton onClick={handleChangeProject}>
+              <Button variant="secondary" colors="white" size="small" onClick={handleChangeProject}>
                 Change project
-              </HeaderButton>
+              </Button>
             ) : (
-              <HeaderButton onClick={handleChangeCredentials}>
-                <MdOutlineVpnKey style={{ width: 14, height: 14 }} /> Change credentials
-              </HeaderButton>
+              <Button variant="secondary" colors="white" size="small" icon={<MdOutlineVpnKey />} onClick={handleChangeCredentials}>
+                Change credentials
+              </Button>
             )}
           </HeaderActions>
         </Header>

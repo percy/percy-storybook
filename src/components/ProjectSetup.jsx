@@ -1,21 +1,16 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useChannel } from 'storybook/manager-api';
+import { Button, Alert, AlertDescription, LoaderV2 } from '@browserstack/design-stack';
+import {
+  MdOutlineSearch, MdClose, MdAdd, MdArrowForward, MdOutlineInfo
+} from '@browserstack/design-stack-icons';
 import { usePercyProjects, formatRelativeTime } from '../hooks/usePercyProjects.js';
 import { PERCY_EVENTS } from '../constants.js';
 import {
-  MdOutlineSearch, MdClose, MdAdd, MdArrowForward, MdRefresh, MdOutlineInfo
-} from '@browserstack/design-stack-icons';
-import {
   Container, Title, Subtitle, SearchRow, SearchInputWrapper, SearchInput,
-  ClearButton, GoButton, ResultsList, ResultItem, ProjectName, ProjectMeta,
-  Divider, CreateButton, EmptyState, EmptyTitle, EmptyDesc, CreateLink,
-  LoadingRow
+  ClearButton, ResultsList, ResultItem, ProjectName, ProjectMeta,
+  Divider, CreateLink, LoadingRow
 } from './ProjectSetup.styles.js';
-
-/* ─── Spinner styles ───────────────────────────────────────────────────── */
-
-const spinnerStyle = { animation: 'spin 1s linear infinite', display: 'inline-block', verticalAlign: 'middle', marginRight: 6 };
-const spinnerWhiteStyle = { animation: 'spin 1s linear infinite' };
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
@@ -126,36 +121,44 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
             </ClearButton>
           )}
         </SearchInputWrapper>
-        <GoButton
+        <Button
+          variant="primary"
+          colors="brand"
           onClick={handleConfirm}
           disabled={!selectedProject || saving}
-          aria-label="Confirm project selection"
-        >
-          {saving ? <MdRefresh style={{ width: 18, height: 18, color: '#fff', ...spinnerWhiteStyle }} /> : <MdArrowForward style={{ width: 18, height: 18 }} />}
-        </GoButton>
+          loading={saving}
+          icon={!saving ? <MdArrowForward /> : undefined}
+          isIconOnlyButton
+          ariaLabel="Confirm project selection"
+          wrapperClassName="h-12 w-12 rounded-lg flex-shrink-0"
+        />
       </SearchRow>
 
       {saveError && (
-        <LoadingRow style={{ color: '#dc2626', marginTop: 8 }}>{saveError}</LoadingRow>
+        <div className="mt-2">
+          <Alert variant="ERROR" density="compact">
+            <AlertDescription>{saveError}</AlertDescription>
+          </Alert>
+        </div>
       )}
 
       {showResults && (
         <ResultsList ref={listRef}>
           {(initialLoading || (loading && projects.length === 0)) && (
             <LoadingRow>
-              <MdRefresh style={{ width: 16, height: 16, color: '#6b7280', ...spinnerStyle }} /> Loading projects…
+              <LoaderV2 size="small" showLabel label="Loading projects…" />
             </LoadingRow>
           )}
 
           {!initialLoading && !loading && projects.length === 0 && (
             <>
-              <EmptyState>
-                <MdOutlineInfo style={{ width: 18, height: 18, color: '#9ca3af' }} />
+              <div className="flex items-start gap-2 p-4">
+                <MdOutlineInfo style={{ width: 18, height: 18, color: '#9ca3af', flexShrink: 0 }} />
                 <div>
-                  <EmptyTitle>No result found</EmptyTitle>
-                  <EmptyDesc>Try another search or create a new project</EmptyDesc>
+                  <div className="font-semibold text-sm">No result found</div>
+                  <div className="text-xs text-neutral-500 mt-0.5">Try another search or create a new project</div>
                 </div>
-              </EmptyState>
+              </div>
               <CreateLink onClick={() => console.log('Create new project')}>
                 Create new project →
               </CreateLink>
@@ -174,18 +177,32 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
           ))}
 
           {loading && !initialLoading && projects.length > 0 && (
-            <LoadingRow><MdRefresh style={{ width: 16, height: 16, color: '#6b7280', ...spinnerStyle }} /> Loading more…</LoadingRow>
+            <LoadingRow>
+              <LoaderV2 size="small" showLabel label="Loading more…" />
+            </LoadingRow>
           )}
           {hasMore && !loading && projects.length > 0 && <div ref={sentinelCallback} style={{ height: 1 }} />}
-          {error && <LoadingRow style={{ color: '#dc2626' }}>{error}</LoadingRow>}
+          {error && (
+            <div className="px-4 py-3">
+              <Alert variant="ERROR" density="compact">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            </div>
+          )}
         </ResultsList>
       )}
 
       <Divider>OR</Divider>
 
-      <CreateButton onClick={() => console.log('Create new project')}>
-        <MdAdd style={{ width: 16, height: 16 }} /> Create new project
-      </CreateButton>
+      <Button
+        variant="primary"
+        colors="brand"
+        fullWidth
+        icon={<MdAdd />}
+        onClick={() => console.log('Create new project')}
+      >
+        Create new project
+      </Button>
     </Container>
   );
 }

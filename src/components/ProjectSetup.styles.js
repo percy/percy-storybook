@@ -38,15 +38,6 @@ export const ClearButton = styled.button`
   &:hover { color: ${p => p.theme.color.defaultText}; background: ${p => p.theme.background.hoverable}; }
 `;
 
-export const GoButton = styled.button`
-  flex-shrink: 0; width: 48px; height: 48px; padding: 0; border: none;
-  border-radius: 8px; background: #2563eb; color: #fff; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s, opacity 0.15s;
-  &:hover:not(:disabled) { background: #1d4ed8; }
-  &:disabled { opacity: 0.4; cursor: not-allowed; }
-`;
-
 export const ResultsList = styled.div`
   margin-top: 8px; border: 1px solid ${p => p.theme.appBorderColor};
   border-radius: 8px; background: ${p => p.theme.background.content};
@@ -78,21 +69,6 @@ export const Divider = styled.div`
   }
 `;
 
-export const CreateButton = styled.button`
-  all: unset; display: flex; align-items: center; justify-content: center;
-  gap: 8px; width: 100%; padding: 12px; border-radius: 8px; cursor: pointer;
-  font-size: 14px; font-weight: 600; color: #fff; box-sizing: border-box;
-  background: #2563eb; transition: background 0.15s;
-  &:hover { background: #1d4ed8; }
-`;
-
-export const EmptyState = styled.div`
-  padding: 16px; display: flex; align-items: flex-start; gap: 8px;
-`;
-
-export const EmptyTitle = styled.div`font-weight: 600; color: ${p => p.theme.color.defaultText};`;
-export const EmptyDesc = styled.div`color: ${p => p.theme.color.mediumdark}; margin-top: 2px;`;
-
 export const CreateLink = styled.div`
   padding: 10px 16px; cursor: pointer; display: flex;
   align-items: center; justify-content: space-between;
@@ -105,5 +81,4 @@ export const LoadingRow = styled.div`
   padding: 12px 16px; text-align: center; font-size: 13px;
   color: ${p => p.theme.color.mediumdark};
   display: flex; align-items: center; justify-content: center; gap: 6px;
-  @keyframes spin { to { transform: rotate(360deg); } }
 `;
