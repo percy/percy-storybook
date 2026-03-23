@@ -5,6 +5,8 @@ const { registerProjectConfigHandlers } = require('./src/server/projectConfig.cj
 const { registerSnapshotHandlers } = require('./src/server/snapshots.cjs');
 const { registerPercyApiHandlers } = require('./src/server/percyApi.cjs');
 const { registerBuildApiHandlers } = require('./src/server/buildApi.cjs');
+const { registerBuildItemsHandlers } = require('./src/server/buildItems.cjs');
+const { registerSnapshotDetailHandlers } = require('./src/server/snapshotDetail.cjs');
 
 /**
  * Percy Storybook Addon – Preset (CommonJS)
@@ -23,6 +25,8 @@ const experimental_serverChannel = async function serverChannel(channel) {
   registerSnapshotHandlers(channel);
   registerPercyApiHandlers(channel);
   registerBuildApiHandlers(channel);
+  registerBuildItemsHandlers(channel);
+  registerSnapshotDetailHandlers(channel);
 
   // MUST return the channel — Storybook presets use a reducer pattern where
   // each preset's hook receives and must return the accumulated channel value.

@@ -12,6 +12,7 @@ import {
   resolveStoryIdsForScope
 } from '../utils/storybookApi.js';
 import { Container, ProjectTitle, Description } from './TriggerBuild.styles.js';
+import { PreviousBuildDialog } from './PreviousBuildDialog';
 
 /* ─── Scope options mapped to SNAPSHOT_TYPES ────────────────────────────── */
 
@@ -25,15 +26,26 @@ const BASE_SCOPE_OPTIONS = [
 
 export function TriggerBuild({
   projectName, emit, currentStory,
-  snapshotStatus, buildId, buildUrl, snapshotError, onScopeChange
+  snapshotStatus, buildId, buildUrl, snapshotError, onScopeChange,
+  hasPreviousBuild
 }) {
   const api = useStorybookApi();
   const [scope, setScope] = useState(SNAPSHOT_TYPES.CURRENT_STORY);
+  const [showDialog, setShowDialog] = useState(false);
 
   const isRunning = snapshotStatus === SNAPSHOT_STATUS.RUNNING;
 
-  const handleRunTest = () => {
+  const handleRunClick = () => {
     if (isRunning || !emit) return;
+    if (hasPreviousBuild) {
+      setShowDialog(true);
+      return;
+    }
+    executeRun();
+  };
+
+  const executeRun = () => {
+    setShowDialog(false);
 
     let include = [];
     switch (scope) {
@@ -123,7 +135,7 @@ export function TriggerBuild({
         variant="primary"
         colors="brand"
         fullWidth
-        onClick={handleRunTest}
+        onClick={handleRunClick}
         disabled={disableRun}
         loading={isRunning}
         loaderText="Running…"
@@ -152,6 +164,12 @@ export function TriggerBuild({
           {snapshotError || 'An error occurred during snapshot capture.'}
         </div>
       )}
+      <PreviousBuildDialog
+        isOpen={showDialog}
+        onCancel={() => setShowDialog(false)}
+        onContinue={executeRun}
+        isLoading={isRunning}
+      />
     </Container>
   );
 }

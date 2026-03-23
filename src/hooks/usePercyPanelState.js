@@ -10,7 +10,8 @@ const VIEWS = {
   PROJECT_SETUP: 'project-setup',
   CREATE_PROJECT: 'create-project',
   TRIGGER_BUILD: 'trigger-build',
-  BUILD_PROGRESS: 'build-progress'
+  BUILD_PROGRESS: 'build-progress',
+  REVIEW: 'review'
 };
 
 /**
@@ -21,6 +22,7 @@ export function usePercyPanelState() {
   const [view, setView] = useState(VIEWS.INITIALIZING);
   const [credentials, setCredentials] = useState({ username: '', accessKey: '' });
   const [selectedProject, setSelectedProject] = useState(null);
+  const [buildMeta, setBuildMeta] = useState(null);
 
   const transition = useCallback((event, payload) => {
     switch (event) {
@@ -64,11 +66,37 @@ export function usePercyPanelState() {
         setView(VIEWS.AUTH);
         break;
 
+      // Build restore (startup with previous build)
+      case 'RESTORE_WITH_BUILD':
+        // payload: { credentials, project, lastBuild }
+        setCredentials(payload.credentials);
+        setSelectedProject(payload.project);
+        setBuildMeta(payload.lastBuild);
+        setView(payload.lastBuild.state === 'finished' ? VIEWS.REVIEW : VIEWS.BUILD_PROGRESS);
+        break;
+
       // Build progress
       case 'BUILD_STARTED':
         setView(VIEWS.BUILD_PROGRESS);
         break;
+      case 'BUILD_FINISHED':
+        setBuildMeta(payload);
+        setView(VIEWS.REVIEW);
+        break;
+
+      // Dynamic view switching (reactive — driven by story navigation useEffect)
+      case 'SNAPSHOT_MATCHED':
+        // Story has a matching snapshot — switch to review, preserve buildMeta
+        setView(VIEWS.REVIEW);
+        break;
+      case 'SNAPSHOT_UNMATCHED':
+        // Story has no matching snapshot — switch to trigger, preserve buildMeta
+        setView(VIEWS.TRIGGER_BUILD);
+        break;
+
+      // Explicit user action — clears buildMeta permanently
       case 'BACK_TO_TRIGGER_BUILD':
+        setBuildMeta(null);
         setView(VIEWS.TRIGGER_BUILD);
         break;
       default:
@@ -76,5 +104,5 @@ export function usePercyPanelState() {
     }
   }, []);
 
-  return { view, credentials, selectedProject, transition, VIEWS };
+  return { view, credentials, selectedProject, buildMeta, transition, VIEWS };
 }

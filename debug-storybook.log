@@ -1,12 +1,12 @@
-[10:21:06.365] [INFO] storybook v10.1.11
-[10:21:07.780] [DEBUG] Getting package.json info for /Users/pradumkumar/percyApps/percy-storybook/package.json...
-[10:21:08.221] [INFO] Starting...
-[10:21:08.372] [DEBUG] Starting preview..
-[10:21:08.380] [INFO] Using implicit CSS loaders
-[10:21:08.384] [INFO] Using default Webpack5 setup
-[10:21:13.619] [ERROR] Failed to build the preview
-[10:21:13.623] [WARN] Force closed preview build
-[10:21:13.624] [ERROR] [38;2;241;97;97mSB_BUILDER-WEBPACK5_0003 (WebpackCompilationError): There were problems when compiling your code with Webpack.
+[09:40:43.630] [INFO] storybook v10.1.11
+[09:40:45.836] [DEBUG] Getting package.json info for /Users/pradumkumar/percyApps/percy-storybook/package.json...
+[09:40:46.432] [INFO] Starting...
+[09:40:46.965] [DEBUG] Starting preview..
+[09:40:46.981] [INFO] Using implicit CSS loaders
+[09:40:46.986] [INFO] Using default Webpack5 setup
+[09:40:49.033] [ERROR] Failed to build the preview
+[09:40:49.043] [WARN] Force closed preview build
+[09:40:49.045] [ERROR] [38;2;241;97;97mSB_BUILDER-WEBPACK5_0003 (WebpackCompilationError): There were problems when compiling your code with Webpack.
 Run Storybook with --debug-webpack for more information.[39m
     at starter (file://./node_modules/@storybook/builder-webpack5/dist/index.js:799:11)
     at starter.next (<anonymous>)
@@ -18,5 +18,5 @@ Run Storybook with --debug-webpack for more information.[39m
     at async withTelemetry (file://./node_modules/storybook/dist/_node-chunks/chunk-2372JZ52.js:209:12)
     at async dev (file://./node_modules/storybook/dist/bin/core.js:2734:3)
     at async _Command.<anonymous> (file://./node_modules/storybook/dist/bin/core.js:2801:92)
-[10:21:13.625] [WARN] Broken build, fix the error above.
+[09:40:49.050] [WARN] Broken build, fix the error above.
 You may need to refresh the browser.

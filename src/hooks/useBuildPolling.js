@@ -56,10 +56,14 @@ export function useBuildPolling(buildId) {
       buildStateRef.current = data.state;
       setBuildData(data);
 
-      // Clear sidebar spinners when build reaches a terminal state
+      // Clear sidebar spinners when build reaches a terminal state (spread-merge preserves reviewStatus)
       if (data.state === BUILD_STATES.FINISHED || data.state === BUILD_STATES.FAILED) {
         if (window.__PERCY_SNAPSHOT_STATE__) {
-          window.__PERCY_SNAPSHOT_STATE__ = { isRunning: false, storyIds: new Set() };
+          window.__PERCY_SNAPSHOT_STATE__ = {
+            ...window.__PERCY_SNAPSHOT_STATE__,
+            isRunning: false,
+            storyIds: new Set()
+          };
         }
       }
     },

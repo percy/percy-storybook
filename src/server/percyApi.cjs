@@ -3,15 +3,9 @@
 const { PERCY_EVENTS } = require('../constants.cjs');
 const { loggedFetch } = require('./apiLogger.cjs');
 const { readBsCredentials } = require('./credentials.cjs');
+const { PERCY_API_BASE, basicAuth } = require('./utils.cjs');
 
-const PERCY_API_BASE = 'https://percy.io/api/v1';
 const PAGE_LIMIT = 30;
-
-/* ─── Helpers ─────────────────────────────────────────────────────────── */
-
-function basicAuth(username, accessKey) {
-  return Buffer.from(`${username}:${accessKey}`).toString('base64');
-}
 
 /* ─── Channel handlers ────────────────────────────────────────────────── */
 

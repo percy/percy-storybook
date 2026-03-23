@@ -1,5 +1,5 @@
-import React from 'react';
-import { Button } from '@browserstack/design-stack';
+import React, { useEffect, useRef } from 'react';
+import { Button, LoaderV2 } from '@browserstack/design-stack';
 import { MdOutlineOpenInNew } from '@browserstack/design-stack-icons';
 import { BUILD_STATES } from '../constants.js';
 import { useBuildPolling } from '../hooks/useBuildPolling.js';
@@ -7,7 +7,7 @@ import { InProgressBuild } from './InProgressBuild';
 import { FailedBuild } from './FailedBuild';
 import { ProgressWrapper, ProgressHeader, ProgressBody } from './BuildProgress.styles.js';
 
-export function BuildProgress({ buildId, buildUrl, buildNumber, snapshotScope, onBack }) {
+export function BuildProgress({ buildId, buildUrl, buildNumber, snapshotScope, onBack, onReviewReady }) {
   const {
     buildData, state, elapsedTime, avgBuildTime,
     progressPercent, pollError, downloadLogs, logDownload
@@ -18,6 +18,22 @@ export function BuildProgress({ buildId, buildUrl, buildNumber, snapshotScope, o
   const isFailed = state === BUILD_STATES.FAILED;
   const isFinished = state === BUILD_STATES.FINISHED;
   const isLoading = !buildData && !pollError;
+
+  // Transition to review page when build finishes — ref guard prevents double-fire
+  const reviewTransitionedRef = useRef(false);
+  useEffect(() => {
+    if (isFinished && buildData && !reviewTransitionedRef.current) {
+      reviewTransitionedRef.current = true;
+      onReviewReady({
+        buildId: buildData.buildId || buildId,
+        buildNumber: buildData.buildNumber || buildNumber,
+        webUrl: buildData.webUrl || buildUrl,
+        reviewState: buildData.reviewState,
+        reviewStateReason: buildData.reviewStateReason,
+        meta: buildData.meta
+      });
+    }
+  }, [isFinished, buildData]);
 
   return (
     <ProgressWrapper>
@@ -77,20 +93,10 @@ export function BuildProgress({ buildId, buildUrl, buildNumber, snapshotScope, o
           />
         )}
 
-        {/* Finished — minimal, full UI is future scope */}
+        {/* Finished — brief loading while transitioning to review */}
         {isFinished && (
           <div className="flex flex-col items-center gap-4 py-8">
-            <div className="p-3 rounded-md bg-success-weaker text-success-default text-sm font-medium">
-              Build complete!
-            </div>
-            {webUrl && (
-              <a href={webUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-                <Button variant="primary" icon={<MdOutlineOpenInNew />} iconPlacement="end">
-                  View on Percy
-                </Button>
-              </a>
-            )}
-            <Button variant="minimal" onClick={onBack}>Run new test</Button>
+            <LoaderV2 size="medium" showLabel label="Loading review..." />
           </div>
         )}
       </ProgressBody>

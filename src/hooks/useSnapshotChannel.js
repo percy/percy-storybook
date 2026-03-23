@@ -20,15 +20,32 @@ export function useSnapshotChannel(transition, view, VIEWS) {
   const configLoaded = useRef(false);
 
   const emit = useChannel({
-    [PERCY_EVENTS.PROJECT_CONFIG_LOADED]: ({ credentialsValid, username, accessKey, project, hasValidToken }) => {
+    [PERCY_EVENTS.PROJECT_CONFIG_LOADED]: ({ credentialsValid, username, accessKey, project, hasValidToken, lastBuild }) => {
       configLoaded.current = true;
       const creds = { username: username || '', accessKey: accessKey || '' };
-      if (credentialsValid && project && hasValidToken) {
-        transition('RESTORE_FULL', { credentials: creds, project });
-      } else if (credentialsValid) {
-        transition('RESTORE_CREDS_ONLY', creds);
-      } else {
+
+      if (!credentialsValid) {
         transition('RESTORE_NONE');
+        return;
+      }
+      if (!project || !hasValidToken) {
+        transition('RESTORE_CREDS_ONLY', creds);
+        return;
+      }
+
+      // Helper to hydrate channel state from a build object
+      const hydrateFromBuild = (build) => {
+        if (build.buildId) setBuildId(build.buildId);
+        if (build.buildNumber) setBuildNumber(String(build.buildNumber));
+        if (build.webUrl) setBuildUrl(build.webUrl);
+      };
+
+      // Has valid creds + project + token — check for last build
+      if (lastBuild && (lastBuild.state === 'finished' || lastBuild.state === 'pending' || lastBuild.state === 'processing')) {
+        hydrateFromBuild(lastBuild);
+        transition('RESTORE_WITH_BUILD', { credentials: creds, project, lastBuild });
+      } else {
+        transition('RESTORE_FULL', { credentials: creds, project });
       }
     },
     [PERCY_EVENTS.SNAPSHOT_STARTED]: () => {
@@ -50,9 +67,13 @@ export function useSnapshotChannel(transition, view, VIEWS) {
       transition('BUILD_STARTED');
     },
     [PERCY_EVENTS.SNAPSHOT_ERROR]: (data) => {
-      // Clear sidebar spinners on error — build won't proceed
+      // Clear sidebar spinners on error — build won't proceed (spread-merge preserves reviewStatus)
       if (window.__PERCY_SNAPSHOT_STATE__) {
-        window.__PERCY_SNAPSHOT_STATE__ = { isRunning: false, storyIds: new Set() };
+        window.__PERCY_SNAPSHOT_STATE__ = {
+          ...window.__PERCY_SNAPSHOT_STATE__,
+          isRunning: false,
+          storyIds: new Set()
+        };
       }
       setSnapshotStatus(SNAPSHOT_STATUS.ERROR);
       setSnapshotError(data?.message || 'Snapshot failed');

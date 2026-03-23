@@ -5,6 +5,7 @@ const { PERCY_EVENTS } = require('../constants.cjs');
 const { getEnvPath, getPercyYmlPath, readEnv, readEnvRaw, setKey, writeEnvRaw } = require('./env.cjs');
 const { readBsCredentials } = require('./credentials.cjs');
 const { loggedFetch } = require('./apiLogger.cjs');
+const { PERCY_API_BASE, validateBuildId, basicAuth } = require('./utils.cjs');
 
 /* ─── .percy.yml helpers ───────────────────────────────────────────────── */
 
@@ -74,10 +75,41 @@ function setPercyToken(token) {
   writeEnvRaw(content);
 }
 
+/* ─── Build restore helper ─────────────────────────────────────────────── */
+
+/**
+ * Fetch last build status from Percy API for restore-on-startup.
+ * Returns build summary or null on any failure (graceful degradation).
+ */
+async function fetchLastBuild(buildIdRaw, username, accessKey) {
+  const id = validateBuildId(buildIdRaw);
+  const res = await loggedFetch(
+    `${PERCY_API_BASE}/builds/${id}?include-metadata=true`,
+    {
+      headers: {
+        Authorization: `Basic ${basicAuth(username, accessKey)}`,
+        'Content-Type': 'application/json'
+      }
+    },
+    'restore-last-build'
+  );
+  if (!res.ok) return null;
+  const json = await res.json();
+  const attrs = json.data.attributes;
+  return {
+    buildId: id,
+    state: attrs.state,
+    buildNumber: attrs['build-number'],
+    webUrl: attrs['web-url'],
+    meta: json.meta || null
+  };
+}
+
 /* ─── Channel handlers ─────────────────────────────────────────────────── */
 
 function registerProjectConfigHandlers(channel) {
   // Load project config on startup — validates credentials via Percy API
+  // Also restores last build state if PERCY_LAST_TRIGGER_BUILD exists
   channel.on(PERCY_EVENTS.LOAD_PROJECT_CONFIG, async () => {
     try {
       const { username, accessKey } = readBsCredentials();
@@ -93,18 +125,34 @@ function registerProjectConfigHandlers(channel) {
         return;
       }
 
-      // Validate credentials via Percy API
-      let credentialsValid = false;
-      try {
-        const token = Buffer.from(`${username}:${accessKey}`).toString('base64');
-        const res = await loggedFetch(
+      // Read env + project config (sync, fast)
+      const envVars = readEnv();
+      const project = readPercyYml();
+      const hasValidToken = !!envVars.PERCY_TOKEN;
+      const lastBuildId = envVars.PERCY_LAST_TRIGGER_BUILD;
+
+      // Parallelize: validate credentials AND fetch last build status
+      const [credResult, buildResult] = await Promise.allSettled([
+        loggedFetch(
           'https://percy.io/api/v1/user',
-          { headers: { Authorization: `Basic ${token}`, 'Content-Type': 'application/json' } },
+          {
+            headers: {
+              Authorization: `Basic ${basicAuth(username, accessKey)}`,
+              'Content-Type': 'application/json'
+            }
+          },
           'startup-validate-credentials'
-        );
-        credentialsValid = res.ok;
-      } catch {
-        credentialsValid = false;
+        ),
+        (lastBuildId && /^\d{1,20}$/.test(lastBuildId))
+          ? fetchLastBuild(lastBuildId, username, accessKey)
+          : Promise.resolve(null)
+      ]);
+
+      const credentialsValid = credResult.status === 'fulfilled' && credResult.value?.ok;
+      const lastBuild = buildResult.status === 'fulfilled' ? buildResult.value : null;
+
+      if (buildResult.status === 'rejected') {
+        console.warn('Failed to restore last build:', buildResult.reason?.message);
       }
 
       if (!credentialsValid) {
@@ -116,17 +164,13 @@ function registerProjectConfigHandlers(channel) {
         return;
       }
 
-      // Credentials valid — check project + token
-      const project = readPercyYml();
-      const envVars = readEnv();
-      const hasValidToken = !!envVars.PERCY_TOKEN;
-
       channel.emit(PERCY_EVENTS.PROJECT_CONFIG_LOADED, {
         credentialsValid: true,
         username,
         accessKey,
         project,
-        hasValidToken
+        hasValidToken,
+        lastBuild
       });
     } catch {
       channel.emit(PERCY_EVENTS.PROJECT_CONFIG_LOADED, {
@@ -147,6 +191,15 @@ function registerProjectConfigHandlers(channel) {
       });
       return;
     }
+    // Clear stale build reference — new project means old build is irrelevant
+    try {
+      let envContent = readEnvRaw();
+      envContent = setKey(envContent, 'PERCY_LAST_TRIGGER_BUILD', '');
+      writeEnvRaw(envContent);
+    } catch (err) {
+      console.warn('Failed to clear last build reference:', err.message);
+    }
+
     writePercyYml(projectId, projectName);
     fetchPercyToken(projectId, username, accessKey)
       .then(percyToken => {

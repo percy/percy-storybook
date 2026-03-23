@@ -8,7 +8,7 @@ const { getEnvPath, parseEnv, readEnvRaw, writeEnvRaw, setKey } = require('./env
 /* ─── Logging helpers ──────────────────────────────────────────────────── */
 
 function getLogPath() {
-  const logDir = path.join(__dirname, '../../log');
+  const logDir = path.join(process.cwd(), 'log');
   if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
   return path.join(logDir, 'percy.log');
 }
@@ -102,27 +102,18 @@ async function runPercyBuild(channel, { baseUrl, include = [], exclude = [] }) {
 
     appendLog('Percy SDK modules imported, config schemas registered');
 
-    // Create Percy instance with include/exclude in both constructor and flags
-    const percyOptions = { delayUploads: true };
-    if (include.length > 0 || exclude.length > 0) {
-      percyOptions.storybook = {};
-      if (include.length > 0) percyOptions.storybook.include = include;
-      if (exclude.length > 0) percyOptions.storybook.exclude = exclude;
-    }
-    const percy = new Percy(percyOptions);
+    // Create Percy instance — always pass storybook config (matching POC approach)
+    const percy = new Percy({
+      delayUploads: true,
+      storybook: { include, exclude }
+    });
 
-    // Flags are passed to takeStorybookSnapshots for story filtering
-    const flags = {};
-    if (include.length > 0) flags.include = include;
-    if (exclude.length > 0) flags.exclude = exclude;
+    appendLog(`Percy instance created with storybook: ${JSON.stringify({ include, exclude })}`);
 
-    appendLog(`Percy instance created with storybook config: ${JSON.stringify(percyOptions.storybook || {})}`);
-    appendLog(`Flags: ${JSON.stringify(flags)}`);
-
-    // Run the snapshot generator
+    // Run the snapshot generator — pass include/exclude in flags for filtering
     const generator = takeStorybookSnapshots(percy, () => {}, {
       baseUrl,
-      flags
+      flags: { include, exclude }
     });
 
     await runAsyncGenerator(generator);

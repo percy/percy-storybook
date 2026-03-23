@@ -3,26 +3,9 @@
 const { PERCY_EVENTS } = require('../constants.cjs');
 const { loggedFetch } = require('./apiLogger.cjs');
 const { readBsCredentials } = require('./credentials.cjs');
+const { PERCY_API_BASE, validateBuildId, basicAuth } = require('./utils.cjs');
 
-const PERCY_API_BASE = 'https://percy.io/api/v1';
 const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB
-
-/* ─── Helpers ─────────────────────────────────────────────────────────── */
-
-/**
- * Validate buildId is a numeric string to prevent SSRF and .env injection.
- */
-function validateBuildId(raw) {
-  const id = String(raw ?? '');
-  if (!/^\d{1,20}$/.test(id)) {
-    throw new Error('Invalid buildId: must be numeric');
-  }
-  return id;
-}
-
-function basicAuth(username, accessKey) {
-  return Buffer.from(`${username}:${accessKey}`).toString('base64');
-}
 
 /* ─── Channel handlers ────────────────────────────────────────────────── */
 
@@ -70,7 +53,10 @@ function registerBuildApiHandlers(channel) {
         totalComparisonsFinished: attrs['total-comparisons-finished'],
         createdAt: attrs['created-at'],
         averageDuration: attrs['average-duration'],
-        buildCountForAverage: attrs['build-count-for-average']
+        buildCountForAverage: attrs['build-count-for-average'],
+        reviewState: attrs['review-state'],
+        reviewStateReason: attrs['review-state-reason'],
+        meta: json.meta || null
       });
     } catch (err) {
       channel.emit(PERCY_EVENTS.BUILD_STATUS_FETCHED, {

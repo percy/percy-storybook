@@ -1,25 +1,48 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, LoaderV2 } from '@browserstack/design-stack';
 import { MdOutlineOpenInNew, MdOutlineVpnKey } from '@browserstack/design-stack-icons';
 import DSIBStack from '@browserstack/design-stack-icons/dist/DSIBStack';
 import { usePercyPanelState } from '../hooks/usePercyPanelState.js';
 import { useSnapshotChannel } from '../hooks/useSnapshotChannel.js';
+import { useBuildItems } from '../hooks/useBuildItems.js';
+import { useAutoViewSwitch } from '../hooks/useAutoViewSwitch.js';
 import { BrowserStackConnect } from './BrowserStackConnect';
 import { ProjectSetup } from './ProjectSetup';
 import { TriggerBuild } from './TriggerBuild';
 import { CreateProject } from './CreateProject';
 import { BuildProgress } from './BuildProgress';
+import { ReviewPageLoader } from './ReviewPageLoader';
 import { Wrapper, Header, LogoArea, HeaderActions, ScrollBody, Card } from './PercyPanel.styles.js';
 
 export function PercyPanel({ active }) {
-  const { view, credentials, selectedProject, transition, VIEWS } = usePercyPanelState();
+  const { view, credentials, selectedProject, buildMeta, transition, VIEWS } = usePercyPanelState();
   const { emit, snapshotStatus, buildId, buildUrl, buildNumber, snapshotError, snapshotScope, setScope, currentStory } =
     useSnapshotChannel(transition, view, VIEWS);
+
+  // Defer build items fetch until the panel has been activated at least once
+  const [panelActivated, setPanelActivated] = useState(false);
+  useEffect(() => {
+    if (active && !panelActivated) setPanelActivated(true);
+  }, [active]);
+
+  // Hoist build items to panel level for dynamic view switching
+  const hasPreviousBuild = !!(buildMeta?.buildId);
+  const shouldFetchItems = hasPreviousBuild && buildMeta?.state === 'finished' && panelActivated;
+  const { groupedItems, storyIdSet, authToken, loading: itemsLoading, error: itemsError, retry: retryItems, reset: resetItems } =
+    useBuildItems(shouldFetchItems ? buildMeta.buildId : null, buildMeta);
+
+  // Dynamic view switching based on story navigation
+  useAutoViewSwitch({ currentStory, storyIdSet, itemsLoading, hasPreviousBuild, view, transition, VIEWS });
 
   if (!active) return null;
 
   const handleAuthenticated = (username, accessKey) => {
     transition('AUTHENTICATED', { username, accessKey });
+  };
+
+  const handleBackToTrigger = () => {
+    resetItems();
+    transition('BACK_TO_TRIGGER_BUILD');
   };
 
   if (view === VIEWS.INITIALIZING) {
@@ -32,15 +55,35 @@ export function PercyPanel({ active }) {
     );
   }
 
+  // REVIEW has its own layout
+  if (view === VIEWS.REVIEW) {
+    return (
+      <ReviewPageLoader
+        buildId={buildMeta?.buildId || buildId}
+        buildNumber={buildMeta?.buildNumber || buildNumber}
+        buildMeta={buildMeta}
+        webUrl={buildMeta?.webUrl || buildUrl}
+        currentStoryId={currentStory?.id}
+        groupedItems={groupedItems}
+        authToken={authToken}
+        itemsLoading={itemsLoading}
+        itemsError={itemsError}
+        retryItems={retryItems}
+        onBack={handleBackToTrigger}
+      />
+    );
+  }
+
   // BUILD_PROGRESS has its own header/layout
   if (view === VIEWS.BUILD_PROGRESS) {
     return (
       <BuildProgress
-        buildId={buildId}
-        buildUrl={buildUrl}
-        buildNumber={buildNumber}
+        buildId={buildMeta?.buildId || buildId}
+        buildUrl={buildMeta?.webUrl || buildUrl}
+        buildNumber={buildMeta?.buildNumber || buildNumber}
         snapshotScope={snapshotScope}
-        onBack={() => transition('BACK_TO_TRIGGER_BUILD')}
+        onBack={handleBackToTrigger}
+        onReviewReady={(data) => transition('BUILD_FINISHED', data)}
       />
     );
   }
@@ -107,6 +150,7 @@ export function PercyPanel({ active }) {
               buildUrl={buildUrl}
               snapshotError={snapshotError}
               onScopeChange={setScope}
+              hasPreviousBuild={hasPreviousBuild}
             />
           )}
         </Card>

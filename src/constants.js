@@ -37,7 +37,13 @@ export const PERCY_EVENTS = {
   FETCH_BUILD_STATUS: `${ADDON_ID}/fetch-build-status`,
   BUILD_STATUS_FETCHED: `${ADDON_ID}/build-status-fetched`,
   FETCH_BUILD_LOGS: `${ADDON_ID}/fetch-build-logs`,
-  BUILD_LOGS_FETCHED: `${ADDON_ID}/build-logs-fetched`
+  BUILD_LOGS_FETCHED: `${ADDON_ID}/build-logs-fetched`,
+  // Build items + auth (review page)
+  FETCH_BUILD_ITEMS: `${ADDON_ID}/fetch-build-items`,
+  BUILD_ITEMS_FETCHED: `${ADDON_ID}/build-items-fetched`,
+  // Snapshot detail (review page)
+  FETCH_SNAPSHOT_DETAIL: `${ADDON_ID}/fetch-snapshot-detail`,
+  SNAPSHOT_DETAIL_FETCHED: `${ADDON_ID}/snapshot-detail-fetched`
 };
 
 export const STORAGE_KEYS = {
