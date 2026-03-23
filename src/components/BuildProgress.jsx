@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, LoaderV2 } from '@browserstack/design-stack';
+import { Button } from '@browserstack/design-stack';
 import { MdOutlineOpenInNew } from '@browserstack/design-stack-icons';
 import { BUILD_STATES } from '../constants.js';
 import { useBuildPolling } from '../hooks/useBuildPolling.js';
@@ -7,7 +7,7 @@ import { InProgressBuild } from './InProgressBuild';
 import { FailedBuild } from './FailedBuild';
 import { ProgressWrapper, ProgressHeader, ProgressBody } from './BuildProgress.styles.js';
 
-export function BuildProgress({ buildId, buildUrl, buildNumber, onBack }) {
+export function BuildProgress({ buildId, buildUrl, buildNumber, snapshotScope, onBack }) {
   const {
     buildData, state, elapsedTime, avgBuildTime,
     progressPercent, pollError, downloadLogs, logDownload
@@ -17,17 +17,7 @@ export function BuildProgress({ buildId, buildUrl, buildNumber, onBack }) {
   const displayNumber = buildData?.buildNumber || buildNumber;
   const isFailed = state === BUILD_STATES.FAILED;
   const isFinished = state === BUILD_STATES.FINISHED;
-
-  // Loading: waiting for first poll response
-  if (!buildData && !pollError) {
-    return (
-      <ProgressWrapper>
-        <div className="flex items-center justify-center h-full">
-          <LoaderV2 size="medium" showLabel label="Loading build status…" />
-        </div>
-      </ProgressWrapper>
-    );
-  }
+  const isLoading = !buildData && !pollError;
 
   return (
     <ProgressWrapper>
@@ -62,17 +52,18 @@ export function BuildProgress({ buildId, buildUrl, buildNumber, onBack }) {
       )}
 
       <ProgressBody>
-        {/* In-progress: pending or processing */}
-        {(state === BUILD_STATES.PENDING || state === BUILD_STATES.PROCESSING) && (
+        {/* Loading or In-progress: show skeleton + progress */}
+        {(isLoading || state === BUILD_STATES.PENDING || state === BUILD_STATES.PROCESSING) && (
           <InProgressBuild
-            state={state}
-            totalSnapshots={buildData.totalSnapshots}
-            totalComparisons={buildData.totalComparisons}
-            totalComparisonsFinished={buildData.totalComparisonsFinished}
+            state={isLoading ? BUILD_STATES.PENDING : state}
+            totalSnapshots={buildData?.totalSnapshots}
+            totalComparisons={buildData?.totalComparisons}
+            totalComparisonsFinished={buildData?.totalComparisonsFinished}
             progressPercent={progressPercent}
             elapsedTime={elapsedTime}
             avgBuildTime={avgBuildTime}
-            buildCountForAverage={buildData.buildCountForAverage}
+            buildCountForAverage={buildData?.buildCountForAverage}
+            snapshotScope={snapshotScope}
           />
         )}
 

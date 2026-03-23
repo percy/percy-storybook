@@ -49,3 +49,51 @@ export function getStorybookBaseUrl() {
   const { protocol, hostname, port } = window.location;
   return `${protocol}//${hostname}${port ? `:${port}` : ''}`;
 }
+
+/**
+ * Resolve a Set of story IDs that fall within a given snapshot scope.
+ * Used to mark stories with spinners in the sidebar during snapshot capture.
+ * @param {Object} api - Storybook API instance
+ * @param {string} scope - One of SNAPSHOT_TYPES (full, current_story, current_tree)
+ * @param {Object|null} currentStory - Current story metadata { id, title, name }
+ * @returns {Set<string>} Set of story IDs in scope
+ */
+export function resolveStoryIdsForScope(api, scope, currentStory) {
+  const ids = new Set();
+
+  if (scope === 'current_story') {
+    if (currentStory?.id) ids.add(currentStory.id);
+    return ids;
+  }
+
+  // SB8: api.getIndex() returns { v, entries: Record<StoryId, Entry> }
+  // Each entry has: { id, type, name, title, ... }
+  // type is "story" | "docs" | "component" | "group" | "root"
+  try {
+    const result = api.getIndex?.();
+    const entries = result?.entries || {};
+
+    if (scope === 'full') {
+      for (const [id, entry] of Object.entries(entries)) {
+        if (entry.type === 'story') ids.add(id);
+      }
+    } else if (scope === 'current_tree' && currentStory?.title) {
+      const prefix = currentStory.title;
+      for (const [id, entry] of Object.entries(entries)) {
+        if (entry.type === 'story' && entry.title === prefix) {
+          ids.add(id);
+        }
+      }
+    }
+  } catch {
+    // Fallback: if we can't get the index, at least mark the current story
+    if (currentStory?.id) ids.add(currentStory.id);
+  }
+
+  // If index didn't yield results, fallback to current story
+  if (ids.size === 0 && currentStory?.id) {
+    ids.add(currentStory.id);
+  }
+
+  return ids;
+}

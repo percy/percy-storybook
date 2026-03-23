@@ -13,7 +13,7 @@ import { Wrapper, Header, LogoArea, HeaderActions, ScrollBody, Card } from './Pe
 
 export function PercyPanel({ active }) {
   const { view, credentials, selectedProject, transition, VIEWS } = usePercyPanelState();
-  const { emit, snapshotStatus, buildId, buildUrl, buildNumber, snapshotError, currentStory } =
+  const { emit, snapshotStatus, buildId, buildUrl, buildNumber, snapshotError, snapshotScope, setScope, currentStory } =
     useSnapshotChannel(transition, view, VIEWS);
 
   if (!active) return null;
@@ -39,6 +39,7 @@ export function PercyPanel({ active }) {
         buildId={buildId}
         buildUrl={buildUrl}
         buildNumber={buildNumber}
+        snapshotScope={snapshotScope}
         onBack={() => transition('BACK_TO_TRIGGER_BUILD')}
       />
     );
@@ -105,6 +106,7 @@ export function PercyPanel({ active }) {
               buildId={buildId}
               buildUrl={buildUrl}
               snapshotError={snapshotError}
+              onScopeChange={setScope}
             />
           )}
         </Card>

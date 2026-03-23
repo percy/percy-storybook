@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useChannel, useStorybookApi } from 'storybook/manager-api';
 import { PERCY_EVENTS, BUILD_STATES, PANEL_ID } from '../constants.js';
 
-const POLL_INTERVAL_MS = 30000;
+const POLL_INTERVAL_MS = 10000;
 const TIME_UPDATE_INTERVAL_MS = 60000;
 
 /* ─── Formatting helpers ──────────────────────────────────────────────── */
@@ -55,6 +55,13 @@ export function useBuildPolling(buildId) {
       setPollError(false);
       buildStateRef.current = data.state;
       setBuildData(data);
+
+      // Clear sidebar spinners when build reaches a terminal state
+      if (data.state === BUILD_STATES.FINISHED || data.state === BUILD_STATES.FAILED) {
+        if (window.__PERCY_SNAPSHOT_STATE__) {
+          window.__PERCY_SNAPSHOT_STATE__ = { isRunning: false, storyIds: new Set() };
+        }
+      }
     },
     [PERCY_EVENTS.BUILD_LOGS_FETCHED]: (data) => {
       if (data.error) {

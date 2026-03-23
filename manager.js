@@ -10,6 +10,7 @@ import React from 'react';
 import { addons, types } from 'storybook/manager-api';
 import { PercyPanel } from './src/components/PercyPanel';
 import { PercyIcon } from './src/components/PercyIcon';
+import { SidebarLabel } from './src/components/SidebarLabel';
 import { ADDON_ID, PANEL_ID } from './src/constants.js';
 
 function PanelTitle() {
@@ -22,6 +23,13 @@ function PanelTitle() {
 }
 
 addons.register(ADDON_ID, () => {
+  // Customize sidebar labels to show snapshot status on stories
+  addons.setConfig({
+    sidebar: {
+      renderLabel: (item) => <SidebarLabel item={item} />
+    }
+  });
+
   addons.add(PANEL_ID, {
     type: types.PANEL,
     title: PanelTitle,

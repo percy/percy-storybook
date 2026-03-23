@@ -3,11 +3,13 @@ import {
   Button, RadioGroup, RadioItem
 } from '@browserstack/design-stack';
 import { MdPlayArrow } from '@browserstack/design-stack-icons';
+import { useStorybookApi } from 'storybook/manager-api';
 import { PERCY_EVENTS, SNAPSHOT_TYPES, SNAPSHOT_STATUS } from '../constants.js';
 import {
   buildCurrentStoryPattern,
   buildCurrentTreePattern,
-  getStorybookBaseUrl
+  getStorybookBaseUrl,
+  resolveStoryIdsForScope
 } from '../utils/storybookApi.js';
 import { Container, ProjectTitle, Description } from './TriggerBuild.styles.js';
 
@@ -23,8 +25,9 @@ const BASE_SCOPE_OPTIONS = [
 
 export function TriggerBuild({
   projectName, emit, currentStory,
-  snapshotStatus, buildId, buildUrl, snapshotError
+  snapshotStatus, buildId, buildUrl, snapshotError, onScopeChange
 }) {
+  const api = useStorybookApi();
   const [scope, setScope] = useState(SNAPSHOT_TYPES.CURRENT_STORY);
 
   const isRunning = snapshotStatus === SNAPSHOT_STATUS.RUNNING;
@@ -47,7 +50,22 @@ export function TriggerBuild({
         break;
     }
 
-    console.log('[percy-trigger]', { scope, currentStory, include });
+    // Set global snapshot state so SidebarLabel can show spinners
+    const storyIds = resolveStoryIdsForScope(api, scope, currentStory);
+    window.__PERCY_SNAPSHOT_STATE__ = { isRunning: true, storyIds };
+
+    // Set scope label for BuildProgress story info row
+    if (onScopeChange) {
+      if (scope === SNAPSHOT_TYPES.CURRENT_STORY && currentStory) {
+        onScopeChange(`${currentStory.title}/${currentStory.name}`);
+      } else if (scope === SNAPSHOT_TYPES.CURRENT_TREE && currentStory) {
+        onScopeChange(`${currentStory.title}/*`);
+      } else {
+        onScopeChange('All stories');
+      }
+    }
+
+    console.log('[percy-trigger]', { scope, currentStory, include, storyIdsCount: storyIds.size });
 
     emit(PERCY_EVENTS.RUN_SNAPSHOT, {
       baseUrl: getStorybookBaseUrl(),

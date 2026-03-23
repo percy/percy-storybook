@@ -14,6 +14,7 @@ export function useSnapshotChannel(transition, view, VIEWS) {
   const [buildUrl, setBuildUrl] = useState('');
   const [buildNumber, setBuildNumber] = useState('');
   const [snapshotError, setSnapshotError] = useState('');
+  const [snapshotScope, setSnapshotScope] = useState('');
   const [currentStory, setCurrentStory] = useState(null);
   const restoreAttempted = useRef(false);
   const configLoaded = useRef(false);
@@ -37,6 +38,9 @@ export function useSnapshotChannel(transition, view, VIEWS) {
       setSnapshotError('');
     },
     [PERCY_EVENTS.SNAPSHOT_SUCCESS]: (data) => {
+      // NOTE: Do NOT clear sidebar spinners here — SNAPSHOT_SUCCESS means snapshots
+      // were uploaded, but the build is still processing. Spinners are cleared by
+      // useBuildPolling when build state reaches FINISHED or FAILED.
       if (data?.buildId) setBuildId(data.buildId);
       if (data?.buildUrl) setBuildUrl(data.buildUrl);
       if (data?.buildNumber) setBuildNumber(data.buildNumber);
@@ -46,6 +50,10 @@ export function useSnapshotChannel(transition, view, VIEWS) {
       transition('BUILD_STARTED');
     },
     [PERCY_EVENTS.SNAPSHOT_ERROR]: (data) => {
+      // Clear sidebar spinners on error — build won't proceed
+      if (window.__PERCY_SNAPSHOT_STATE__) {
+        window.__PERCY_SNAPSHOT_STATE__ = { isRunning: false, storyIds: new Set() };
+      }
       setSnapshotStatus(SNAPSHOT_STATUS.ERROR);
       setSnapshotError(data?.message || 'Snapshot failed');
     }
@@ -72,5 +80,11 @@ export function useSnapshotChannel(transition, view, VIEWS) {
     return () => clearTimeout(timeout);
   }, []);
 
-  return { emit, snapshotStatus, buildId, buildUrl, buildNumber, snapshotError, currentStory };
+  /**
+   * Called by TriggerBuild to store the human-readable scope label
+   * (e.g. "InputField/InputWithAddOn") before emitting RUN_SNAPSHOT.
+   */
+  const setScope = (label) => setSnapshotScope(label);
+
+  return { emit, snapshotStatus, buildId, buildUrl, buildNumber, snapshotError, snapshotScope, setScope, currentStory };
 }

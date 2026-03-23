@@ -102,10 +102,7 @@ async function runPercyBuild(channel, { baseUrl, include = [], exclude = [] }) {
 
     appendLog('Percy SDK modules imported, config schemas registered');
 
-    // Build flags for sharding (if ever needed)
-    const flags = {};
-
-    // Create Percy instance — pass include/exclude in the storybook config
+    // Create Percy instance with include/exclude in both constructor and flags
     const percyOptions = { delayUploads: true };
     if (include.length > 0 || exclude.length > 0) {
       percyOptions.storybook = {};
@@ -114,7 +111,13 @@ async function runPercyBuild(channel, { baseUrl, include = [], exclude = [] }) {
     }
     const percy = new Percy(percyOptions);
 
+    // Flags are passed to takeStorybookSnapshots for story filtering
+    const flags = {};
+    if (include.length > 0) flags.include = include;
+    if (exclude.length > 0) flags.exclude = exclude;
+
     appendLog(`Percy instance created with storybook config: ${JSON.stringify(percyOptions.storybook || {})}`);
+    appendLog(`Flags: ${JSON.stringify(flags)}`);
 
     // Run the snapshot generator
     const generator = takeStorybookSnapshots(percy, () => {}, {
