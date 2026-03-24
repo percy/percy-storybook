@@ -94,10 +94,21 @@ const Subtitle = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  /* Inherit white text when story is selected (blue background) */
+  [aria-current="page"] &,
+  [data-selected="true"] & {
+    color: inherit;
+  }
 `;
 
 const DiffText = styled.span`
   color: ${props => props.color || '#999'};
+
+  [aria-current="page"] &,
+  [data-selected="true"] & {
+    color: inherit;
+  }
 `;
 
 /* ─── Component ───────────────────────────────────────────────────────── */
