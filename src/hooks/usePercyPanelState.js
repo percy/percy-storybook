@@ -77,6 +77,7 @@ export function usePercyPanelState() {
 
       // Build progress
       case 'BUILD_STARTED':
+        setBuildMeta(null);
         setView(VIEWS.BUILD_PROGRESS);
         break;
       case 'BUILD_FINISHED':

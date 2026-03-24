@@ -3,9 +3,9 @@ export default {
 };
 
 export const Primary = {
-  render: () => <button style={{ padding: '8px 16px', fontSize: '14px', cursor: 'pointer' }}>Click me</button>
+  render: () => <button style={{ padding: '8px 16px', fontSize: '14px', cursor: 'pointer', background: '#007bff' }}>Click me</button>
 };
 
 export const Secondary = {
-  render: () => <button style={{ padding: '8px 16px', fontSize: '14px', cursor: 'pointer', background: '#eee' }}>Secondary</button>
+  render: () => <button style={{ padding: '8px 16px', fontSize: '14px', cursor: 'pointer', background: '#eee' }}>Secondary me</button>
 };

@@ -27,7 +27,11 @@ export function PercyPanel({ active }) {
 
   // Hoist build items to panel level for dynamic view switching
   const hasPreviousBuild = !!(buildMeta?.buildId);
-  const shouldFetchItems = hasPreviousBuild && buildMeta?.state === 'finished' && panelActivated;
+  // Fetch items when: build exists + panel activated + build is finished.
+  // Restored builds have state='finished'. Fresh builds from BUILD_FINISHED have no state field
+  // (they wouldn't reach here unless they finished), so treat missing state as finished.
+  const buildIsFinished = !buildMeta?.state || buildMeta.state === 'finished';
+  const shouldFetchItems = hasPreviousBuild && buildIsFinished && panelActivated;
   const { groupedItems, storyIdSet, authToken, loading: itemsLoading, error: itemsError, retry: retryItems, reset: resetItems } =
     useBuildItems(shouldFetchItems ? buildMeta.buildId : null, buildMeta);
 
