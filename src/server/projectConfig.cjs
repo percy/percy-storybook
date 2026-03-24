@@ -30,17 +30,32 @@ function readPercyYml() {
 }
 
 /**
- * Write .percy.yml with project info (overwrites entire file).
+ * Write project info to .percy.yml, preserving existing content.
+ * Appends or updates the project section without clearing other config.
  */
 function writePercyYml(projectId, projectName) {
-  const content = [
-    '# Added by Percy Storybook addon',
-    'project:',
-    `  id: ${projectId}`,
-    `  name: "${projectName}"`,
-    ''
-  ].join('\n');
-  fs.writeFileSync(getPercyYmlPath(), content, 'utf8');
+  const ymlPath = getPercyYmlPath();
+  let content = '';
+
+  if (fs.existsSync(ymlPath)) {
+    content = fs.readFileSync(ymlPath, 'utf8');
+  }
+
+  const projectBlock = `project:\n  id: ${projectId}\n  name: "${projectName}"`;
+
+  // Check if a project section already exists
+  const projectSectionRegex = /^project:\s*\n(?:\s+\w[^\n]*\n?)*/m;
+  if (projectSectionRegex.test(content)) {
+    // Replace existing project section
+    content = content.replace(projectSectionRegex, projectBlock + '\n');
+  } else {
+    // Append project section
+    if (content && !content.endsWith('\n')) content += '\n';
+    if (content) content += '\n';
+    content += projectBlock + '\n';
+  }
+
+  fs.writeFileSync(ymlPath, content, 'utf8');
 }
 
 /* ─── Percy API helpers ────────────────────────────────────────────────── */

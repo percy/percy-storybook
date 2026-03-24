@@ -23,10 +23,12 @@ export function usePercyProjects(username, accessKey, initialSearch = '') {
   const pageRef = useRef(0);
   const hasMoreRef = useRef(hasMore);
   const loadingRef = useRef(loading);
+  const debouncedSearchRef = useRef(debouncedSearch);
 
   // Keep refs in sync with state
   useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
   useEffect(() => { loadingRef.current = loading; }, [loading]);
+  useEffect(() => { debouncedSearchRef.current = debouncedSearch; }, [debouncedSearch]);
 
   // Debounce search input
   useEffect(() => {
@@ -37,7 +39,7 @@ export function usePercyProjects(username, accessKey, initialSearch = '') {
   const emit = useChannel({
     [PERCY_EVENTS.PROJECTS_FETCHED]: ({ projects: items, hasMore: more, error: errMsg, search: respSearch, page }) => {
       // Ignore stale responses from a previous search term
-      if (respSearch !== undefined && respSearch !== debouncedSearch) return;
+      if (respSearch !== undefined && respSearch !== debouncedSearchRef.current) return;
 
       if (errMsg) {
         setError(errMsg);
