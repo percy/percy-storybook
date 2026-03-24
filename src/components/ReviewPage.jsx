@@ -2,13 +2,14 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { Button, LoaderV2 } from '@browserstack/design-stack';
-import { MdOutlineOpenInNew, MdKeyboardArrowDown, MdCheck } from '@browserstack/design-stack-icons';
 import { styled } from 'storybook/theming';
 import { MemoryRouter } from 'react-router-dom';
 import { ReviewViewerProvider, useSnapshotReview, useReviewViewerApi } from '@browserstack/review-viewer';
 import ReviewSection from '@browserstack/review-viewer/modules/ReviewSection';
 import { experimental_getStatusStore } from 'storybook/manager-api';
 import { ADDON_ID } from '../constants.js';
+import { getReviewStateDisplay, formatDiffPercent } from '../utils/reviewState.js';
+import ReviewHeader from './ReviewHeader.jsx';
 
 /* ─── Styles ──────────────────────────────────────────────────────────── */
 
@@ -19,72 +20,14 @@ const ReviewWrapper = styled.div`
   overflow: hidden;
 `;
 
-const ReviewHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-  border-bottom: 1px solid ${p => p.theme.appBorderColor};
-  flex-shrink: 0;
-`;
-
 const ReviewBody = styled.div`
   flex: 1;
   overflow: hidden;
   position: relative;
 `;
 
-// Dummy Redux store for the default ReactReduxContext.
-// review-viewer's RTK Query hooks call useStore() via the default context
-// (a bug — it should use the custom reviewViewerStoreContext). In the Percy
-// frontend app this works because there's already a global Redux Provider.
-// In our Storybook addon there isn't one, so we provide a minimal store
-// to prevent the null context crash.
+// Dummy Redux store — see comment in original for rationale
 const dummyStore = configureStore({ reducer: () => ({}) });
-
-/* ─── Snapshot Selector (inline) ─────────────────────────────────────── */
-
-function SnapshotSelector({ snapshots, selectedId, onSelect }) {
-  const [open, setOpen] = useState(false);
-  const selected = snapshots.find(s => s.id === selectedId) || snapshots[0];
-
-  if (!snapshots.length) return null;
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-neutral-default bg-raised-default hover:bg-neutral-weakest text-sm font-medium cursor-pointer"
-      >
-        <span className="truncate max-w-[200px]">{selected?.name || 'Select snapshot'}</span>
-        {snapshots.length > 1 && <MdKeyboardArrowDown className="w-4 h-4" />}
-      </button>
-
-      {open && snapshots.length > 1 && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 mt-1 z-20 min-w-[320px] bg-raised-default border border-neutral-default rounded-lg shadow-lg py-1 max-h-[300px] overflow-y-auto">
-            {snapshots.map(snap => (
-              <button
-                key={snap.id}
-                onClick={() => { onSelect(snap.id); setOpen(false); }}
-                className="flex items-center gap-3 w-full px-3 py-2 text-left text-sm hover:bg-neutral-weakest cursor-pointer"
-              >
-                <span className="w-4 flex-shrink-0">
-                  {snap.id === selectedId && <MdCheck className="w-4 h-4 text-brand-default" />}
-                </span>
-                <span className="flex-1 truncate">{snap.name}</span>
-                <span className="text-xs text-neutral-weak capitalize">
-                  {snap.reviewState?.replace('_', ' ') || ''}
-                </span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
 
 /* ─── Review Content (inside provider, uses review-viewer hooks) ──────── */
 
@@ -95,7 +38,6 @@ function ReviewContent({ snapshotId, buildId, onReviewComplete }) {
   });
   const reviewActions = useSnapshotReview(buildId, onReviewComplete);
 
-  // Fetch diff regions once snapshot comparisons are available
   const comparisonIds = useMemo(
     () => snapshotData?.data?.comparisons ?? [],
     [snapshotData?.data?.comparisons]
@@ -108,7 +50,6 @@ function ReviewContent({ snapshotId, buildId, onReviewComplete }) {
     ? diffRegionsData
     : (diffRegionsData?.data ?? null);
 
-  // Viewer params — controls browser/width selection
   const [params, setParamsState] = useState({
     browser: null,
     width: null,
@@ -157,8 +98,9 @@ function ReviewContent({ snapshotId, buildId, onReviewComplete }) {
 /* ─── Main Component ──────────────────────────────────────────────────── */
 
 export default function ReviewPage({
-  buildId, buildNumber, buildMeta, webUrl, currentStoryId, onBack,
-  groupedItems, authToken, itemsLoading: loading, itemsError: error, retryItems: retry
+  buildId, buildNumber, buildMeta, webUrl, currentStoryId, currentStory, onBack,
+  groupedItems, authToken, itemsLoading: loading, itemsError: error, retryItems: retry,
+  emit, snapshotStatus
 }) {
   const [selectedSnapshotId, setSelectedSnapshotId] = useState(null);
   const [currentGroup, setCurrentGroup] = useState(null);
@@ -172,12 +114,14 @@ export default function ReviewPage({
     for (const group of groupedItems) {
       const { state, reason } = group.worstState;
       const maxDiff = Math.max(...group.snapshots.map(s => s.diffRatio || 0));
+      const display = getReviewStateDisplay(state, reason);
+
       let status = 'success';
       if (state === 'failed' || state === 'error') status = 'error';
       else if (state === 'changes_requested' || state === 'unreviewed') status = 'warn';
 
-      let description = reason === 'no_diffs' ? 'No changes' : state?.replace('_', ' ');
-      if (maxDiff > 0) description = `${(maxDiff * 100).toFixed(2)}% diff · ${description}`;
+      let description = display?.label || state?.replace('_', ' ') || '';
+      if (maxDiff > 0) description = `${formatDiffPercent(maxDiff)} · ${description}`;
 
       storyIds.push(group.storyId);
       statuses.push({ storyId: group.storyId, typeId: ADDON_ID, status, title: 'Percy', description });
@@ -187,7 +131,6 @@ export default function ReviewPage({
   }, [groupedItems]);
 
   // Auto-select first snapshot or match current story
-  // cover-snapshot-display-name uses Storybook story ID format
   useEffect(() => {
     if (!groupedItems?.length) return;
     const group = currentStoryId
@@ -200,11 +143,9 @@ export default function ReviewPage({
     }
   }, [currentStoryId, groupedItems]);
 
-  // Derive current snapshots list for the selector
   const currentSnapshots = currentGroup?.snapshots || [];
 
   const handleReviewComplete = useCallback(() => {
-    // Refetch build items to update snapshot selector badges and sidebar status
     retry();
   }, [retry]);
 
@@ -240,10 +181,18 @@ export default function ReviewPage({
   if (!groupedItems?.length) {
     return (
       <ReviewWrapper>
-        <ReviewHeader>
-          <span className="text-lg font-semibold">#{buildNumber}</span>
-          <Button variant="minimal" size="small" onClick={onBack}>Run new test</Button>
-        </ReviewHeader>
+        <ReviewHeader
+          buildNumber={buildNumber}
+          webUrl={webUrl}
+          buildId={buildId}
+          currentSnapshots={[]}
+          selectedSnapshotId={null}
+          onSelectSnapshot={() => {}}
+          emit={emit}
+          currentStory={currentStory}
+          onBack={onBack}
+          snapshotStatus={snapshotStatus}
+        />
         <div className="flex flex-col items-center gap-4 py-8">
           <div className="p-3 rounded-md bg-neutral-weakest text-neutral-default text-sm">
             No snapshots found in this build.
@@ -255,26 +204,17 @@ export default function ReviewPage({
 
   return (
     <ReviewWrapper>
-      <ReviewHeader>
-        <div className="flex items-center gap-3">
-          <span className="text-lg font-semibold">#{buildNumber}</span>
-          <SnapshotSelector
-            snapshots={currentSnapshots}
-            selectedId={selectedSnapshotId}
-            onSelect={setSelectedSnapshotId}
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          {webUrl && (
-            <a href={webUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-              <Button variant="minimal" size="small" icon={<MdOutlineOpenInNew />} iconPlacement="end">
-                Review in Percy
-              </Button>
-            </a>
-          )}
-          <Button variant="minimal" size="small" onClick={onBack}>Run new test</Button>
-        </div>
-      </ReviewHeader>
+      <ReviewHeader
+        buildNumber={buildNumber}
+        webUrl={webUrl}
+        buildId={buildId}
+        currentSnapshots={currentSnapshots}
+        selectedSnapshotId={selectedSnapshotId}
+        onSelectSnapshot={setSelectedSnapshotId}
+        emit={emit}
+        currentStory={currentStory}
+        onBack={onBack}
+      />
 
       <ReviewBody>
         {authToken && selectedSnapshotId ? (
@@ -295,10 +235,10 @@ export default function ReviewPage({
                 }}
               >
                 <ReviewContent
-                snapshotId={selectedSnapshotId}
-                buildId={buildId}
-                onReviewComplete={handleReviewComplete}
-              />
+                  snapshotId={selectedSnapshotId}
+                  buildId={buildId}
+                  onReviewComplete={handleReviewComplete}
+                />
               </ReviewViewerProvider>
             </MemoryRouter>
           </Provider>

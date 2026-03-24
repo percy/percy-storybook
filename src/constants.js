@@ -43,7 +43,14 @@ export const PERCY_EVENTS = {
   BUILD_ITEMS_FETCHED: `${ADDON_ID}/build-items-fetched`,
   // Snapshot detail (review page)
   FETCH_SNAPSHOT_DETAIL: `${ADDON_ID}/fetch-snapshot-detail`,
-  SNAPSHOT_DETAIL_FETCHED: `${ADDON_ID}/snapshot-detail-fetched`
+  SNAPSHOT_DETAIL_FETCHED: `${ADDON_ID}/snapshot-detail-fetched`,
+  // Build actions (review header kebab menu)
+  REJECT_BUILD: `${ADDON_ID}/reject-build`,
+  BUILD_REJECTED: `${ADDON_ID}/build-rejected`,
+  DELETE_BUILD: `${ADDON_ID}/delete-build`,
+  BUILD_DELETED: `${ADDON_ID}/build-deleted`,
+  DOWNLOAD_BUILD_LOGS: `${ADDON_ID}/download-build-logs`,
+  BUILD_LOGS_DOWNLOADED: `${ADDON_ID}/build-logs-downloaded`
 };
 
 export const STORAGE_KEYS = {

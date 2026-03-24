@@ -108,6 +108,136 @@ function registerBuildApiHandlers(channel) {
       });
     }
   });
+
+  /**
+   * REJECT_BUILD
+   * Rejects a Percy build via the reviews API.
+   * Payload: { buildId }
+   * Response: { buildId, success } or { error, buildId }
+   */
+  channel.on(PERCY_EVENTS.REJECT_BUILD, async ({ buildId }) => {
+    try {
+      const id = validateBuildId(buildId);
+      const { username, accessKey } = readBsCredentials();
+      const res = await loggedFetch(
+        `${PERCY_API_BASE}/reviews`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${basicAuth(username, accessKey)}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            data: {
+              attributes: {
+                action: 'reject',
+                'review-start-time': Date.now()
+              },
+              relationships: {
+                build: { data: { type: 'builds', id: String(id) } }
+              },
+              type: 'reviews'
+            }
+          })
+        },
+        'reject-build'
+      );
+
+      if (!res.ok) {
+        channel.emit(PERCY_EVENTS.BUILD_REJECTED, {
+          error: `Failed to reject build (HTTP ${res.status})`, buildId: id
+        });
+        return;
+      }
+
+      channel.emit(PERCY_EVENTS.BUILD_REJECTED, { buildId: id, success: true });
+    } catch (err) {
+      channel.emit(PERCY_EVENTS.BUILD_REJECTED, {
+        error: err.message, buildId: String(buildId)
+      });
+    }
+  });
+
+  /**
+   * DELETE_BUILD
+   * Deletes a Percy build.
+   * Payload: { buildId }
+   * Response: { buildId, success } or { error, buildId }
+   */
+  channel.on(PERCY_EVENTS.DELETE_BUILD, async ({ buildId }) => {
+    try {
+      const id = validateBuildId(buildId);
+      const { username, accessKey } = readBsCredentials();
+      const res = await loggedFetch(
+        `${PERCY_API_BASE}/builds/${id}/delete`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${basicAuth(username, accessKey)}`,
+            'Content-Type': 'application/json'
+          }
+        },
+        'delete-build'
+      );
+
+      if (!res.ok) {
+        channel.emit(PERCY_EVENTS.BUILD_DELETED, {
+          error: `Failed to delete build (HTTP ${res.status})`, buildId: id
+        });
+        return;
+      }
+
+      channel.emit(PERCY_EVENTS.BUILD_DELETED, { buildId: id, success: true });
+    } catch (err) {
+      channel.emit(PERCY_EVENTS.BUILD_DELETED, {
+        error: err.message, buildId: String(buildId)
+      });
+    }
+  });
+
+  /**
+   * DOWNLOAD_BUILD_LOGS
+   * Downloads build logs and emits content for client-side save.
+   * Payload: { buildId }
+   * Response: { content, filename } or { error }
+   */
+  channel.on(PERCY_EVENTS.DOWNLOAD_BUILD_LOGS, async ({ buildId }) => {
+    try {
+      const id = validateBuildId(buildId);
+      const { username, accessKey } = readBsCredentials();
+      const res = await loggedFetch(
+        `${PERCY_API_BASE}/logs?build_id=${id}&service_name=cli`,
+        {
+          headers: {
+            'Authorization': `Basic ${basicAuth(username, accessKey)}`
+          }
+        },
+        'download-build-logs'
+      );
+
+      if (!res.ok) {
+        channel.emit(PERCY_EVENTS.BUILD_LOGS_DOWNLOADED, {
+          error: `Failed to download logs (HTTP ${res.status})`
+        });
+        return;
+      }
+
+      let content = await res.text();
+      if (content.length > MAX_LOG_SIZE) {
+        content = '[Log truncated — showing last 5MB]\n' +
+          content.slice(content.length - MAX_LOG_SIZE);
+      }
+
+      channel.emit(PERCY_EVENTS.BUILD_LOGS_DOWNLOADED, {
+        content,
+        filename: `percy-build-${id}.log`
+      });
+    } catch (err) {
+      channel.emit(PERCY_EVENTS.BUILD_LOGS_DOWNLOADED, {
+        error: err.message
+      });
+    }
+  });
 }
 
 module.exports = { registerBuildApiHandlers };

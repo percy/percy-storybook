@@ -68,12 +68,15 @@ export function PercyPanel({ active }) {
         buildMeta={buildMeta}
         webUrl={buildMeta?.webUrl || buildUrl}
         currentStoryId={currentStory?.id}
+        currentStory={currentStory}
         groupedItems={groupedItems}
         authToken={authToken}
         itemsLoading={itemsLoading}
         itemsError={itemsError}
         retryItems={retryItems}
         onBack={handleBackToTrigger}
+        emit={emit}
+        snapshotStatus={snapshotStatus}
       />
     );
   }
