@@ -100,7 +100,7 @@ function ReviewContent({ snapshotId, buildId, onReviewComplete }) {
 export default function ReviewPage({
   buildId, buildNumber, buildMeta, webUrl, currentStoryId, currentStory, onBack,
   groupedItems, authToken, itemsLoading: loading, itemsError: error, retryItems: retry,
-  emit, snapshotStatus
+  emit
 }) {
   const [selectedSnapshotId, setSelectedSnapshotId] = useState(null);
   const [currentGroup, setCurrentGroup] = useState(null);
@@ -191,7 +191,6 @@ export default function ReviewPage({
           emit={emit}
           currentStory={currentStory}
           onBack={onBack}
-          snapshotStatus={snapshotStatus}
         />
         <div className="flex flex-col items-center gap-4 py-8">
           <div className="p-3 rounded-md bg-neutral-weakest text-neutral-default text-sm">

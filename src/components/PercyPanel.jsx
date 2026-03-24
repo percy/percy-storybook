@@ -76,7 +76,6 @@ export function PercyPanel({ active }) {
         retryItems={retryItems}
         onBack={handleBackToTrigger}
         emit={emit}
-        snapshotStatus={snapshotStatus}
       />
     );
   }

@@ -7,7 +7,7 @@ import {
   MdPlayArrow, MdOutlineSettings, MdOutlineFileDownload, MdClose, MdDeleteOutline
 } from '@browserstack/design-stack-icons';
 import { useChannel, useStorybookApi } from 'storybook/manager-api';
-import { PERCY_EVENTS, SNAPSHOT_TYPES, SNAPSHOT_STATUS } from '../constants.js';
+import { PERCY_EVENTS, SNAPSHOT_TYPES } from '../constants.js';
 import { getReviewStateDisplay, formatDiffPercent } from '../utils/reviewState.js';
 import {
   buildCurrentStoryPattern,
@@ -75,11 +75,12 @@ function ReviewStateBadge({ snapshot }) {
 
 /* ─── Run Story Split Button ───────────────────────────────────────────── */
 
-function RunStorySplitButton({ emit, currentStory, isRunning }) {
+function RunStorySplitButton({ emit, currentStory }) {
   const api = useStorybookApi();
+  const [triggered, setTriggered] = useState(false);
 
   const handleRun = useCallback((scope) => {
-    if (!emit || isRunning) return;
+    if (!emit || triggered) return;
 
     let include = [];
     if (scope === SNAPSHOT_TYPES.CURRENT_STORY) {
@@ -90,6 +91,8 @@ function RunStorySplitButton({ emit, currentStory, isRunning }) {
       include = [buildCurrentTreePattern(currentStory)];
     }
 
+    setTriggered(true);
+
     const storyIds = resolveStoryIdsForScope(api, scope, currentStory);
     window.__PERCY_SNAPSHOT_STATE__ = { isRunning: true, storyIds };
 
@@ -99,7 +102,7 @@ function RunStorySplitButton({ emit, currentStory, isRunning }) {
       exclude: [],
       scope
     });
-  }, [emit, currentStory, api, isRunning]);
+  }, [emit, currentStory, api, triggered]);
 
   return (
     <div className="inline-flex items-stretch">
@@ -109,8 +112,8 @@ function RunStorySplitButton({ emit, currentStory, isRunning }) {
         size="small"
         icon={<MdPlayArrow />}
         onClick={() => handleRun(SNAPSHOT_TYPES.CURRENT_STORY)}
-        disabled={isRunning}
-        loading={isRunning}
+        disabled={triggered}
+        loading={triggered}
         loaderText="Running…"
         wrapperClassName="!rounded-r-none"
       >
@@ -119,10 +122,10 @@ function RunStorySplitButton({ emit, currentStory, isRunning }) {
       <Dropdown align="end" side="bottom">
         <DropdownTrigger
           isIconOnly
-          icon={<MdKeyboardArrowDown className="w-4 h-4" />}
+          icon={<MdKeyboardArrowDown className="w-4 h-4 text-white" />}
           colors="brand"
-          disabled={isRunning}
-          wrapperClassName="!rounded-l-none !rounded-r-md !border-l !border-l-white/30 h-full"
+          disabled={triggered}
+          wrapperClassName="!rounded-l-none !rounded-r-md !border-l !border-l-white/30 h-full [&_.icon-neutral-strong]:!text-white"
           triggerAriaLabel="More run options"
         />
         <DropdownOptionGroup>
@@ -228,10 +231,9 @@ function KebabMenu({ buildId, webUrl, onBack }) {
 
 export default function ReviewHeader({
   buildNumber, webUrl, buildId, currentSnapshots, selectedSnapshotId,
-  onSelectSnapshot, emit, currentStory, onBack, snapshotStatus
+  onSelectSnapshot, emit, currentStory, onBack
 }) {
   const selectedSnapshot = currentSnapshots.find(s => s.id === selectedSnapshotId) || currentSnapshots[0];
-  const isRunning = snapshotStatus === SNAPSHOT_STATUS.RUNNING;
 
   return (
     <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-default flex-shrink-0">
@@ -255,7 +257,7 @@ export default function ReviewHeader({
             </Button>
           </a>
         )}
-        <RunStorySplitButton emit={emit} currentStory={currentStory} isRunning={isRunning} />
+        <RunStorySplitButton emit={emit} currentStory={currentStory} />
         <KebabMenu buildId={buildId} webUrl={webUrl} onBack={onBack} />
       </div>
     </div>
