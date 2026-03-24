@@ -251,7 +251,7 @@ export default function ReviewPage({
                 authType="basic"
                 buildId={buildId}
                 snapshotId={selectedSnapshotId}
-                panels={{ ai: false, comments: false, history: false, regions: false, snapshotRules: false }}
+                panels={{ ai: true, comments: true, history: true, regions: true, snapshotRules: true }}
                 onReviewComplete={handleReviewComplete}
                 buildAttributes={{
                   reviewState: buildMeta?.reviewState,

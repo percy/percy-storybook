@@ -182,8 +182,10 @@ function KebabMenu({ buildId, webUrl, onBack }) {
         if (settingsUrl) window.open(settingsUrl, '_blank');
         break;
       case 'download-logs':
-        setActionLoading('download-logs');
-        channelEmit(PERCY_EVENTS.DOWNLOAD_BUILD_LOGS, { buildId });
+        window.open(
+          `https://percy.io/api/v1/logs?build_id=${buildId}&service_name=cli`,
+          '_blank'
+        );
         break;
       case 'reject-build':
         setActionLoading('reject-build');
