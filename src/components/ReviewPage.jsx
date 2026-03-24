@@ -105,12 +105,14 @@ export default function ReviewPage({
   const [selectedSnapshotId, setSelectedSnapshotId] = useState(null);
   const [currentGroup, setCurrentGroup] = useState(null);
 
-  // Update sidebar status when items are loaded
+  // Update sidebar status + global review data when items are loaded
   useEffect(() => {
     if (!groupedItems?.length) return;
     const statusStore = experimental_getStatusStore(ADDON_ID);
     const statuses = [];
     const storyIds = [];
+    const reviewData = {};
+
     for (const group of groupedItems) {
       const { state, reason } = group.worstState;
       const maxDiff = Math.max(...group.snapshots.map(s => s.diffRatio || 0));
@@ -125,9 +127,32 @@ export default function ReviewPage({
 
       storyIds.push(group.storyId);
       statuses.push({ storyId: group.storyId, typeId: ADDON_ID, status, title: 'Percy', description });
+
+      // Store per-story review data for SidebarLabel rendering
+      reviewData[group.storyId] = {
+        diffRatio: maxDiff,
+        reviewState: state,
+        reviewStateReason: reason
+      };
     }
+
     statusStore.set(statuses);
-    return () => statusStore.unset(storyIds);
+
+    // Expose review data globally for SidebarLabel
+    window.__PERCY_SNAPSHOT_STATE__ = {
+      ...window.__PERCY_SNAPSHOT_STATE__,
+      reviewData
+    };
+
+    return () => {
+      statusStore.unset(storyIds);
+      if (window.__PERCY_SNAPSHOT_STATE__?.reviewData) {
+        window.__PERCY_SNAPSHOT_STATE__ = {
+          ...window.__PERCY_SNAPSHOT_STATE__,
+          reviewData: {}
+        };
+      }
+    };
   }, [groupedItems]);
 
   // Auto-select first snapshot or match current story

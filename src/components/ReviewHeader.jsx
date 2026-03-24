@@ -37,7 +37,7 @@ function SnapshotSelector({ snapshots, selectedId, onSelect }) {
         <div className="flex items-center gap-2 w-full">
           <span className="flex-1 truncate">{snap.name}</span>
           {parts && <span className="text-xs text-neutral-weak whitespace-nowrap">{parts}</span>}
-          {stateDisplay && (
+          {stateDisplay && ['success', 'error', 'warn', 'info'].includes(stateDisplay.color) && (
             <Badge text={stateDisplay.label} modifier={stateDisplay.color} size="basic" />
           )}
         </div>
@@ -69,7 +69,8 @@ function SnapshotSelector({ snapshots, selectedId, onSelect }) {
 function ReviewStateBadge({ snapshot }) {
   if (!snapshot) return null;
   const display = getReviewStateDisplay(snapshot.reviewState, snapshot.reviewStateReason);
-  if (!display) return null;
+  // Skip badge for states without a valid design-stack Badge modifier (e.g. 'purple')
+  if (!display || !['success', 'error', 'warn', 'info'].includes(display.color)) return null;
   return <Badge text={display.label} modifier={display.color} size="basic" />;
 }
 

@@ -5,10 +5,14 @@
  * @param {string} reason - review-state-reason from Percy API
  * @returns {{ label: string, color: string } | null}
  *   color values map to design-stack Badge modifier prop
- *   Returns null when no badge should be shown (e.g. unreviewed)
+ *   Returns null only when state is missing/empty
  */
 export function getReviewStateDisplay(state, reason) {
-  if (!state || state === 'unreviewed') return null;
+  if (!state) return null;
+
+  if (state === 'unreviewed') {
+    return { label: 'Unreviewed', color: 'purple' };
+  }
 
   if (state === 'approved') {
     if (reason === 'no_diffs') {
@@ -26,6 +30,27 @@ export function getReviewStateDisplay(state, reason) {
 
   // Fallback for unexpected states (failed, error, etc.)
   return { label: state.replace(/_/g, ' '), color: 'error' };
+}
+
+/**
+ * Maps review display color to a CSS dot color for sidebar indicators.
+ * Colors match the Figma design:
+ *   purple  → unreviewed
+ *   warn    → changes requested (yellow/orange)
+ *   info    → no changes (light blue)
+ *   success → approved (green)
+ *   error   → failed (red)
+ */
+const DOT_COLORS = {
+  purple: '#8B5CF6',
+  warn: '#F59E0B',
+  info: '#60A5FA',
+  success: '#22C55E',
+  error: '#EF4444',
+};
+
+export function getDotColor(displayColor) {
+  return DOT_COLORS[displayColor] || null;
 }
 
 /**
