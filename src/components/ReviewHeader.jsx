@@ -35,7 +35,7 @@ export function SnapshotSelector({ snapshots, selectedId, onSelect }) {
       id: snap.id,
       body: (
         <div className="flex items-center gap-2 w-full min-w-0">
-          <span className="font-medium truncate min-w-0 max-w-[50ch]">{snap.name}</span>
+          <span className="font-medium whitespace-nowrap">{snap.name}</span>
           {parts && <span className="text-xs text-neutral-weak whitespace-nowrap flex-shrink-0">{parts}</span>}
         </div>
       )
@@ -48,7 +48,7 @@ export function SnapshotSelector({ snapshots, selectedId, onSelect }) {
         <span className="truncate max-w-[50ch]">{selected?.name || 'Select snapshot'}</span>
         <MdKeyboardArrowDown className="w-4 h-4 flex-shrink-0" />
       </DropdownTrigger>
-      <DropdownOptionGroup>
+      <DropdownOptionGroup wrapperClassName="min-w-[400px]">
         {options.map(opt => (
           <DropdownOptionItem
             key={opt.id}
