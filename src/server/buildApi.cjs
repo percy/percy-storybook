@@ -22,7 +22,7 @@ function registerBuildApiHandlers(channel) {
       const id = validateBuildId(buildId);
       const { username, accessKey } = readBsCredentials();
       const res = await loggedFetch(
-        `${PERCY_API_BASE}/builds/${id}?include-metadata=true`,
+        `${PERCY_API_BASE}/builds/${id}?include-metadata=true&include=base-build`,
         {
           headers: {
             'Authorization': `Basic ${basicAuth(username, accessKey)}`,
@@ -42,6 +42,17 @@ function registerBuildApiHandlers(channel) {
       const json = await res.json();
       const attrs = json.data.attributes;
 
+      // Extract branch names: head branch from build, base branch from included base-build
+      const headBranch = attrs.branch || '';
+      let baseBranch = '';
+      const baseBuildRel = json.data.relationships?.['base-build']?.data;
+      if (baseBuildRel?.id && Array.isArray(json.included)) {
+        const baseBuild = json.included.find(
+          inc => inc.type === 'builds' && inc.id === baseBuildRel.id
+        );
+        baseBranch = baseBuild?.attributes?.branch || '';
+      }
+
       channel.emit(PERCY_EVENTS.BUILD_STATUS_FETCHED, {
         buildId: id,
         buildNumber: attrs['build-number'],
@@ -56,6 +67,8 @@ function registerBuildApiHandlers(channel) {
         buildCountForAverage: attrs['build-count-for-average'],
         reviewState: attrs['review-state'],
         reviewStateReason: attrs['review-state-reason'],
+        headBranch,
+        baseBranch,
         meta: json.meta || null
       });
     } catch (err) {

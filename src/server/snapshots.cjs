@@ -102,8 +102,15 @@ async function runPercyBuild(channel, { baseUrl, include = [], exclude = [] }) {
 
     appendLog('Percy SDK modules imported, config schemas registered');
 
+    // Read package info for client/environment metadata
+    const pkg = require('../../package.json');
+    const clientInfo = `${pkg.name}/${pkg.version} ${pkg.name}-addon/${pkg.version}`;
+    const environmentInfo = `node/${process.version}`;
+
     // Create Percy instance — always pass storybook config (matching POC approach)
     const percy = new Percy({
+      clientInfo,
+      environmentInfo,
       delayUploads: true,
       storybook: { include, exclude }
     });

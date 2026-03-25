@@ -18,7 +18,7 @@ import {
 
 /* ─── Snapshot Selector ────────────────────────────────────────────────── */
 
-function SnapshotSelector({ snapshots, selectedId, onSelect }) {
+export function SnapshotSelector({ snapshots, selectedId, onSelect }) {
   const selected = snapshots.find(s => s.id === selectedId) || snapshots[0];
   if (!snapshots.length) return null;
 
@@ -34,12 +34,9 @@ function SnapshotSelector({ snapshots, selectedId, onSelect }) {
     return {
       id: snap.id,
       body: (
-        <div className="flex items-center gap-2 w-full">
-          <span className="flex-1 truncate">{snap.name}</span>
-          {parts && <span className="text-xs text-neutral-weak whitespace-nowrap">{parts}</span>}
-          {stateDisplay && ['success', 'error', 'warn', 'info'].includes(stateDisplay.color) && (
-            <Badge text={stateDisplay.label} modifier={stateDisplay.color} size="basic" />
-          )}
+        <div className="flex items-center gap-2 w-full min-w-0">
+          <span className="font-medium truncate min-w-0 max-w-[50ch]">{snap.name}</span>
+          {parts && <span className="text-xs text-neutral-weak whitespace-nowrap flex-shrink-0">{parts}</span>}
         </div>
       )
     };
@@ -48,7 +45,7 @@ function SnapshotSelector({ snapshots, selectedId, onSelect }) {
   return (
     <Dropdown align="start" side="bottom">
       <DropdownTrigger wrapperClassName="flex items-center gap-1.5 text-sm font-medium">
-        <span className="truncate max-w-[200px]">{selected?.name || 'Select snapshot'}</span>
+        <span className="truncate max-w-[50ch]">{selected?.name || 'Select snapshot'}</span>
         <MdKeyboardArrowDown className="w-4 h-4 flex-shrink-0" />
       </DropdownTrigger>
       <DropdownOptionGroup>
@@ -62,16 +59,6 @@ function SnapshotSelector({ snapshots, selectedId, onSelect }) {
       </DropdownOptionGroup>
     </Dropdown>
   );
-}
-
-/* ─── Review State Badge ───────────────────────────────────────────────── */
-
-function ReviewStateBadge({ snapshot }) {
-  if (!snapshot) return null;
-  const display = getReviewStateDisplay(snapshot.reviewState, snapshot.reviewStateReason);
-  // Skip badge for states without a valid design-stack Badge modifier (e.g. 'purple')
-  if (!display || !['success', 'error', 'warn', 'info'].includes(display.color)) return null;
-  return <Badge text={display.label} modifier={display.color} size="basic" />;
 }
 
 /* ─── Run Story Split Button ───────────────────────────────────────────── */
@@ -234,21 +221,15 @@ function KebabMenu({ buildId, webUrl, onBack }) {
 
 export default function ReviewHeader({
   buildNumber, webUrl, buildId, currentSnapshots, selectedSnapshotId,
-  onSelectSnapshot, emit, currentStory, onBack
+  emit, currentStory, onBack
 }) {
   const selectedSnapshot = currentSnapshots.find(s => s.id === selectedSnapshotId) || currentSnapshots[0];
 
   return (
     <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-default flex-shrink-0">
-      {/* Left: build number + snapshot selector + badges */}
+      {/* Left: build number + review state badge */}
       <div className="flex items-center gap-3 min-w-0">
         <span className="text-base font-semibold flex-shrink-0">#{buildNumber}</span>
-        <SnapshotSelector
-          snapshots={currentSnapshots}
-          selectedId={selectedSnapshotId}
-          onSelect={onSelectSnapshot}
-        />
-        <ReviewStateBadge snapshot={selectedSnapshot} />
       </div>
 
       {/* Right: action buttons */}

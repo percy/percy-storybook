@@ -30,6 +30,8 @@ export function BuildProgress({ buildId, buildUrl, buildNumber, snapshotScope, o
         webUrl: buildData.webUrl || buildUrl,
         reviewState: buildData.reviewState,
         reviewStateReason: buildData.reviewStateReason,
+        headBranch: buildData.headBranch,
+        baseBranch: buildData.baseBranch,
         meta: buildData.meta
       });
     }

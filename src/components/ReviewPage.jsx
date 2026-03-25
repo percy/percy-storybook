@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import { Button, LoaderV2 } from '@browserstack/design-stack';
+import { Button, LoaderV2, Tag } from '@browserstack/design-stack';
 import { styled } from 'storybook/theming';
 import { MemoryRouter } from 'react-router-dom';
 import { ReviewViewerProvider, useSnapshotReview, useReviewViewerApi } from '@browserstack/review-viewer';
@@ -9,7 +9,7 @@ import ReviewSection from '@browserstack/review-viewer/modules/ReviewSection';
 import { experimental_getStatusStore } from 'storybook/manager-api';
 import { ADDON_ID } from '../constants.js';
 import { getReviewStateDisplay, formatDiffPercent } from '../utils/reviewState.js';
-import ReviewHeader from './ReviewHeader.jsx';
+import ReviewHeader, { SnapshotSelector } from './ReviewHeader.jsx';
 
 /* ─── Styles ──────────────────────────────────────────────────────────── */
 
@@ -169,6 +169,7 @@ export default function ReviewPage({
   }, [currentStoryId, groupedItems]);
 
   const currentSnapshots = currentGroup?.snapshots || [];
+  const selectedSnapshot = currentSnapshots.find(s => s.id === selectedSnapshotId) || currentSnapshots[0];
 
   const handleReviewComplete = useCallback(() => {
     retry();
@@ -212,7 +213,6 @@ export default function ReviewPage({
           buildId={buildId}
           currentSnapshots={[]}
           selectedSnapshotId={null}
-          onSelectSnapshot={() => {}}
           emit={emit}
           currentStory={currentStory}
           onBack={onBack}
@@ -234,7 +234,6 @@ export default function ReviewPage({
         buildId={buildId}
         currentSnapshots={currentSnapshots}
         selectedSnapshotId={selectedSnapshotId}
-        onSelectSnapshot={setSelectedSnapshotId}
         emit={emit}
         currentStory={currentStory}
         onBack={onBack}
@@ -242,30 +241,56 @@ export default function ReviewPage({
 
       <ReviewBody>
         {authToken && selectedSnapshotId ? (
-          <Provider store={dummyStore}>
-            <MemoryRouter>
-              <ReviewViewerProvider
-                key={buildId}
-                apiBaseUrl="https://percy.io/api"
-                authToken={authToken}
-                authType="basic"
-                buildId={buildId}
-                snapshotId={selectedSnapshotId}
-                panels={{ ai: true, comments: true, history: true, regions: true, snapshotRules: true }}
-                onReviewComplete={handleReviewComplete}
-                buildAttributes={{
-                  reviewState: buildMeta?.reviewState,
-                  reviewStateReason: buildMeta?.reviewStateReason
+          <>
+            {/* Overlay: superimpose snapshot dropdown over ReviewSectionHeader's SnapshotInfo (only when multiple snapshots) */}
+            {currentSnapshots.length > 1 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  height: '62px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  zIndex: 10,
+                  background: 'var(--ds-surface-default, #fff)'
                 }}
               >
-                <ReviewContent
-                  snapshotId={selectedSnapshotId}
-                  buildId={buildId}
-                  onReviewComplete={handleReviewComplete}
+                <SnapshotSelector
+                  snapshots={currentSnapshots}
+                  selectedId={selectedSnapshotId}
+                  onSelect={setSelectedSnapshotId}
                 />
-              </ReviewViewerProvider>
-            </MemoryRouter>
-          </Provider>
+              </div>
+            )}
+            <Provider store={dummyStore}>
+              <MemoryRouter>
+                <ReviewViewerProvider
+                  key={buildId}
+                  apiBaseUrl="https://percy.io/api"
+                  authToken={authToken}
+                  authType="basic"
+                  buildId={buildId}
+                  snapshotId={selectedSnapshotId}
+                  panels={{ ai: true, comments: true, history: true, regions: true, snapshotRules: true }}
+                  onReviewComplete={handleReviewComplete}
+                  headBranch={buildMeta?.headBranch || ''}
+                  baseBranch={buildMeta?.baseBranch || ''}
+                  buildAttributes={{
+                    reviewState: buildMeta?.reviewState,
+                    reviewStateReason: buildMeta?.reviewStateReason
+                  }}
+                >
+                  <ReviewContent
+                    snapshotId={selectedSnapshotId}
+                    buildId={buildId}
+                    onReviewComplete={handleReviewComplete}
+                  />
+                </ReviewViewerProvider>
+              </MemoryRouter>
+            </Provider>
+          </>
         ) : (
           <div className="flex items-center justify-center h-full">
             <LoaderV2 size="medium" showLabel label="Initializing review..." />

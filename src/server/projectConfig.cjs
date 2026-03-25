@@ -99,7 +99,7 @@ function setPercyToken(token) {
 async function fetchLastBuild(buildIdRaw, username, accessKey) {
   const id = validateBuildId(buildIdRaw);
   const res = await loggedFetch(
-    `${PERCY_API_BASE}/builds/${id}?include-metadata=true`,
+    `${PERCY_API_BASE}/builds/${id}?include-metadata=true&include=base-build`,
     {
       headers: {
         Authorization: `Basic ${basicAuth(username, accessKey)}`,
@@ -111,11 +111,25 @@ async function fetchLastBuild(buildIdRaw, username, accessKey) {
   if (!res.ok) return null;
   const json = await res.json();
   const attrs = json.data.attributes;
+
+  // Extract branch names
+  const headBranch = attrs.branch || '';
+  let baseBranch = '';
+  const baseBuildRel = json.data.relationships?.['base-build']?.data;
+  if (baseBuildRel?.id && Array.isArray(json.included)) {
+    const baseBuild = json.included.find(
+      inc => inc.type === 'builds' && inc.id === baseBuildRel.id
+    );
+    baseBranch = baseBuild?.attributes?.branch || '';
+  }
+
   return {
     buildId: id,
     state: attrs.state,
     buildNumber: attrs['build-number'],
     webUrl: attrs['web-url'],
+    headBranch,
+    baseBranch,
     meta: json.meta || null
   };
 }
