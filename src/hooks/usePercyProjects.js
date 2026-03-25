@@ -76,7 +76,7 @@ export function usePercyProjects(username, accessKey, initialSearch = '') {
       search: debouncedSearch,
       page: 0
     });
-  }, [debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]); // eslint-disable-line
 
   const loadMore = useCallback(() => {
     if (loadingRef.current || !hasMoreRef.current) return;
@@ -89,7 +89,7 @@ export function usePercyProjects(username, accessKey, initialSearch = '') {
       search: debouncedSearch,
       page: pageRef.current
     });
-  }, [debouncedSearch, username, accessKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, username, accessKey]); // eslint-disable-line
 
   const cancel = useCallback(() => {
     // Server-side requests can't be aborted via channel,

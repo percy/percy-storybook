@@ -2,7 +2,6 @@
 
 const { PERCY_EVENTS } = require('../constants.cjs');
 const { loggedFetch } = require('./apiLogger.cjs');
-const { readBsCredentials } = require('./credentials.cjs');
 const { PERCY_API_BASE, basicAuth } = require('./utils.cjs');
 
 const PAGE_LIMIT = 30;
@@ -10,7 +9,6 @@ const PAGE_LIMIT = 30;
 /* ─── Channel handlers ────────────────────────────────────────────────── */
 
 function registerPercyApiHandlers(channel) {
-
   /**
    * VALIDATE_CREDENTIALS
    * Validates BrowserStack username + access key against Percy API.
@@ -23,7 +21,7 @@ function registerPercyApiHandlers(channel) {
         `${PERCY_API_BASE}/user`,
         {
           headers: {
-            'Authorization': `Basic ${basicAuth(username, accessKey)}`,
+            Authorization: `Basic ${basicAuth(username, accessKey)}`,
             'Content-Type': 'application/json'
           }
         },
@@ -56,7 +54,7 @@ function registerPercyApiHandlers(channel) {
     try {
       const params = new URLSearchParams({
         'filter[product]': 'web',
-        'origin': 'percy_web',
+        origin: 'percy_web',
         'page[limit]': String(PAGE_LIMIT),
         'page[offset]': String(page * PAGE_LIMIT)
       });
@@ -65,7 +63,7 @@ function registerPercyApiHandlers(channel) {
       const res = await loggedFetch(
         `${PERCY_API_BASE}/projects?${params}`,
         {
-          headers: { 'Authorization': `Basic ${basicAuth(username, accessKey)}` }
+          headers: { Authorization: `Basic ${basicAuth(username, accessKey)}` }
         },
         'fetch-projects'
       );
@@ -114,7 +112,7 @@ function registerPercyApiHandlers(channel) {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Basic ${basicAuth(username, accessKey)}`,
+            Authorization: `Basic ${basicAuth(username, accessKey)}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({

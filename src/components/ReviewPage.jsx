@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
-import { Button, LoaderV2, Tag } from '@browserstack/design-stack';
+import { Button, LoaderV2 } from '@browserstack/design-stack';
 import { styled } from 'storybook/theming';
 import { MemoryRouter } from 'react-router-dom';
 import { ReviewViewerProvider, useSnapshotReview, useReviewViewerApi } from '@browserstack/review-viewer';
 import ReviewSection from '@browserstack/review-viewer/modules/ReviewSection';
-import { experimental_getStatusStore } from 'storybook/manager-api';
+import { experimental_getStatusStore } from 'storybook/manager-api'; // eslint-disable-line camelcase
 import { ADDON_ID } from '../constants.js';
 import { getReviewStateDisplay, formatDiffPercent } from '../utils/reviewState.js';
 import ReviewHeader, { SnapshotSelector } from './ReviewHeader.jsx';
@@ -108,7 +108,7 @@ export default function ReviewPage({
   // Update sidebar status + global review data when items are loaded
   useEffect(() => {
     if (!groupedItems?.length) return;
-    const statusStore = experimental_getStatusStore(ADDON_ID);
+    const statusStore = experimental_getStatusStore(ADDON_ID); // eslint-disable-line camelcase
     const statuses = [];
     const storyIds = [];
     const reviewData = {};
@@ -169,8 +169,6 @@ export default function ReviewPage({
   }, [currentStoryId, groupedItems]);
 
   const currentSnapshots = currentGroup?.snapshots || [];
-  const selectedSnapshot = currentSnapshots.find(s => s.id === selectedSnapshotId) || currentSnapshots[0];
-
   const handleReviewComplete = useCallback(() => {
     retry();
   }, [retry]);

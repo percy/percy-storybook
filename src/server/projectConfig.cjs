@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const { PERCY_EVENTS } = require('../constants.cjs');
-const { getEnvPath, getPercyYmlPath, readEnv, readEnvRaw, setKey, writeEnvRaw } = require('./env.cjs');
+const { getPercyYmlPath, readEnv, readEnvRaw, setKey, writeEnvRaw } = require('./env.cjs');
 const { readBsCredentials } = require('./credentials.cjs');
 const { loggedFetch } = require('./apiLogger.cjs');
 const { PERCY_API_BASE, validateBuildId, basicAuth } = require('./utils.cjs');

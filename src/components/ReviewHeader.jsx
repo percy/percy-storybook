@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  Badge, Button, Dropdown, DropdownOptionGroup, DropdownOptionItem, DropdownTrigger
+  Button, Dropdown, DropdownOptionGroup, DropdownOptionItem, DropdownTrigger
 } from '@browserstack/design-stack';
 import {
   MdOutlineOpenInNew, MdKeyboardArrowDown, MdMoreVert,
@@ -134,11 +134,10 @@ function RunStorySplitButton({ emit, currentStory }) {
 /* ─── Kebab Menu ───────────────────────────────────────────────────────── */
 
 function KebabMenu({ buildId, webUrl, onBack }) {
-  const [actionLoading, setActionLoading] = useState(null);
+  const [, setActionLoading] = useState(null);
 
   const channelEmit = useChannel({
     [PERCY_EVENTS.BUILD_REJECTED]: (data) => {
-      setActionLoading(null);
       if (data.success) onBack();
     },
     [PERCY_EVENTS.BUILD_DELETED]: (data) => {
@@ -223,8 +222,6 @@ export default function ReviewHeader({
   buildNumber, webUrl, buildId, currentSnapshots, selectedSnapshotId,
   emit, currentStory, onBack
 }) {
-  const selectedSnapshot = currentSnapshots.find(s => s.id === selectedSnapshotId) || currentSnapshots[0];
-
   return (
     <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-default flex-shrink-0">
       {/* Left: build number + review state badge */}

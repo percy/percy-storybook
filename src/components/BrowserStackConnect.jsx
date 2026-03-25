@@ -78,7 +78,7 @@ export function BrowserStackConnect({ onAuthenticated }) {
     }
   });
 
-  useEffect(() => { emit(PERCY_EVENTS.LOAD_BS_CREDENTIALS); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { emit(PERCY_EVENTS.LOAD_BS_CREDENTIALS); }, []); // eslint-disable-line
 
   function handleContinue() {
     const user = username.trim();

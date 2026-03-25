@@ -9,6 +9,6 @@ module.exports = {
     './node_modules/@browserstack/review-viewer/dist/**/*.{js,jsx,mjs}',
     './node_modules/@browserstack/review-viewer/modules/**/*.{js,jsx}',
     // Scan our own source components
-    './src/**/*.{js,jsx}',
-  ],
+    './src/**/*.{js,jsx}'
+  ]
 };

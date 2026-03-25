@@ -46,7 +46,7 @@ const DOT_COLORS = {
   warn: '#F59E0B',
   info: '#60A5FA',
   success: '#22C55E',
-  error: '#EF4444',
+  error: '#EF4444'
 };
 
 export function getDotColor(displayColor) {

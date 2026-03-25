@@ -19,6 +19,7 @@ function managerEntries(entry = []) {
   return [...entry, require.resolve('./dist/manager.js')];
 }
 
+// eslint-disable-next-line camelcase
 const experimental_serverChannel = async function serverChannel(channel) {
   registerCredentialHandlers(channel);
   registerProjectConfigHandlers(channel);
@@ -33,4 +34,4 @@ const experimental_serverChannel = async function serverChannel(channel) {
   return channel;
 };
 
-module.exports = { managerEntries, experimental_serverChannel };
+module.exports = { managerEntries, experimental_serverChannel }; // eslint-disable-line camelcase

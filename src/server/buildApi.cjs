@@ -10,7 +10,6 @@ const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB
 /* ─── Channel handlers ────────────────────────────────────────────────── */
 
 function registerBuildApiHandlers(channel) {
-
   /**
    * FETCH_BUILD_STATUS
    * Polls Percy Build API for current build state.
@@ -25,7 +24,7 @@ function registerBuildApiHandlers(channel) {
         `${PERCY_API_BASE}/builds/${id}?include-metadata=true&include=base-build`,
         {
           headers: {
-            'Authorization': `Basic ${basicAuth(username, accessKey)}`,
+            Authorization: `Basic ${basicAuth(username, accessKey)}`,
             'Content-Type': 'application/json'
           }
         },
@@ -92,7 +91,7 @@ function registerBuildApiHandlers(channel) {
         `${PERCY_API_BASE}/logs?build_id=${id}&service_name=cli`,
         {
           headers: {
-            'Authorization': `Basic ${basicAuth(username, accessKey)}`
+            Authorization: `Basic ${basicAuth(username, accessKey)}`
           }
         },
         'fetch-build-logs'
@@ -137,7 +136,7 @@ function registerBuildApiHandlers(channel) {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Basic ${basicAuth(username, accessKey)}`,
+            Authorization: `Basic ${basicAuth(username, accessKey)}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
@@ -186,7 +185,7 @@ function registerBuildApiHandlers(channel) {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Basic ${basicAuth(username, accessKey)}`,
+            Authorization: `Basic ${basicAuth(username, accessKey)}`,
             'Content-Type': 'application/json'
           }
         },
@@ -222,7 +221,7 @@ function registerBuildApiHandlers(channel) {
         `${PERCY_API_BASE}/logs?build_id=${id}&service_name=cli`,
         {
           headers: {
-            'Authorization': `Basic ${basicAuth(username, accessKey)}`
+            Authorization: `Basic ${basicAuth(username, accessKey)}`
           }
         },
         'download-build-logs'

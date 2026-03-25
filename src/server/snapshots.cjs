@@ -92,9 +92,11 @@ async function runPercyBuild(channel, { baseUrl, include = [], exclude = [] }) {
     appendLog('PERCY_TOKEN loaded from .env');
 
     // Dynamic import of ESM modules
+    // eslint-disable-next-line import/no-extraneous-dependencies
     const { default: Percy } = await import('@percy/core');
     const { takeStorybookSnapshots } = await import('@percy/storybook');
     const { storybookSchema, configSchema } = await import('../config.js');
+    // eslint-disable-next-line import/no-extraneous-dependencies
     const { addSchema } = await import('@percy/config');
 
     // Register storybook config schemas so Percy can validate story params
