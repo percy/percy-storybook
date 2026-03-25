@@ -1,6 +1,6 @@
 {
   "name": "@percy/storybook",
-  "version": "10.0.1-alpha.0",
+  "version": "10.0.1-alpha.1",
   "description": "Storybook addons for visual testing with Percy",
   "keywords": [
     "storybook",
@@ -27,7 +27,8 @@
   "files": [
     "bin",
     "dist",
-    "dist/chunks",
+    "!dist/components",
+    "!dist/hooks",
     "preset.cjs",
     "src/constants.js",
     "src/constants.cjs"
