@@ -110,8 +110,8 @@ export function BrowserStackConnect({ onAuthenticated }) {
 
       <FieldWrapper>
         <InputField
-          id="bs-username" label="BrowserStack Username (Email)" type="email"
-          placeholder="user@example.com" value={username}
+          id="bs-username" label="BrowserStack Username"
+          placeholder="Enter your username" value={username}
           onChange={e => { setUsername(e.target.value); setSaveError(''); setValidationError(''); }}
           autoComplete="username"
         />

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  Button, Dropdown, DropdownOptionGroup, DropdownOptionItem, DropdownTrigger
+  Button, Dropdown, DropdownOptionGroup, DropdownOptionItem, DropdownTrigger, Tooltip
 } from '@browserstack/design-stack';
 import {
   MdOutlineOpenInNew, MdKeyboardArrowDown, MdMoreVert,
@@ -94,19 +94,25 @@ function RunStorySplitButton({ emit, currentStory }) {
 
   return (
     <div className="inline-flex items-stretch">
-      <Button
-        variant="primary"
-        colors="brand"
-        size="small"
-        icon={<MdPlayArrow />}
-        onClick={() => handleRun(SNAPSHOT_TYPES.CURRENT_STORY)}
-        disabled={triggered}
-        loading={triggered}
-        loaderText="Running…"
-        wrapperClassName="!rounded-r-none"
+      <Tooltip
+        content="Very Fast - Test only the current story"
+        theme="light"
+        placementSide="top"
       >
-        Run story
-      </Button>
+        <Button
+          variant="primary"
+          colors="brand"
+          size="small"
+          icon={<MdPlayArrow />}
+          onClick={() => handleRun(SNAPSHOT_TYPES.CURRENT_STORY)}
+          disabled={triggered}
+          loading={triggered}
+          loaderText="Running…"
+          wrapperClassName="!rounded-r-none"
+        >
+          Run story
+        </Button>
+      </Tooltip>
       <Dropdown align="end" side="bottom">
         <DropdownTrigger
           isIconOnly
@@ -118,11 +124,25 @@ function RunStorySplitButton({ emit, currentStory }) {
         />
         <DropdownOptionGroup>
           <DropdownOptionItem
-            option={{ id: 'run-component', body: 'Run component' }}
+            option={{
+              id: 'run-component',
+              body: (
+                <Tooltip content="Fast - Test stories in the current component folder" theme="light" placementSide="left">
+                  <span>Run component</span>
+                </Tooltip>
+              )
+            }}
             onClick={() => handleRun(SNAPSHOT_TYPES.CURRENT_TREE)}
           />
           <DropdownOptionItem
-            option={{ id: 'run-all', body: 'Run all stories' }}
+            option={{
+              id: 'run-all',
+              body: (
+                <Tooltip content="Full Suite - Test all stories in the project" theme="light" placementSide="left">
+                  <span>Run all stories</span>
+                </Tooltip>
+              )
+            }}
             onClick={() => handleRun(SNAPSHOT_TYPES.FULL)}
           />
         </DropdownOptionGroup>
