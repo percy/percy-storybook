@@ -95,6 +95,11 @@ export function usePercyPanelState() {
         setView(VIEWS.TRIGGER_BUILD);
         break;
 
+      // Update buildMeta in-place (e.g. after approve refreshes build status)
+      case 'UPDATE_BUILD_META':
+        setBuildMeta(prev => prev ? { ...prev, ...payload } : payload);
+        break;
+
       // Explicit user action — clears buildMeta permanently
       case 'BACK_TO_TRIGGER_BUILD':
         setBuildMeta(null);

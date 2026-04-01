@@ -98,7 +98,7 @@ function ReviewContent({ snapshotId, buildId, onReviewComplete }) {
 /* ─── Main Component ──────────────────────────────────────────────────── */
 
 export default function ReviewPage({
-  buildId, buildNumber, buildMeta, webUrl, currentStoryId, currentStory, onBack,
+  buildId, buildNumber, buildMeta, webUrl, currentStoryId, currentStory, onBack, onApproved,
   groupedItems, authToken, itemsLoading: loading, itemsError: error, retryItems: retry,
   emit
 }) {
@@ -209,11 +209,13 @@ export default function ReviewPage({
           buildNumber={buildNumber}
           webUrl={webUrl}
           buildId={buildId}
+          reviewState={buildMeta?.reviewState}
           currentSnapshots={[]}
           selectedSnapshotId={null}
           emit={emit}
           currentStory={currentStory}
           onBack={onBack}
+          onApproved={onApproved}
         />
         <div className="flex flex-col items-center gap-4 py-8">
           <div className="p-3 rounded-md bg-neutral-weakest text-neutral-default text-sm">
@@ -230,11 +232,13 @@ export default function ReviewPage({
         buildNumber={buildNumber}
         webUrl={webUrl}
         buildId={buildId}
+        reviewState={buildMeta?.reviewState}
         currentSnapshots={currentSnapshots}
         selectedSnapshotId={selectedSnapshotId}
         emit={emit}
         currentStory={currentStory}
         onBack={onBack}
+        onApproved={onApproved}
       />
 
       <ReviewBody>

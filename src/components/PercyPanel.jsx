@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button, LoaderV2 } from '@browserstack/design-stack';
 import { MdOutlineOpenInNew, MdOutlineVpnKey } from '@browserstack/design-stack-icons';
 import DSIBStack from '@browserstack/design-stack-icons/dist/DSIBStack';
+import { useChannel } from 'storybook/manager-api';
+import { PERCY_EVENTS } from '../constants.js';
 import { usePercyPanelState } from '../hooks/usePercyPanelState.js';
 import { useSnapshotChannel } from '../hooks/useSnapshotChannel.js';
 import { useBuildItems } from '../hooks/useBuildItems.js';
@@ -37,6 +39,26 @@ export function PercyPanel({ active }) {
 
   // Dynamic view switching based on story navigation
   useAutoViewSwitch({ currentStory, storyIdSet, itemsLoading, hasPreviousBuild, view, transition, VIEWS });
+
+  // Listen for build status updates triggered by approve-build re-fetch
+  const emitChannel = useChannel({
+    [PERCY_EVENTS.BUILD_STATUS_FETCHED]: (data) => {
+      if (data.error || !data.buildId) return;
+      transition('UPDATE_BUILD_META', {
+        reviewState: data.reviewState,
+        reviewStateReason: data.reviewStateReason
+      });
+    }
+  });
+
+  const handleBuildApproved = useCallback(() => {
+    const id = buildMeta?.buildId;
+    if (!id) return;
+    // Re-fetch build status to update reviewState in buildMeta
+    emitChannel(PERCY_EVENTS.FETCH_BUILD_STATUS, { buildId: id });
+    // Re-fetch build items to update snapshot-level review states
+    retryItems();
+  }, [buildMeta?.buildId, emitChannel, retryItems]);
 
   if (!active) return null;
 
@@ -75,6 +97,7 @@ export function PercyPanel({ active }) {
         itemsError={itemsError}
         retryItems={retryItems}
         onBack={handleBackToTrigger}
+        onApproved={handleBuildApproved}
         emit={emit}
       />
     );

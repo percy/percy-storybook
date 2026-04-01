@@ -122,6 +122,55 @@ function registerBuildApiHandlers(channel) {
   });
 
   /**
+   * APPROVE_BUILD
+   * Approves a Percy build via the reviews API.
+   * Payload: { buildId }
+   * Response: { buildId, success } or { error, buildId }
+   */
+  channel.on(PERCY_EVENTS.APPROVE_BUILD, async ({ buildId }) => {
+    try {
+      const id = validateBuildId(buildId);
+      const { username, accessKey } = readBsCredentials();
+      const res = await loggedFetch(
+        `${PERCY_API_BASE}/reviews`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Basic ${basicAuth(username, accessKey)}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            data: {
+              attributes: {
+                action: 'approve',
+                'review-start-time': Date.now()
+              },
+              relationships: {
+                build: { data: { type: 'builds', id: String(id) } }
+              },
+              type: 'reviews'
+            }
+          })
+        },
+        'approve-build'
+      );
+
+      if (!res.ok) {
+        channel.emit(PERCY_EVENTS.BUILD_APPROVED, {
+          error: `Failed to approve build (HTTP ${res.status})`, buildId: id
+        });
+        return;
+      }
+
+      channel.emit(PERCY_EVENTS.BUILD_APPROVED, { buildId: id, success: true });
+    } catch (err) {
+      channel.emit(PERCY_EVENTS.BUILD_APPROVED, {
+        error: err.message, buildId: String(buildId)
+      });
+    }
+  });
+
+  /**
    * REJECT_BUILD
    * Rejects a Percy build via the reviews API.
    * Payload: { buildId }

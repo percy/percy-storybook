@@ -193,12 +193,24 @@ function registerProjectConfigHandlers(channel) {
         return;
       }
 
+      // Auto-fetch token when project exists in .percy.yml but PERCY_TOKEN is missing
+      let tokenValid = hasValidToken;
+      if (project && !hasValidToken) {
+        try {
+          const percyToken = await fetchPercyToken(project.id, username, accessKey);
+          setPercyToken(percyToken);
+          tokenValid = true;
+        } catch (err) {
+          console.warn('Auto-fetch Percy token failed:', err.message);
+        }
+      }
+
       channel.emit(PERCY_EVENTS.PROJECT_CONFIG_LOADED, {
         credentialsValid: true,
         username,
         accessKey,
         project,
-        hasValidToken,
+        hasValidToken: tokenValid,
         lastBuild
       });
     } catch {

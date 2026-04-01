@@ -4,7 +4,7 @@ import {
 } from '@browserstack/design-stack';
 import {
   MdOutlineOpenInNew, MdKeyboardArrowDown, MdMoreVert,
-  MdPlayArrow, MdOutlineSettings, MdOutlineFileDownload, MdClose, MdDeleteOutline
+  MdPlayArrow, MdOutlineSettings, MdOutlineFileDownload, MdCheck, MdClose, MdDeleteOutline
 } from '@browserstack/design-stack-icons';
 import { useChannel, useStorybookApi } from 'storybook/manager-api';
 import { PERCY_EVENTS, SNAPSHOT_TYPES } from '../constants.js';
@@ -133,10 +133,14 @@ function RunStorySplitButton({ emit, currentStory }) {
 
 /* ─── Kebab Menu ───────────────────────────────────────────────────────── */
 
-function KebabMenu({ buildId, webUrl, onBack }) {
+function KebabMenu({ buildId, webUrl, reviewState, onBack, onApproved }) {
   const [, setActionLoading] = useState(null);
 
   const channelEmit = useChannel({
+    [PERCY_EVENTS.BUILD_APPROVED]: (data) => {
+      setActionLoading(null);
+      if (data.success && onApproved) onApproved();
+    },
     [PERCY_EVENTS.BUILD_REJECTED]: (data) => {
       if (data.success) onBack();
     },
@@ -162,6 +166,8 @@ function KebabMenu({ buildId, webUrl, onBack }) {
     ? webUrl.replace(/\/builds\/\d+$/, '/settings')
     : null;
 
+  const isApproved = reviewState === 'approved';
+
   const handleMenuAction = useCallback((optionId) => {
     switch (optionId) {
       case 'project-settings':
@@ -173,6 +179,12 @@ function KebabMenu({ buildId, webUrl, onBack }) {
           '_blank'
         );
         break;
+      case 'approve-build':
+        if (!isApproved) {
+          setActionLoading('approve-build');
+          channelEmit(PERCY_EVENTS.APPROVE_BUILD, { buildId });
+        }
+        break;
       case 'reject-build':
         setActionLoading('reject-build');
         channelEmit(PERCY_EVENTS.REJECT_BUILD, { buildId });
@@ -182,7 +194,7 @@ function KebabMenu({ buildId, webUrl, onBack }) {
         channelEmit(PERCY_EVENTS.DELETE_BUILD, { buildId });
         break;
     }
-  }, [buildId, settingsUrl, channelEmit]);
+  }, [buildId, settingsUrl, channelEmit, isApproved]);
 
   return (
     <Dropdown align="end" side="bottom">
@@ -204,6 +216,11 @@ function KebabMenu({ buildId, webUrl, onBack }) {
           onClick={() => handleMenuAction('download-logs')}
         />
         <DropdownOptionItem
+          disabled={isApproved}
+          option={{ id: 'approve-build', body: 'Approve build', icon: <MdCheck className="w-4 h-4" /> }}
+          onClick={() => handleMenuAction('approve-build')}
+        />
+        <DropdownOptionItem
           option={{ id: 'reject-build', body: 'Reject build', icon: <MdClose className="w-4 h-4" /> }}
           onClick={() => handleMenuAction('reject-build')}
         />
@@ -219,8 +236,8 @@ function KebabMenu({ buildId, webUrl, onBack }) {
 /* ─── Main Header Export ───────────────────────────────────────────────── */
 
 export default function ReviewHeader({
-  buildNumber, webUrl, buildId, currentSnapshots, selectedSnapshotId,
-  emit, currentStory, onBack
+  buildNumber, webUrl, buildId, reviewState, currentSnapshots, selectedSnapshotId,
+  emit, currentStory, onBack, onApproved
 }) {
   return (
     <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-default flex-shrink-0">
@@ -239,7 +256,7 @@ export default function ReviewHeader({
           </a>
         )}
         <RunStorySplitButton emit={emit} currentStory={currentStory} />
-        <KebabMenu buildId={buildId} webUrl={webUrl} onBack={onBack} />
+        <KebabMenu buildId={buildId} webUrl={webUrl} reviewState={reviewState} onBack={onBack} onApproved={onApproved} />
       </div>
     </div>
   );

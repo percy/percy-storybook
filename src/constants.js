@@ -45,6 +45,8 @@ export const PERCY_EVENTS = {
   FETCH_SNAPSHOT_DETAIL: `${ADDON_ID}/fetch-snapshot-detail`,
   SNAPSHOT_DETAIL_FETCHED: `${ADDON_ID}/snapshot-detail-fetched`,
   // Build actions (review header kebab menu)
+  APPROVE_BUILD: `${ADDON_ID}/approve-build`,
+  BUILD_APPROVED: `${ADDON_ID}/build-approved`,
   REJECT_BUILD: `${ADDON_ID}/reject-build`,
   BUILD_REJECTED: `${ADDON_ID}/build-rejected`,
   DELETE_BUILD: `${ADDON_ID}/delete-build`,

@@ -102,6 +102,10 @@ async function runPercyBuild(channel, { baseUrl, include = [], exclude = [] }) {
     // Register storybook config schemas so Percy can validate story params
     addSchema([storybookSchema, configSchema]);
 
+    // Force reload config from disk so .percy.yml changes take effect without restart
+    const { load: loadConfig } = await import('@percy/config');
+    loadConfig({ reload: true });
+
     appendLog('Percy SDK modules imported, config schemas registered');
 
     // Read package info for client/environment metadata

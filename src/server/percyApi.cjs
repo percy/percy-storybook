@@ -63,7 +63,7 @@ function registerPercyApiHandlers(channel) {
       const res = await loggedFetch(
         `${PERCY_API_BASE}/projects?${params}`,
         {
-          headers: { Authorization: `Basic ${basicAuth(username, accessKey)}` }
+          headers: { Authorization: `Basic ${basicAuth(username, accessKey)}`, 'X-Percy-New-Dashboard': 'true' }
         },
         'fetch-projects'
       );
