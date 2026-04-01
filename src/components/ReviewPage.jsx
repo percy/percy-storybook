@@ -57,6 +57,12 @@ function ReviewContent({ snapshotId, buildId, onReviewComplete }) {
     diffMode: 'overlay'
   });
 
+  // Local AI review toggle (no preference API in the addon)
+  const [isAIReviewEnabled, setIsAIReviewEnabled] = useState(true);
+  const onAIReviewToggle = useCallback((checked) => {
+    setIsAIReviewEnabled(checked);
+  }, []);
+
   const setParam = useCallback((key, value) => {
     setParamsState(prev => ({ ...prev, [key]: value }));
   }, []);
@@ -91,6 +97,9 @@ function ReviewContent({ snapshotId, buildId, onReviewComplete }) {
       setParam={setParam}
       setParams={setParams}
       reviewActions={reviewActions}
+      isAIReviewEnabled={isAIReviewEnabled}
+      onAIReviewToggle={onAIReviewToggle}
+      isAIAvailable
     />
   );
 }
