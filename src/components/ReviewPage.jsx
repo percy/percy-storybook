@@ -210,6 +210,7 @@ export default function ReviewPage({
           webUrl={webUrl}
           buildId={buildId}
           reviewState={buildMeta?.reviewState}
+          reviewStateReason={buildMeta?.reviewStateReason}
           currentSnapshots={[]}
           selectedSnapshotId={null}
           emit={emit}
@@ -233,6 +234,7 @@ export default function ReviewPage({
         webUrl={webUrl}
         buildId={buildId}
         reviewState={buildMeta?.reviewState}
+        reviewStateReason={buildMeta?.reviewStateReason}
         currentSnapshots={currentSnapshots}
         selectedSnapshotId={selectedSnapshotId}
         emit={emit}
@@ -276,6 +278,7 @@ export default function ReviewPage({
                   buildId={buildId}
                   snapshotId={selectedSnapshotId}
                   panels={{ ai: true, comments: true, history: true, regions: true, snapshotRules: true }}
+                  permissions={{ canApproveSnapshot: true, canCommentSnapshot: true, canMergeSnapshot: true }}
                   onReviewComplete={handleReviewComplete}
                   headBranch={buildMeta?.headBranch || ''}
                   baseBranch={buildMeta?.baseBranch || ''}
