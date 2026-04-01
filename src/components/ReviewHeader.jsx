@@ -7,6 +7,7 @@ import {
   MdPlayArrow, MdOutlineSettings, MdOutlineFileDownload, MdCheck, MdClose, MdDeleteOutline
 } from '@browserstack/design-stack-icons';
 import { useChannel, useStorybookApi } from 'storybook/manager-api';
+import { useTheme } from 'storybook/theming';
 import { PERCY_EVENTS, SNAPSHOT_TYPES } from '../constants.js';
 import { getReviewStateDisplay, formatDiffPercent } from '../utils/reviewState.js';
 import {
@@ -65,6 +66,8 @@ export function SnapshotSelector({ snapshots, selectedId, onSelect }) {
 
 function RunStorySplitButton({ emit, currentStory }) {
   const api = useStorybookApi();
+  const theme = useTheme();
+  const tooltipTheme = theme?.base === 'dark' ? 'dark' : 'light';
   const [triggered, setTriggered] = useState(false);
 
   const handleRun = useCallback((scope) => {
@@ -96,7 +99,7 @@ function RunStorySplitButton({ emit, currentStory }) {
     <div className="inline-flex items-stretch">
       <Tooltip
         content="Very Fast - Test only the current story"
-        theme="light"
+        theme={tooltipTheme}
         placementSide="top"
       >
         <Button
@@ -127,7 +130,7 @@ function RunStorySplitButton({ emit, currentStory }) {
             option={{
               id: 'run-component',
               body: (
-                <Tooltip content="Fast - Test stories in the current component folder" theme="light" placementSide="left">
+                <Tooltip content="Fast - Test stories in the current component folder" theme={tooltipTheme} placementSide="left">
                   <span>Run component</span>
                 </Tooltip>
               )
@@ -138,7 +141,7 @@ function RunStorySplitButton({ emit, currentStory }) {
             option={{
               id: 'run-all',
               body: (
-                <Tooltip content="Full Suite - Test all stories in the project" theme="light" placementSide="left">
+                <Tooltip content="Full Suite - Test all stories in the project" theme={tooltipTheme} placementSide="left">
                   <span>Run all stories</span>
                 </Tooltip>
               )
