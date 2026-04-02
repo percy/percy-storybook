@@ -180,7 +180,8 @@ export default function ReviewPage({
   const currentSnapshots = currentGroup?.snapshots || [];
   const handleReviewComplete = useCallback(() => {
     retry();
-  }, [retry]);
+    if (onApproved) onApproved();
+  }, [retry, onApproved]);
 
   // Loading state
   if (loading) {
