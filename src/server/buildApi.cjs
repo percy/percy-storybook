@@ -41,9 +41,10 @@ function registerBuildApiHandlers(channel) {
       const json = await res.json();
       const attrs = json.data.attributes;
 
-      // Extract branch names and timestamps: head from build, base from included base-build
+      // Extract branch names, timestamps, and build type
       const headBranch = attrs.branch || '';
       const finishedAt = attrs['finished-at'] || null;
+      const buildType = attrs.type || 'web';
       let baseBranch = '';
       let baseBuildFinishedAt = null;
       const baseBuildRel = json.data.relationships?.['base-build']?.data;
@@ -73,6 +74,7 @@ function registerBuildApiHandlers(channel) {
         baseBranch,
         finishedAt,
         baseBuildFinishedAt,
+        buildType,
         meta: json.meta || null
       });
     } catch (err) {
@@ -301,6 +303,53 @@ function registerBuildApiHandlers(channel) {
     } catch (err) {
       channel.emit(PERCY_EVENTS.BUILD_LOGS_DOWNLOADED, {
         error: err.message
+      });
+    }
+  });
+
+  /**
+   * MERGE_BUILD
+   * Merges all approved snapshots into the base branch (branchline workflow).
+   * POST /v1/branchline/merge with build relationship.
+   * Payload: { buildId }
+   * Response: { buildId, success } or { error, buildId }
+   */
+  channel.on(PERCY_EVENTS.MERGE_BUILD, async ({ buildId }) => {
+    try {
+      const id = validateBuildId(buildId);
+      const { username, accessKey } = readBsCredentials();
+      const res = await loggedFetch(
+        `${PERCY_API_BASE}/branchline/merge`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Basic ${basicAuth(username, accessKey)}`,
+            'Content-Type': 'application/vnd.api+json'
+          },
+          body: JSON.stringify({
+            data: {
+              type: 'branchline-histories',
+              attributes: {},
+              relationships: {
+                build: { data: { type: 'builds', id: String(id) } }
+              }
+            }
+          })
+        },
+        'merge-build'
+      );
+
+      if (!res.ok) {
+        channel.emit(PERCY_EVENTS.BUILD_MERGED, {
+          error: `Failed to merge build (HTTP ${res.status})`, buildId: id
+        });
+        return;
+      }
+
+      channel.emit(PERCY_EVENTS.BUILD_MERGED, { buildId: id, success: true });
+    } catch (err) {
+      channel.emit(PERCY_EVENTS.BUILD_MERGED, {
+        error: err.message, buildId: String(buildId)
       });
     }
   });

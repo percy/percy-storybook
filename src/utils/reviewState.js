@@ -14,6 +14,10 @@ export function getReviewStateDisplay(state, reason) {
     return { label: 'Unreviewed', color: 'purple' };
   }
 
+  if (state === 'merged') {
+    return { label: 'merged', color: 'success' };
+  }
+
   if (state === 'approved') {
     if (reason === 'no_diffs') {
       return { label: 'No changes', color: 'info' };

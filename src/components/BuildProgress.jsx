@@ -34,6 +34,7 @@ export function BuildProgress({ buildId, buildUrl, buildNumber, snapshotScope, o
         baseBranch: buildData.baseBranch,
         finishedAt: buildData.finishedAt,
         baseBuildFinishedAt: buildData.baseBuildFinishedAt,
+        buildType: buildData.buildType,
         meta: buildData.meta
       });
     }

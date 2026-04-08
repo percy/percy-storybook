@@ -20,7 +20,7 @@ export function useSnapshotChannel(transition, view, VIEWS) {
   const configLoaded = useRef(false);
 
   const emit = useChannel({
-    [PERCY_EVENTS.PROJECT_CONFIG_LOADED]: ({ credentialsValid, username, accessKey, project, hasValidToken, lastBuild }) => {
+    [PERCY_EVENTS.PROJECT_CONFIG_LOADED]: ({ credentialsValid, username, accessKey, project, projectDetails, hasValidToken, lastBuild }) => {
       configLoaded.current = true;
       const creds = { username: username || '', accessKey: accessKey || '' };
 
@@ -43,9 +43,9 @@ export function useSnapshotChannel(transition, view, VIEWS) {
       // Has valid creds + project + token — check for last build
       if (lastBuild && (lastBuild.state === 'finished' || lastBuild.state === 'pending' || lastBuild.state === 'processing')) {
         hydrateFromBuild(lastBuild);
-        transition('RESTORE_WITH_BUILD', { credentials: creds, project, lastBuild });
+        transition('RESTORE_WITH_BUILD', { credentials: creds, project, projectDetails, lastBuild });
       } else {
-        transition('RESTORE_FULL', { credentials: creds, project });
+        transition('RESTORE_FULL', { credentials: creds, project, projectDetails });
       }
     },
     [PERCY_EVENTS.SNAPSHOT_STARTED]: () => {

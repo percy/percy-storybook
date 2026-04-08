@@ -4,7 +4,7 @@ import {
 } from '@browserstack/design-stack';
 import {
   MdOutlineOpenInNew, MdKeyboardArrowDown, MdMoreVert,
-  MdPlayArrow, MdOutlineSettings, MdOutlineFileDownload, MdCheck, MdClose, MdDeleteOutline
+  MdPlayArrow, MdOutlineSettings, MdOutlineFileDownload, MdCheck, MdClose, MdDeleteOutline, MdCallMerge
 } from '@browserstack/design-stack-icons';
 import { useChannel, useStorybookApi } from 'storybook/manager-api';
 import { useTheme } from 'storybook/theming';
@@ -156,7 +156,7 @@ function RunStorySplitButton({ emit, currentStory }) {
 
 /* ─── Kebab Menu ───────────────────────────────────────────────────────── */
 
-function KebabMenu({ buildId, webUrl, reviewState, onBack, onApproved }) {
+function KebabMenu({ buildId, webUrl, reviewState, reviewStateReason, projectDetails, onBack, onApproved }) {
   const [, setActionLoading] = useState(null);
 
   const channelEmit = useChannel({
@@ -182,6 +182,10 @@ function KebabMenu({ buildId, webUrl, reviewState, onBack, onApproved }) {
         a.click();
         URL.revokeObjectURL(url);
       }
+    },
+    [PERCY_EVENTS.BUILD_MERGED]: (data) => {
+      setActionLoading(null);
+      if (data.success && onApproved) onApproved();
     }
   });
 
@@ -189,7 +193,11 @@ function KebabMenu({ buildId, webUrl, reviewState, onBack, onApproved }) {
     ? webUrl.replace(/\/builds\/\d+$/, '/settings')
     : null;
 
-  const isApproved = reviewState === 'approved';
+  const isMerged = reviewState === 'merged';
+  const isApproved = reviewState === 'approved' || isMerged;
+  const isBranchline = projectDetails?.workflow === 'branchline';
+  const hasDiffs = reviewStateReason !== 'no_diffs';
+  const showMergeBuild = isBranchline && hasDiffs && (isApproved || isMerged);
 
   const handleMenuAction = useCallback((optionId) => {
     switch (optionId) {
@@ -208,6 +216,12 @@ function KebabMenu({ buildId, webUrl, reviewState, onBack, onApproved }) {
           channelEmit(PERCY_EVENTS.APPROVE_BUILD, { buildId });
         }
         break;
+      case 'merge-build':
+        if (!isMerged) {
+          setActionLoading('merge-build');
+          channelEmit(PERCY_EVENTS.MERGE_BUILD, { buildId });
+        }
+        break;
       case 'reject-build':
         setActionLoading('reject-build');
         channelEmit(PERCY_EVENTS.REJECT_BUILD, { buildId });
@@ -217,7 +231,7 @@ function KebabMenu({ buildId, webUrl, reviewState, onBack, onApproved }) {
         channelEmit(PERCY_EVENTS.DELETE_BUILD, { buildId });
         break;
     }
-  }, [buildId, settingsUrl, channelEmit, isApproved]);
+  }, [buildId, settingsUrl, channelEmit, isApproved, isMerged]);
 
   return (
     <Dropdown align="end" side="bottom">
@@ -243,6 +257,13 @@ function KebabMenu({ buildId, webUrl, reviewState, onBack, onApproved }) {
           option={{ id: 'approve-build', body: 'Approve build', icon: <MdCheck className="w-4 h-4" /> }}
           onClick={() => handleMenuAction('approve-build')}
         />
+        {showMergeBuild && (
+          <DropdownOptionItem
+            disabled={isMerged}
+            option={{ id: 'merge-build', body: isMerged ? 'Build merged' : 'Merge build', icon: <MdCallMerge className="w-4 h-4" /> }}
+            onClick={() => handleMenuAction('merge-build')}
+          />
+        )}
         <DropdownOptionItem
           option={{ id: 'reject-build', body: 'Reject build', icon: <MdClose className="w-4 h-4" /> }}
           onClick={() => handleMenuAction('reject-build')}
@@ -259,7 +280,8 @@ function KebabMenu({ buildId, webUrl, reviewState, onBack, onApproved }) {
 /* ─── Main Header Export ───────────────────────────────────────────────── */
 
 export default function ReviewHeader({
-  buildNumber, webUrl, buildId, reviewState, currentSnapshots, selectedSnapshotId,
+  buildNumber, webUrl, buildId, reviewState, reviewStateReason, projectDetails,
+  currentSnapshots, selectedSnapshotId,
   emit, currentStory, onBack, onApproved
 }) {
   return (
@@ -279,7 +301,7 @@ export default function ReviewHeader({
           </a>
         )}
         <RunStorySplitButton emit={emit} currentStory={currentStory} />
-        <KebabMenu buildId={buildId} webUrl={webUrl} reviewState={reviewState} onBack={onBack} onApproved={onApproved} />
+        <KebabMenu buildId={buildId} webUrl={webUrl} reviewState={reviewState} reviewStateReason={reviewStateReason} projectDetails={projectDetails} onBack={onBack} onApproved={onApproved} />
       </div>
     </div>
   );

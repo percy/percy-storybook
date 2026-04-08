@@ -107,7 +107,7 @@ function ReviewContent({ snapshotId, buildId, onReviewComplete }) {
 /* ─── Main Component ──────────────────────────────────────────────────── */
 
 export default function ReviewPage({
-  buildId, buildNumber, buildMeta, webUrl, currentStoryId, currentStory, onBack, onApproved,
+  buildId, buildNumber, buildMeta, projectDetails, webUrl, currentStoryId, currentStory, onBack, onApproved,
   groupedItems, authToken, itemsLoading: loading, itemsError: error, retryItems: retry,
   emit
 }) {
@@ -221,6 +221,7 @@ export default function ReviewPage({
           buildId={buildId}
           reviewState={buildMeta?.reviewState}
           reviewStateReason={buildMeta?.reviewStateReason}
+          projectDetails={projectDetails}
           currentSnapshots={[]}
           selectedSnapshotId={null}
           emit={emit}
@@ -245,6 +246,7 @@ export default function ReviewPage({
         buildId={buildId}
         reviewState={buildMeta?.reviewState}
         reviewStateReason={buildMeta?.reviewStateReason}
+        projectDetails={projectDetails}
         currentSnapshots={currentSnapshots}
         selectedSnapshotId={selectedSnapshotId}
         emit={emit}
@@ -292,12 +294,16 @@ export default function ReviewPage({
                   onReviewComplete={handleReviewComplete}
                   headBranch={buildMeta?.headBranch || ''}
                   baseBranch={buildMeta?.baseBranch || ''}
-                  projectType="web"
+                  projectType={buildMeta?.buildType || 'web'}
                   buildAttributes={{
+                    type: buildMeta?.buildType || 'web',
                     reviewState: buildMeta?.reviewState,
                     reviewStateReason: buildMeta?.reviewStateReason,
-                    finishedAt: buildMeta?.finishedAt,
-                    baseBuildFinishedAt: buildMeta?.baseBuildFinishedAt
+                    workflowType: projectDetails?.workflow || 'default',
+                    isBaseBranch: !!(buildMeta?.headBranch && projectDetails?.defaultBaseBranch && buildMeta.headBranch === projectDetails.defaultBaseBranch),
+                    isDeleted: false,
+                    finishedAt: buildMeta?.finishedAt || null,
+                    baseBuildFinishedAt: buildMeta?.baseBuildFinishedAt || null
                   }}
                 >
                   <ReviewContent

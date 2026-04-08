@@ -90,6 +90,33 @@ function setPercyToken(token) {
   writeEnvRaw(content);
 }
 
+/* ─── Project details helper ──────────────────────────────────────────── */
+
+/**
+ * Fetch project details (workflow, default base branch) from Percy API.
+ * Returns { workflow, defaultBaseBranch } or null on failure.
+ */
+async function fetchProjectDetails(projectId, username, accessKey) {
+  const res = await loggedFetch(
+    `${PERCY_API_BASE}/projects/${projectId}`,
+    {
+      headers: {
+        Authorization: `Basic ${basicAuth(username, accessKey)}`,
+        'Content-Type': 'application/json'
+      }
+    },
+    'fetch-project-details'
+  );
+  if (!res.ok) return null;
+  const json = await res.json();
+  const projectAttrs = json.data?.attributes;
+  if (!projectAttrs) return null;
+  return {
+    workflow: projectAttrs.workflow || 'default',
+    defaultBaseBranch: projectAttrs['default-base-branch'] || ''
+  };
+}
+
 /* ─── Build restore helper ─────────────────────────────────────────────── */
 
 /**
@@ -112,9 +139,10 @@ async function fetchLastBuild(buildIdRaw, username, accessKey) {
   const json = await res.json();
   const attrs = json.data.attributes;
 
-  // Extract branch names and timestamps
+  // Extract branch names, timestamps, and build type
   const headBranch = attrs.branch || '';
   const finishedAt = attrs['finished-at'] || null;
+  const buildType = attrs.type || 'web';
   let baseBranch = '';
   let baseBuildFinishedAt = null;
   const baseBuildRel = json.data.relationships?.['base-build']?.data;
@@ -131,10 +159,13 @@ async function fetchLastBuild(buildIdRaw, username, accessKey) {
     state: attrs.state,
     buildNumber: attrs['build-number'],
     webUrl: attrs['web-url'],
+    reviewState: attrs['review-state'] || null,
+    reviewStateReason: attrs['review-state-reason'] || null,
     headBranch,
     baseBranch,
     finishedAt,
     baseBuildFinishedAt,
+    buildType,
     meta: json.meta || null
   };
 }
@@ -165,8 +196,8 @@ function registerProjectConfigHandlers(channel) {
       const hasValidToken = !!envVars.PERCY_TOKEN;
       const lastBuildId = envVars.PERCY_LAST_TRIGGER_BUILD;
 
-      // Parallelize: validate credentials AND fetch last build status
-      const [credResult, buildResult] = await Promise.allSettled([
+      // Parallelize: validate credentials, fetch last build, and fetch project details
+      const [credResult, buildResult, projectDetailsResult] = await Promise.allSettled([
         loggedFetch(
           'https://percy.io/api/v1/user',
           {
@@ -179,11 +210,15 @@ function registerProjectConfigHandlers(channel) {
         ),
         (lastBuildId && /^\d{1,20}$/.test(lastBuildId))
           ? fetchLastBuild(lastBuildId, username, accessKey)
+          : Promise.resolve(null),
+        project?.id
+          ? fetchProjectDetails(project.id, username, accessKey)
           : Promise.resolve(null)
       ]);
 
       const credentialsValid = credResult.status === 'fulfilled' && credResult.value?.ok;
       const lastBuild = buildResult.status === 'fulfilled' ? buildResult.value : null;
+      const projectDetails = projectDetailsResult.status === 'fulfilled' ? projectDetailsResult.value : null;
 
       if (buildResult.status === 'rejected') {
         console.warn('Failed to restore last build:', buildResult.reason?.message);
@@ -215,6 +250,7 @@ function registerProjectConfigHandlers(channel) {
         username,
         accessKey,
         project,
+        projectDetails,
         hasValidToken: tokenValid,
         lastBuild
       });

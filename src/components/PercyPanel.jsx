@@ -17,7 +17,7 @@ import { ReviewPageLoader } from './ReviewPageLoader';
 import { Wrapper, Header, LogoArea, HeaderActions, ScrollBody, Card } from './PercyPanel.styles.js';
 
 export function PercyPanel({ active }) {
-  const { view, credentials, selectedProject, buildMeta, transition, VIEWS } = usePercyPanelState();
+  const { view, credentials, selectedProject, projectDetails, buildMeta, transition, VIEWS } = usePercyPanelState();
   const { emit, snapshotStatus, buildId, buildUrl, buildNumber, snapshotError, snapshotScope, setScope, currentStory } =
     useSnapshotChannel(transition, view, VIEWS);
 
@@ -88,6 +88,7 @@ export function PercyPanel({ active }) {
         buildId={buildMeta?.buildId || buildId}
         buildNumber={buildMeta?.buildNumber || buildNumber}
         buildMeta={buildMeta}
+        projectDetails={projectDetails}
         webUrl={buildMeta?.webUrl || buildUrl}
         currentStoryId={currentStory?.id}
         currentStory={currentStory}

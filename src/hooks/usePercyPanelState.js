@@ -22,6 +22,7 @@ export function usePercyPanelState() {
   const [view, setView] = useState(VIEWS.INITIALIZING);
   const [credentials, setCredentials] = useState({ username: '', accessKey: '' });
   const [selectedProject, setSelectedProject] = useState(null);
+  const [projectDetails, setProjectDetails] = useState(null);
   const [buildMeta, setBuildMeta] = useState(null);
 
   const transition = useCallback((event, payload) => {
@@ -30,6 +31,7 @@ export function usePercyPanelState() {
       case 'RESTORE_FULL':
         setCredentials(payload.credentials);
         setSelectedProject(payload.project);
+        if (payload.projectDetails) setProjectDetails(payload.projectDetails);
         setView(VIEWS.TRIGGER_BUILD);
         break;
       case 'RESTORE_CREDS_ONLY':
@@ -68,9 +70,10 @@ export function usePercyPanelState() {
 
       // Build restore (startup with previous build)
       case 'RESTORE_WITH_BUILD':
-        // payload: { credentials, project, lastBuild }
+        // payload: { credentials, project, projectDetails, lastBuild }
         setCredentials(payload.credentials);
         setSelectedProject(payload.project);
+        if (payload.projectDetails) setProjectDetails(payload.projectDetails);
         setBuildMeta(payload.lastBuild);
         setView(payload.lastBuild.state === 'finished' ? VIEWS.REVIEW : VIEWS.BUILD_PROGRESS);
         break;
@@ -110,5 +113,5 @@ export function usePercyPanelState() {
     }
   }, []);
 
-  return { view, credentials, selectedProject, buildMeta, transition, VIEWS };
+  return { view, credentials, selectedProject, projectDetails, buildMeta, transition, VIEWS };
 }

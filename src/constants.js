@@ -52,7 +52,10 @@ export const PERCY_EVENTS = {
   DELETE_BUILD: `${ADDON_ID}/delete-build`,
   BUILD_DELETED: `${ADDON_ID}/build-deleted`,
   DOWNLOAD_BUILD_LOGS: `${ADDON_ID}/download-build-logs`,
-  BUILD_LOGS_DOWNLOADED: `${ADDON_ID}/build-logs-downloaded`
+  BUILD_LOGS_DOWNLOADED: `${ADDON_ID}/build-logs-downloaded`,
+  // Branchline merge (build-level)
+  MERGE_BUILD: `${ADDON_ID}/merge-build`,
+  BUILD_MERGED: `${ADDON_ID}/build-merged`
 };
 
 export const STORAGE_KEYS = {
