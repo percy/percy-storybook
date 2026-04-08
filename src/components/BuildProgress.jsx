@@ -32,6 +32,8 @@ export function BuildProgress({ buildId, buildUrl, buildNumber, snapshotScope, o
         reviewStateReason: buildData.reviewStateReason,
         headBranch: buildData.headBranch,
         baseBranch: buildData.baseBranch,
+        finishedAt: buildData.finishedAt,
+        baseBuildFinishedAt: buildData.baseBuildFinishedAt,
         meta: buildData.meta
       });
     }

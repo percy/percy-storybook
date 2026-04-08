@@ -292,9 +292,12 @@ export default function ReviewPage({
                   onReviewComplete={handleReviewComplete}
                   headBranch={buildMeta?.headBranch || ''}
                   baseBranch={buildMeta?.baseBranch || ''}
+                  projectType="web"
                   buildAttributes={{
                     reviewState: buildMeta?.reviewState,
-                    reviewStateReason: buildMeta?.reviewStateReason
+                    reviewStateReason: buildMeta?.reviewStateReason,
+                    finishedAt: buildMeta?.finishedAt,
+                    baseBuildFinishedAt: buildMeta?.baseBuildFinishedAt
                   }}
                 >
                   <ReviewContent

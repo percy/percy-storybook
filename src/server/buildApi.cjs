@@ -41,15 +41,18 @@ function registerBuildApiHandlers(channel) {
       const json = await res.json();
       const attrs = json.data.attributes;
 
-      // Extract branch names: head branch from build, base branch from included base-build
+      // Extract branch names and timestamps: head from build, base from included base-build
       const headBranch = attrs.branch || '';
+      const finishedAt = attrs['finished-at'] || null;
       let baseBranch = '';
+      let baseBuildFinishedAt = null;
       const baseBuildRel = json.data.relationships?.['base-build']?.data;
       if (baseBuildRel?.id && Array.isArray(json.included)) {
         const baseBuild = json.included.find(
           inc => inc.type === 'builds' && inc.id === baseBuildRel.id
         );
         baseBranch = baseBuild?.attributes?.branch || '';
+        baseBuildFinishedAt = baseBuild?.attributes?.['finished-at'] || null;
       }
 
       channel.emit(PERCY_EVENTS.BUILD_STATUS_FETCHED, {
@@ -68,6 +71,8 @@ function registerBuildApiHandlers(channel) {
         reviewStateReason: attrs['review-state-reason'],
         headBranch,
         baseBranch,
+        finishedAt,
+        baseBuildFinishedAt,
         meta: json.meta || null
       });
     } catch (err) {
