@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  stories: ['../*.stories.js'],
+  stories: ['*.stories.js'],
   addons: [
     // Load the Percy preset directly from the local source tree
     // (no publish / npm link needed)

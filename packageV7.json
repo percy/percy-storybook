@@ -45,7 +45,7 @@
   },
   "type": "module",
   "scripts": {
-    "build": "babel src --out-dir dist",
+    "build": "babel src --out-dir dist --ignore src/components,src/hooks,src/styles",
     "clean": "git clean -Xdf -e !node_modules -e !node_modules/**",
     "lint": "eslint --ignore-path .gitignore .",
     "readme": "percy-cli-readme",
