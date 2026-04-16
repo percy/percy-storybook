@@ -170,4 +170,4 @@ function registerSnapshotHandlers(channel) {
   });
 }
 
-module.exports = { runPercyBuild, registerSnapshotHandlers };
+module.exports = { runPercyBuild, registerSnapshotHandlers, runAsyncGenerator };
