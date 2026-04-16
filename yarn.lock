@@ -1205,8 +1205,10 @@
     react-select "github:bonzoSPb/react-select"
     typescript "5.8.3"
 
-"@browserstack/review-viewer@file:../../ai/frontend/packages/review-viewer":
-  version "0.1.0"
+"@browserstack/review-viewer@^0.1.1":
+  version "0.1.1"
+  resolved "https://npm.pkg.github.com/download/@browserstack/review-viewer/0.1.1/3ed941c8e759561c28678cf3873809fc0d3b908a#3ed941c8e759561c28678cf3873809fc0d3b908a"
+  integrity sha512-qgzY27E1DWjSdlLA1FNwuTZd0RYDo9+jlP/dT2DiSrMygoSL6cLXT0rMzobavIqyAPRgFFWHyt+ISxj/PCw/Kw==
   dependencies:
     "@browserstack/integrations" "3.9.0"
     "@internationalized/date" "3.1.0"

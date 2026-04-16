@@ -1,9 +1,6 @@
-import { resolve } from 'path';
 import { readFileSync } from 'fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-
-const rvBase = resolve('node_modules/@browserstack/review-viewer');
 
 /**
  * Stub plugin: provides empty modules for monorepo-internal imports
@@ -115,20 +112,6 @@ export default defineConfig({
   },
 
   resolve: {
-    alias: [
-      // Resolve @browserstack/review-viewer barrel import to source (not dist).
-      // This matches the Percy frontend's Vite alias strategy and ensures
-      // ReviewViewerProvider and ReviewSection share the same createContext().
-      {
-        find: /^@browserstack\/review-viewer$/,
-        replacement: resolve(rvBase, 'index.js')
-      },
-      // Resolve subpath imports (e.g. /modules/ReviewSection) to source directory
-      {
-        find: /^@browserstack\/review-viewer\//,
-        replacement: `${rvBase}/`
-      }
-    ],
     // Ensure all deps resolve to a single copy — prevents duplicate contexts
     dedupe: ['react', 'react-dom', 'react-redux', '@reduxjs/toolkit'],
     extensions: ['.js', '.jsx', '.mjs']

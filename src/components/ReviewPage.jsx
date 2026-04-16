@@ -2,10 +2,10 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { Button, LoaderV2 } from '@browserstack/design-stack';
-import { styled } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming';
 import { MemoryRouter } from 'react-router-dom';
 import { ReviewViewerProvider, useSnapshotReview, useReviewViewerApi } from '@browserstack/review-viewer';
-import ReviewSection from '@browserstack/review-viewer/modules/ReviewSection';
+import ReviewSection from '@browserstack/review-viewer/ReviewSection';
 import { experimental_getStatusStore } from 'storybook/manager-api'; // eslint-disable-line camelcase
 import { ADDON_ID } from '../constants.js';
 import { getReviewStateDisplay, formatDiffPercent } from '../utils/reviewState.js';
@@ -111,8 +111,16 @@ export default function ReviewPage({
   groupedItems, authToken, itemsLoading: loading, itemsError: error, retryItems: retry,
   emit
 }) {
+  const theme = useTheme();
+  const isDark = theme?.base === 'dark';
   const [selectedSnapshotId, setSelectedSnapshotId] = useState(null);
   const [currentGroup, setCurrentGroup] = useState(null);
+
+  // Sync .dark class on <html> so Tailwind dark mode applies to portaled elements (tooltips, dropdowns)
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark);
+    return () => document.documentElement.classList.remove('dark');
+  }, [isDark]);
 
   // Update sidebar status + global review data when items are loaded
   useEffect(() => {
@@ -270,7 +278,7 @@ export default function ReviewPage({
                   alignItems: 'center',
                   gap: '8px',
                   zIndex: 10,
-                  background: 'var(--ds-surface-default, #fff)'
+                  background: theme?.background?.content || 'var(--ds-surface-default, #fff)'
                 }}
               >
                 <SnapshotSelector

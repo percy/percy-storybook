@@ -103,7 +103,7 @@
     "@browserstack/design-stack": "8.17.0",
     "@browserstack/design-stack-icons": "2.8.0",
     "@browserstack/hooks": "2.5.1",
-    "@browserstack/review-viewer": "file:/Users/pradumkumar/ai/frontend/packages/review-viewer",
+    "@browserstack/review-viewer": "^0.1.1",
     "@browserstack/tailwind-config": "1.2.0",
     "@browserstack/utils": "5.10.0",
     "@reduxjs/toolkit": "1.9.1",
