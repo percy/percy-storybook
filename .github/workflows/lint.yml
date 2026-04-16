@@ -19,7 +19,7 @@ jobs:
           key: ${{ runner.os }}/node-22/${{ hashFiles('**/yarn.lock') }}
           restore-keys: ${{ runner.os }}/node-22/
       - name: Authenticate GitHub Packages
-        run: cp .npmrc.config .npmrc && sed -i 's/_AUTH_TOKEN_/${{ secrets.GITHUB_TOKEN }}/' .npmrc
+        run: cp .npmrc.config .npmrc && sed -i 's/_AUTH_TOKEN_/${{ secrets.NODE_AUTH_TOKEN }}/' .npmrc
       - run: yarn
         env:
           PERCY_POSTINSTALL_BROWSER: true

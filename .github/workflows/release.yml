@@ -12,7 +12,7 @@ jobs:
         node-version: 22
         registry-url: 'https://registry.npmjs.org'
     - name: Authenticate GitHub Packages
-      run: cp .npmrc.config .npmrc && sed -i 's/_AUTH_TOKEN_/${{ secrets.GITHUB_TOKEN }}/' .npmrc
+      run: cp .npmrc.config .npmrc && sed -i 's/_AUTH_TOKEN_/${{ secrets.NODE_AUTH_TOKEN }}/' .npmrc
     - run: yarn
     - run: yarn build
     - run: npm publish
