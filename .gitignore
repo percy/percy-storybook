@@ -16,4 +16,3 @@ CLAUDE.md
 *.log
 log/
 .env
-.npmrc

@@ -39,6 +39,7 @@ jobs:
       - run: yarn
         env:
           PERCY_POSTINSTALL_BROWSER: true
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: yarn build
       - name: Debug npm info storybook
         run: |

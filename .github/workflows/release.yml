@@ -12,6 +12,8 @@ jobs:
         node-version: 22
         registry-url: 'https://registry.npmjs.org'
     - run: yarn
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - run: yarn build
     - run: npm publish
       env:
