@@ -25,7 +25,9 @@ export function CreateProject({ username, accessKey, onProjectCreated, onBack })
         createdProjectRef.current = project;
         emit(PERCY_EVENTS.SAVE_PROJECT_CONFIG, {
           projectId: project.id,
-          projectName: project.name
+          projectName: project.name,
+          username,
+          accessKey
         });
       } else {
         setError(errMsg || 'Failed to create project. Please try again.');
@@ -59,7 +61,9 @@ export function CreateProject({ username, accessKey, onProjectCreated, onBack })
     setError('');
     emit(PERCY_EVENTS.SAVE_PROJECT_CONFIG, {
       projectId: createdProject.id,
-      projectName: createdProject.name
+      projectName: createdProject.name,
+      username,
+      accessKey
     });
   };
 

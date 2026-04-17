@@ -68,7 +68,9 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
     setSaveError('');
     emit(PERCY_EVENTS.SAVE_PROJECT_CONFIG, {
       projectId: selectedProject.id,
-      projectName: selectedProject.name
+      projectName: selectedProject.name,
+      username,
+      accessKey
     });
   };
 

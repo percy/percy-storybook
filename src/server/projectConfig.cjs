@@ -264,8 +264,11 @@ function registerProjectConfigHandlers(channel) {
   });
 
   // Save project config: write .percy.yml, fetch token, update .env
-  channel.on(PERCY_EVENTS.SAVE_PROJECT_CONFIG, ({ projectId, projectName }) => {
-    const { username, accessKey } = readBsCredentials();
+  channel.on(PERCY_EVENTS.SAVE_PROJECT_CONFIG, ({ projectId, projectName, username: payloadUser, accessKey: payloadKey }) => {
+    // Use credentials from payload (session-only mode) or fall back to .env
+    const envCreds = readBsCredentials();
+    const username = payloadUser || envCreds.username;
+    const accessKey = payloadKey || envCreds.accessKey;
     if (!username || !accessKey) {
       channel.emit(PERCY_EVENTS.PROJECT_CONFIG_SAVED, {
         success: false,
