@@ -112,15 +112,8 @@ export default function ReviewPage({
   emit
 }) {
   const theme = useTheme();
-  const isDark = theme?.base === 'dark';
   const [selectedSnapshotId, setSelectedSnapshotId] = useState(null);
   const [currentGroup, setCurrentGroup] = useState(null);
-
-  // Sync .dark class on <html> so Tailwind dark mode applies to portaled elements (tooltips, dropdowns)
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDark);
-    return () => document.documentElement.classList.remove('dark');
-  }, [isDark]);
 
   // Update sidebar status + global review data when items are loaded
   useEffect(() => {

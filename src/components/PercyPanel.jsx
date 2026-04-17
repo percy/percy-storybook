@@ -3,6 +3,7 @@ import { Button, LoaderV2 } from '@browserstack/design-stack';
 import { MdOutlineOpenInNew, MdOutlineVpnKey } from '@browserstack/design-stack-icons';
 import DSIBStack from '@browserstack/design-stack-icons/dist/DSIBStack';
 import { useChannel } from 'storybook/manager-api';
+import { useTheme } from 'storybook/theming';
 import { PERCY_EVENTS } from '../constants.js';
 import { usePercyPanelState } from '../hooks/usePercyPanelState.js';
 import { useSnapshotChannel } from '../hooks/useSnapshotChannel.js';
@@ -20,6 +21,14 @@ export function PercyPanel({ active }) {
   const { view, credentials, selectedProject, projectDetails, buildMeta, transition, VIEWS } = usePercyPanelState();
   const { emit, snapshotStatus, buildId, buildUrl, buildNumber, snapshotError, snapshotScope, setScope, currentStory } =
     useSnapshotChannel(transition, view, VIEWS);
+
+  // Sync .dark class on <html> so design-stack Tailwind tokens switch to dark values
+  const theme = useTheme();
+  useEffect(() => {
+    const isDark = theme?.base === 'dark';
+    document.documentElement.classList.toggle('dark', isDark);
+    return () => document.documentElement.classList.remove('dark');
+  }, [theme?.base]);
 
   // Defer build items fetch until the panel has been activated at least once
   const [panelActivated, setPanelActivated] = useState(false);
