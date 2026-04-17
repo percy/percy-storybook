@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { styled } from 'storybook/theming';
 import { useChannel } from 'storybook/manager-api';
-import { Alert, AlertTitle, AlertDescription, Button, InputField } from '@browserstack/design-stack';
+import {
+  Alert, AlertTitle, AlertDescription, Button, InputField,
+  Modal, ModalHeader, ModalBody, ModalFooter
+} from '@browserstack/design-stack';
 import MdOutlineVisibility from '@browserstack/design-stack-icons/dist/MdOutlineVisibility';
 import MdOutlineVisibilityOff from '@browserstack/design-stack-icons/dist/MdOutlineVisibilityOff';
 import ArrowTopRightOnSquareIcon from '@browserstack/design-stack-icons/dist/ArrowTopRightOnSquareIcon';
+import { MdInfoOutline } from '@browserstack/design-stack-icons';
 import { PERCY_EVENTS } from '../constants.js';
 
 /* ─── Styled components (layout only) ──────────────────────────────────── */
@@ -45,8 +49,11 @@ export function BrowserStackConnect({ onAuthenticated }) {
   const [saveError, setSaveError] = useState('');
   const [validationError, setValidationError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showConsent, setShowConsent] = useState(false);
   const usernameRef = useRef('');
   const accessKeyRef = useRef('');
+  // Track whether credentials were loaded from .env on mount (re-auth vs first-time)
+  const hadExistingCreds = useRef(false);
 
   const emit = useChannel({
     [PERCY_EVENTS.BS_CREDENTIALS_LOADED]: ({ username: u, accessKey: k }) => {
@@ -54,14 +61,22 @@ export function BrowserStackConnect({ onAuthenticated }) {
       setAccessKey(k || '');
       usernameRef.current = u || '';
       accessKeyRef.current = k || '';
+      hadExistingCreds.current = !!(u && k);
     },
     [PERCY_EVENTS.CREDENTIALS_VALIDATED]: ({ valid, error }) => {
       if (valid) {
         setValidationError('');
-        emit(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
-          username: usernameRef.current,
-          accessKey: accessKeyRef.current
-        });
+        // Re-auth (credentials already in .env) — skip consent, save directly
+        if (hadExistingCreds.current) {
+          emit(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
+            username: usernameRef.current,
+            accessKey: accessKeyRef.current
+          });
+        } else {
+          // First-time — show consent before writing to .env
+          setLoading(false);
+          setShowConsent(true);
+        }
       } else {
         setValidationError(error || 'Username/Access Key is incorrect');
         setLoading(false);
@@ -71,7 +86,7 @@ export function BrowserStackConnect({ onAuthenticated }) {
       setLoading(false);
       if (success) {
         setSaveError('');
-        onAuthenticated && onAuthenticated(usernameRef.current, accessKeyRef.current);
+        onAuthenticated && onAuthenticated(usernameRef.current, accessKeyRef.current, false);
       } else {
         setSaveError(error || 'Failed to save credentials');
       }
@@ -88,6 +103,21 @@ export function BrowserStackConnect({ onAuthenticated }) {
     accessKeyRef.current = key;
     setValidationError(''); setSaveError(''); setLoading(true);
     emit(PERCY_EVENTS.VALIDATE_CREDENTIALS, { username: user, accessKey: key });
+  }
+
+  function handleConsentAccept() {
+    setShowConsent(false);
+    setLoading(true);
+    emit(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
+      username: usernameRef.current,
+      accessKey: accessKeyRef.current
+    });
+  }
+
+  function handleConsentDecline() {
+    setShowConsent(false);
+    // Session-only mode: proceed without writing to .env
+    onAuthenticated && onAuthenticated(usernameRef.current, accessKeyRef.current, true);
   }
 
   return (
@@ -144,6 +174,30 @@ export function BrowserStackConnect({ onAuthenticated }) {
           <Alert variant="error"><AlertDescription>{saveError}</AlertDescription></Alert>
         </div>
       )}
+
+      {/* Consent dialog — shown after validation, before .env write */}
+      <Modal show={showConsent} onOverlayClick={() => {}} size="sm">
+        <ModalHeader heading="Store credentials locally?" icon={<MdInfoOutline />} />
+        <ModalBody>
+          <p className="text-sm text-neutral-default">
+            Your BrowserStack username and access key will be saved to{' '}
+            <code className="text-xs font-mono bg-neutral-strongest px-1 py-0.5 rounded">.env</code>{' '}
+            in your project root so the addon can authenticate automatically.
+          </p>
+          <p className="text-sm text-neutral-weaker mt-2">
+            Make sure <code className="text-xs font-mono bg-neutral-strongest px-1 py-0.5 rounded">.env</code> is
+            in your <code className="text-xs font-mono bg-neutral-strongest px-1 py-0.5 rounded">.gitignore</code>.
+          </p>
+        </ModalBody>
+        <ModalFooter position="right">
+          <Button variant="primary" colors="white" onClick={handleConsentDecline}>
+            Not now
+          </Button>
+          <Button variant="primary" onClick={handleConsentAccept}>
+            Save to .env
+          </Button>
+        </ModalFooter>
+      </Modal>
     </Container>
   );
 }

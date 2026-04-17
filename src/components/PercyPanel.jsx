@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, LoaderV2 } from '@browserstack/design-stack';
+import { Alert, AlertDescription, Button, LoaderV2 } from '@browserstack/design-stack';
 import { MdOutlineOpenInNew, MdOutlineVpnKey } from '@browserstack/design-stack-icons';
 import DSIBStack from '@browserstack/design-stack-icons/dist/DSIBStack';
 import { useChannel } from 'storybook/manager-api';
@@ -69,9 +69,14 @@ export function PercyPanel({ active }) {
     retryItems();
   }, [buildMeta?.buildId, emitChannel, retryItems]);
 
+  // Session-only mode: credentials in memory, not persisted to .env
+  const [sessionOnly, setSessionOnly] = useState(false);
+  const [sessionBannerDismissed, setSessionBannerDismissed] = useState(false);
+
   if (!active) return null;
 
-  const handleAuthenticated = (username, accessKey) => {
+  const handleAuthenticated = (username, accessKey, isSessionOnly) => {
+    if (isSessionOnly) setSessionOnly(true);
     transition('AUTHENTICATED', { username, accessKey });
   };
 
@@ -154,6 +159,15 @@ export function PercyPanel({ active }) {
             )}
           </HeaderActions>
         </Header>
+      )}
+      {sessionOnly && !sessionBannerDismissed && view !== VIEWS.AUTH && (
+        <div style={{ padding: '8px 16px', flexShrink: 0 }}>
+          <Alert variant="info" dismissButton onClose={() => setSessionBannerDismissed(true)}>
+            <AlertDescription>
+              Credentials are not saved. You'll need to re-enter them next session.
+            </AlertDescription>
+          </Alert>
+        </div>
       )}
       <ScrollBody>
         <Card>
