@@ -1,5 +1,7 @@
 /**
  * Constants for Percy Storybook Addon
+ *
+ * NOTE: Keep in sync with constants.cjs (CJS version for server-side modules).
  */
 
 export const ADDON_ID = 'percy-storybook';

@@ -48,10 +48,10 @@ export const ResultsList = styled.div`
 export const ResultItem = styled.div`
   padding: 10px 16px; cursor: pointer;
   border-bottom: 1px solid ${p => p.theme.appBorderColor};
-  border-left: 3px solid ${p => p.selected ? '#2563eb' : 'transparent'};
-  background: ${p => p.selected ? '#eff6ff' : 'transparent'};
+  border-left: 3px solid ${p => p.selected ? p.theme.color.secondary : 'transparent'};
+  background: ${p => p.selected ? (p.theme.base === 'dark' ? 'rgba(30, 167, 253, 0.1)' : 'rgba(30, 167, 253, 0.06)') : 'transparent'};
   &:last-child { border-bottom: none; }
-  &:hover { background: ${p => p.selected ? '#eff6ff' : p.theme.background.hoverable}; }
+  &:hover { background: ${p => p.selected ? (p.theme.base === 'dark' ? 'rgba(30, 167, 253, 0.1)' : 'rgba(30, 167, 253, 0.06)') : p.theme.background.hoverable}; }
 `;
 
 export const ProjectName = styled.div`font-weight: 600; font-size: 14px;`;
@@ -73,7 +73,7 @@ export const CreateLink = styled.div`
   padding: 10px 16px; cursor: pointer; display: flex;
   align-items: center; justify-content: space-between;
   border-top: 1px solid ${p => p.theme.appBorderColor};
-  color: #2563eb; font-size: 14px; font-weight: 600;
+  color: ${p => p.theme.color.secondary}; font-size: 14px; font-weight: 600;
   &:hover { background: ${p => p.theme.background.hoverable}; }
 `;
 

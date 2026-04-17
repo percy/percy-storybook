@@ -77,8 +77,6 @@ export function TriggerBuild({
       }
     }
 
-    console.log('[percy-trigger]', { scope, currentStory, include, storyIdsCount: storyIds.size });
-
     emit(PERCY_EVENTS.RUN_SNAPSHOT, {
       baseUrl: getStorybookBaseUrl(),
       include,

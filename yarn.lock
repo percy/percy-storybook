@@ -2302,7 +2302,7 @@
     pac-proxy-agent "^7.0.2"
     pako "^2.1.0"
 
-"@percy/config@1.31.11":
+"@percy/config@1.31.11", "@percy/config@^1.31.10":
   version "1.31.11"
   resolved "https://registry.yarnpkg.com/@percy/config/-/config-1.31.11.tgz#5c311e88ce4d69d7ab0ad92646b629c849daafd9"
   integrity sha512-ETMiyMH9Oq5DXjZzJakgA7wt5ttNc5eGJWVsdmWwZhPEbHqJ9cS8p+YtM1xXOQajNxndLtjPdg53fsEI5O/Khg==

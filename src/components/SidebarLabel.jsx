@@ -52,8 +52,8 @@ const Spinner = styled.span`
   display: inline-block;
   width: 12px;
   height: 12px;
-  border: 2px solid #e0e0e0;
-  border-top-color: #1ea7fd;
+  border: 2px solid ${p => p.theme.appBorderColor};
+  border-top-color: ${p => p.theme.color.secondary};
   border-radius: 50%;
   flex-shrink: 0;
   animation: percy-spin 0.8s linear infinite;
@@ -80,8 +80,8 @@ const ErrorIcon = styled.span`
   height: 14px;
   border-radius: 50%;
   flex-shrink: 0;
-  background-color: #EF4444;
-  color: #fff;
+  background-color: ${p => p.theme.color.negative};
+  color: ${p => p.theme.color.lightest};
   font-size: 9px;
   font-weight: 700;
   line-height: 1;
@@ -90,7 +90,7 @@ const ErrorIcon = styled.span`
 const Subtitle = styled.span`
   font-size: 11px;
   line-height: 1.2;
-  color: #999;
+  color: ${p => p.theme.color.mediumdark};
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -103,7 +103,7 @@ const Subtitle = styled.span`
 `;
 
 const DiffText = styled.span`
-  color: ${props => props.color || '#999'};
+  color: ${props => props.color || props.theme.color.mediumdark};
 
   [aria-current="page"] &,
   [data-selected="true"] & {
@@ -181,9 +181,9 @@ export function SidebarLabel({ item }) {
     const dotColor = display ? getDotColor(display.color) : null;
     const showReview = display && !isCapturing;
 
-    // Diff ratio is red when snapshot is not approved
+    // Diff ratio uses negative/error color when snapshot is not approved
     const isApproved = reviewInfo?.reviewState === 'approved';
-    const diffColor = (!isApproved && diffText) ? '#EF4444' : undefined;
+    const diffColor = (!isApproved && diffText) ? 'var(--colors-danger-500, #EF4444)' : undefined;
 
     return (
       <LabelWrapper>

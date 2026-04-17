@@ -25,7 +25,7 @@ const FieldWrapper = styled.div`margin-bottom: 20px;`;
 const AlertWrapper = styled.div`margin-bottom: 28px;`;
 
 const InfoLink = styled.a`
-  font-size: 13px; color: #1a56db; text-decoration: none;
+  font-size: 13px; color: ${p => p.theme.color.secondary}; text-decoration: none;
   display: inline-flex; align-items: center; gap: 5px; margin-top: 8px;
   &:hover { text-decoration: underline; }
 `;
