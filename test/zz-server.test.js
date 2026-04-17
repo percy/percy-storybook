@@ -8,7 +8,7 @@ import {
 } from '../src/server/env.cjs';
 import { logApiCall, loggedFetch, getApiLogPath } from '../src/server/apiLogger.cjs';
 import {
-  readBsCredentials, writeBsCredentials, registerCredentialHandlers
+  readBsCredentials, writeBsCredentials, clearSessionCredentials, registerCredentialHandlers
 } from '../src/server/credentials.cjs';
 import { registerPercyApiHandlers } from '../src/server/percyApi.cjs';
 import { registerBuildItemsHandlers } from '../src/server/buildItems.cjs';
@@ -442,9 +442,14 @@ describe('Server / apiLogger.cjs', () => {
 
 describe('Server / credentials.cjs', () => {
   beforeEach(() => {
+    clearSessionCredentials();
     spyOn(fs, 'existsSync');
     spyOn(fs, 'readFileSync');
     spyOn(fs, 'writeFileSync');
+  });
+
+  afterEach(() => {
+    clearSessionCredentials();
   });
 
   describe('readBsCredentials', () => {
@@ -1771,6 +1776,7 @@ describe('Server / projectConfig.cjs', () => {
   let originalFetch;
 
   beforeEach(() => {
+    clearSessionCredentials();
     originalFetch = globalThis.fetch;
     spyOn(fs, 'existsSync');
     spyOn(fs, 'readFileSync');
@@ -1780,6 +1786,7 @@ describe('Server / projectConfig.cjs', () => {
   });
 
   afterEach(() => {
+    clearSessionCredentials();
     globalThis.fetch = originalFetch;
   });
 

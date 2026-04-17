@@ -20,6 +20,11 @@ function getSessionCredentials() {
   return { username: sessionCreds.username, accessKey: sessionCreds.accessKey };
 }
 
+function clearSessionCredentials() {
+  sessionCreds.username = '';
+  sessionCreds.accessKey = '';
+}
+
 /* ─── Helpers ──────────────────────────────────────────────────────────── */
 
 /**
@@ -110,5 +115,6 @@ module.exports = {
   writeBsCredentials,
   getSessionCredentials,
   setSessionCredentials,
+  clearSessionCredentials,
   registerCredentialHandlers
 };
