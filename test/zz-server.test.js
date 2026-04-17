@@ -8,7 +8,9 @@ import {
 } from '../src/server/env.cjs';
 import { logApiCall, loggedFetch, getApiLogPath } from '../src/server/apiLogger.cjs';
 import {
-  readBsCredentials, writeBsCredentials, clearSessionCredentials, registerCredentialHandlers
+  readBsCredentials, writeBsCredentials,
+  getSessionCredentials, setSessionCredentials, clearSessionCredentials,
+  registerCredentialHandlers
 } from '../src/server/credentials.cjs';
 import { registerPercyApiHandlers } from '../src/server/percyApi.cjs';
 import { registerBuildItemsHandlers } from '../src/server/buildItems.cjs';
@@ -529,6 +531,57 @@ describe('Server / credentials.cjs', () => {
     });
   });
 
+  describe('session credentials cache', () => {
+    it('getSessionCredentials returns empty strings by default', () => {
+      const creds = getSessionCredentials();
+      expect(creds.username).toBe('');
+      expect(creds.accessKey).toBe('');
+    });
+
+    it('setSessionCredentials updates the cache', () => {
+      setSessionCredentials('sess-user', 'sess-key');
+      const creds = getSessionCredentials();
+      expect(creds.username).toBe('sess-user');
+      expect(creds.accessKey).toBe('sess-key');
+    });
+
+    it('setSessionCredentials normalizes undefined to empty strings', () => {
+      setSessionCredentials(undefined, undefined);
+      const creds = getSessionCredentials();
+      expect(creds.username).toBe('');
+      expect(creds.accessKey).toBe('');
+    });
+
+    it('clearSessionCredentials resets both fields', () => {
+      setSessionCredentials('u', 'k');
+      clearSessionCredentials();
+      const creds = getSessionCredentials();
+      expect(creds.username).toBe('');
+      expect(creds.accessKey).toBe('');
+    });
+
+    it('readBsCredentials falls back to session cache when .env missing', () => {
+      fs.existsSync.and.returnValue(false);
+      setSessionCredentials('sess-u', 'sess-k');
+      const creds = readBsCredentials();
+      expect(creds.username).toBe('sess-u');
+      expect(creds.accessKey).toBe('sess-k');
+    });
+
+    it('readBsCredentials prefers .env over session cache', () => {
+      fs.existsSync.and.returnValue(true);
+      fs.readFileSync.and.callFake((p) => {
+        if (p.endsWith('.env')) return 'BROWSERSTACK_USERNAME=env-u\nBROWSERSTACK_ACCESS_KEY=env-k';
+        if (p.endsWith('package.json')) return '{"name":"app"}';
+        return '';
+      });
+      setSessionCredentials('sess-u', 'sess-k');
+      const creds = readBsCredentials();
+      expect(creds.username).toBe('env-u');
+      expect(creds.accessKey).toBe('env-k');
+    });
+  });
+
   describe('registerCredentialHandlers', () => {
     let channel;
 
@@ -585,6 +638,25 @@ describe('Server / credentials.cjs', () => {
         PERCY_EVENTS.BS_CREDENTIALS_SAVED,
         jasmine.objectContaining({ success: false, error: 'Failed to save credentials' })
       );
+    });
+
+    it('populates session cache on SET_SESSION_CREDENTIALS', async () => {
+      await channel.trigger(PERCY_EVENTS.SET_SESSION_CREDENTIALS, {
+        username: 'sess-u', accessKey: 'sess-k'
+      });
+      const creds = getSessionCredentials();
+      expect(creds.username).toBe('sess-u');
+      expect(creds.accessKey).toBe('sess-k');
+    });
+
+    it('populates session cache on successful SAVE_BS_CREDENTIALS', async () => {
+      fs.existsSync.and.returnValue(false);
+      await channel.trigger(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
+        username: 'saved-u', accessKey: 'saved-k'
+      });
+      const creds = getSessionCredentials();
+      expect(creds.username).toBe('saved-u');
+      expect(creds.accessKey).toBe('saved-k');
     });
   });
 });
@@ -2346,6 +2418,29 @@ describe('Server / projectConfig.cjs', () => {
         expect(channel.emit).toHaveBeenCalledWith(
           PERCY_EVENTS.PROJECT_CONFIG_SAVED,
           { success: false, error: 'BrowserStack credentials not found' }
+        );
+      });
+
+      it('uses credentials from payload when .env is empty (session-only mode)', async () => {
+        fs.existsSync.and.returnValue(false);
+
+        globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(
+          mockResponse({ data: [{ attributes: { role: 'master', token: 'tok-session' } }] })
+        );
+
+        await channel.trigger(PERCY_EVENTS.SAVE_PROJECT_CONFIG, {
+          projectId: 42,
+          projectName: 'P',
+          username: 'payload-u',
+          accessKey: 'payload-k'
+        });
+
+        // Wait for async token fetch
+        await new Promise(r => setTimeout(r, 50));
+
+        expect(channel.emit).toHaveBeenCalledWith(
+          PERCY_EVENTS.PROJECT_CONFIG_SAVED,
+          { success: true }
         );
       });
 
