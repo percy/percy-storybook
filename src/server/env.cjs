@@ -36,10 +36,15 @@ function parseEnv(content) {
  */
 function setKey(src, key, value) {
   if (String(value).includes('\n')) throw new Error(`Invalid value for ${key}: contains newline`);
-  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const re = new RegExp(`^${escapedKey}=.*$`, 'm');
   const line = `${key}=${value}`;
-  return re.test(src) ? src.replace(re, line) : (src.trim() ? `${src.trim()}\n${line}\n` : `${line}\n`);
+  const lines = src.split('\n');
+  const prefix = `${key}=`;
+  const idx = lines.findIndex(l => l.trimStart().startsWith(prefix));
+  if (idx !== -1) {
+    lines[idx] = line;
+    return lines.join('\n');
+  }
+  return src.trim() ? `${src.trim()}\n${line}\n` : `${line}\n`;
 }
 
 /**
