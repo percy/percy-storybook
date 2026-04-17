@@ -162,7 +162,7 @@ export function PercyPanel({ active }) {
       )}
       {sessionOnly && !sessionBannerDismissed && view !== VIEWS.AUTH && (
         <div style={{ padding: '8px 16px', flexShrink: 0 }}>
-          <Alert variant="info" dismissButton onClose={() => setSessionBannerDismissed(true)}>
+          <Alert variant="info" dismissCallback={() => setSessionBannerDismissed(true)}>
             <AlertDescription>
               Credentials are not saved. You'll need to re-enter them next session.
             </AlertDescription>

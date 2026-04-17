@@ -109,7 +109,7 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
 
       {saveError && (
         <div className="mt-2">
-          <Alert variant="ERROR" density="compact">
+          <Alert variant="error" density="compact">
             <AlertDescription>{saveError}</AlertDescription>
           </Alert>
         </div>
@@ -157,7 +157,7 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
           {hasMore && !loading && projects.length > 0 && <div ref={sentinelRef} style={{ height: 1 }} />}
           {error && (
             <div className="px-4 py-3">
-              <Alert variant="ERROR" density="compact">
+              <Alert variant="error" density="compact">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             </div>
