@@ -22,6 +22,7 @@ const PERCY_EVENTS = {
   BS_CREDENTIALS_LOADED: `${ADDON_ID}/bs-credentials-loaded`,
   SAVE_BS_CREDENTIALS: `${ADDON_ID}/save-bs-credentials`,
   BS_CREDENTIALS_SAVED: `${ADDON_ID}/bs-credentials-saved`,
+  SET_SESSION_CREDENTIALS: `${ADDON_ID}/set-session-credentials`,
   // Project config
   SAVE_PROJECT_CONFIG: `${ADDON_ID}/save-project-config`,
   PROJECT_CONFIG_SAVED: `${ADDON_ID}/project-config-saved`,

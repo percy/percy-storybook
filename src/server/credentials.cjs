@@ -5,6 +5,21 @@ const path = require('path');
 const { PERCY_EVENTS } = require('../constants.cjs');
 const { getEnvPath, setKey, readEnvRaw, writeEnvRaw } = require('./env.cjs');
 
+/* ─── Session cache ─────────────────────────────────────────────────────
+ * Holds credentials in server memory when the user declines .env consent.
+ * Cleared when the Storybook dev server restarts.
+ */
+const sessionCreds = { username: '', accessKey: '' };
+
+function setSessionCredentials(username, accessKey) {
+  sessionCreds.username = username || '';
+  sessionCreds.accessKey = accessKey || '';
+}
+
+function getSessionCredentials() {
+  return { username: sessionCreds.username, accessKey: sessionCreds.accessKey };
+}
+
 /* ─── Helpers ──────────────────────────────────────────────────────────── */
 
 /**
@@ -22,18 +37,24 @@ function getProjectName() {
 }
 
 /**
- * Read BROWSERSTACK_USERNAME + BROWSERSTACK_ACCESS_KEY from .env (if it exists).
+ * Read BROWSERSTACK_USERNAME + BROWSERSTACK_ACCESS_KEY.
+ * Checks .env first; falls back to session cache (session-only mode where
+ * the user declined to persist credentials to .env).
  */
 function readBsCredentials() {
   const { parseEnv } = require('./env.cjs');
   const envPath = getEnvPath();
-  if (!fs.existsSync(envPath)) return { username: '', accessKey: '', projectName: '' };
-  const parsed = parseEnv(fs.readFileSync(envPath, 'utf8'));
-  return {
-    username: parsed.BROWSERSTACK_USERNAME || '',
-    accessKey: parsed.BROWSERSTACK_ACCESS_KEY || '',
-    projectName: getProjectName()
-  };
+  let username = '';
+  let accessKey = '';
+  if (fs.existsSync(envPath)) {
+    const parsed = parseEnv(fs.readFileSync(envPath, 'utf8'));
+    username = parsed.BROWSERSTACK_USERNAME || '';
+    accessKey = parsed.BROWSERSTACK_ACCESS_KEY || '';
+  }
+  // Fall back to in-memory session cache
+  if (!username) username = sessionCreds.username;
+  if (!accessKey) accessKey = sessionCreds.accessKey;
+  return { username, accessKey, projectName: getProjectName() };
 }
 
 /**
@@ -66,6 +87,8 @@ function registerCredentialHandlers(channel) {
   channel.on(PERCY_EVENTS.SAVE_BS_CREDENTIALS, ({ username, accessKey }) => {
     try {
       writeBsCredentials(username, accessKey);
+      // Also populate session cache so in-flight handlers see the update immediately
+      setSessionCredentials(username, accessKey);
       channel.emit(PERCY_EVENTS.BS_CREDENTIALS_SAVED, { success: true });
     } catch (err) {
       channel.emit(PERCY_EVENTS.BS_CREDENTIALS_SAVED, {
@@ -74,6 +97,18 @@ function registerCredentialHandlers(channel) {
       });
     }
   });
+
+  // Session-only mode: user declined to persist to .env, but credentials
+  // must still be accessible to server handlers for the current session.
+  channel.on(PERCY_EVENTS.SET_SESSION_CREDENTIALS, ({ username, accessKey }) => {
+    setSessionCredentials(username, accessKey);
+  });
 }
 
-module.exports = { readBsCredentials, writeBsCredentials, registerCredentialHandlers };
+module.exports = {
+  readBsCredentials,
+  writeBsCredentials,
+  getSessionCredentials,
+  setSessionCredentials,
+  registerCredentialHandlers
+};

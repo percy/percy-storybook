@@ -116,7 +116,13 @@ export function BrowserStackConnect({ onAuthenticated }) {
 
   function handleConsentDecline() {
     setShowConsent(false);
-    // Session-only mode: proceed without writing to .env
+    // Session-only mode: push credentials to the server's in-memory cache
+    // so server handlers (build polling, project fetch, etc.) can use them
+    // without reading from .env.
+    emit(PERCY_EVENTS.SET_SESSION_CREDENTIALS, {
+      username: usernameRef.current,
+      accessKey: accessKeyRef.current
+    });
     onAuthenticated && onAuthenticated(usernameRef.current, accessKeyRef.current, true);
   }
 
