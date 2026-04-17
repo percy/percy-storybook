@@ -379,7 +379,9 @@ describe('Server / apiLogger.cjs', () => {
 
     it('handles response with null headers', async () => {
       const resp = {
-        ok: true, status: 200, statusText: 'OK',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
         headers: null,
         json: async () => ({}),
         text: async () => ''
@@ -393,7 +395,8 @@ describe('Server / apiLogger.cjs', () => {
 
     it('logs x-percy-request-id and x-ratelimit-remaining', async () => {
       const resp = mockResponse({}, {
-        ok: true, status: 200,
+        ok: true,
+        status: 200,
         headers: { 'x-percy-request-id': 'percy-123', 'x-ratelimit-remaining': '99' }
       });
       globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(resp);
@@ -419,8 +422,11 @@ describe('Server / apiLogger.cjs', () => {
   describe('logApiCall edge cases', () => {
     it('logs without optional context, error, or responseHeaders', () => {
       logApiCall({
-        method: 'GET', url: 'https://example.com',
-        status: 200, success: true, duration: 10
+        method: 'GET',
+        url: 'https://example.com',
+        status: 200,
+        success: true,
+        duration: 10
       });
       const line = fs.appendFileSync.calls.mostRecent().args[1];
       expect(line).toContain('[SUCCESS]');
@@ -855,7 +861,9 @@ describe('Server / percyApi.cjs', () => {
 
     it('handles json parse error in error response', async () => {
       const resp = {
-        ok: false, status: 422, statusText: 'Unprocessable',
+        ok: false,
+        status: 422,
+        statusText: 'Unprocessable',
         headers: { get: () => null },
         json: async () => { throw new Error('invalid json'); }
       };
@@ -1210,7 +1218,8 @@ describe('Server / snapshotDetail.cjs', () => {
     it('handles relationships with array data', async () => {
       const json = {
         data: {
-          id: '1', type: 'snapshots',
+          id: '1',
+          type: 'snapshots',
           attributes: {},
           relationships: {
             comparisons: {
@@ -1232,7 +1241,8 @@ describe('Server / snapshotDetail.cjs', () => {
         data: { id: '1', type: 'snapshots', attributes: {} },
         included: [
           {
-            id: '10', type: 'comparisons',
+            id: '10',
+            type: 'comparisons',
             attributes: { name: 'Comp' },
             relationships: {
               screenshots: {
@@ -1252,7 +1262,8 @@ describe('Server / snapshotDetail.cjs', () => {
     it('handles relationships with null data', async () => {
       const json = {
         data: {
-          id: '1', type: 'snapshots',
+          id: '1',
+          type: 'snapshots',
           attributes: {},
           relationships: {
             build: { data: null }
@@ -1287,8 +1298,9 @@ describe('Server / snapshotDetail.cjs', () => {
     it('converts kebab and snake case attributes', async () => {
       const json = {
         data: {
-          id: '1', type: 'snapshots',
-          attributes: { 'review-state': 'approved', 'total_count': 5 }
+          id: '1',
+          type: 'snapshots',
+          attributes: { 'review-state': 'approved', total_count: 5 }
         }
       };
       globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(mockResponse(json));
@@ -1302,7 +1314,8 @@ describe('Server / snapshotDetail.cjs', () => {
     it('camelCaseKeys handles arrays and nested objects', async () => {
       const json = {
         data: {
-          id: '1', type: 'snapshots',
+          id: '1',
+          type: 'snapshots',
           attributes: {
             'nested-obj': { 'inner-key': 'val' },
             'some-array': [1, 2]
@@ -1371,7 +1384,8 @@ describe('Server / buildApi.cjs', () => {
       },
       included: [
         {
-          id: '9', type: 'builds',
+          id: '9',
+          type: 'builds',
           attributes: { branch: 'develop', 'finished-at': '2024-01-01T00:30:00Z' }
         }
       ],
@@ -1403,13 +1417,21 @@ describe('Server / buildApi.cjs', () => {
         data: {
           id: '10',
           attributes: {
-            'build-number': 1, state: 'pending', branch: 'feat',
-            'finished-at': null, type: 'web',
-            'web-url': '', 'failure-reason': null,
-            'total-snapshots': 0, 'total-comparisons': 0,
-            'total-comparisons-finished': 0, 'created-at': '2024-01-01',
-            'average-duration': 0, 'build-count-for-average': 0,
-            'review-state': null, 'review-state-reason': null
+            'build-number': 1,
+            state: 'pending',
+            branch: 'feat',
+            'finished-at': null,
+            type: 'web',
+            'web-url': '',
+            'failure-reason': null,
+            'total-snapshots': 0,
+            'total-comparisons': 0,
+            'total-comparisons-finished': 0,
+            'created-at': '2024-01-01',
+            'average-duration': 0,
+            'build-count-for-average': 0,
+            'review-state': null,
+            'review-state-reason': null
           },
           relationships: {}
         }
@@ -1427,12 +1449,18 @@ describe('Server / buildApi.cjs', () => {
         data: {
           id: '10',
           attributes: {
-            'build-number': 1, state: 'pending',
-            'web-url': '', 'failure-reason': null,
-            'total-snapshots': 0, 'total-comparisons': 0,
-            'total-comparisons-finished': 0, 'created-at': '2024-01-01',
-            'average-duration': 0, 'build-count-for-average': 0,
-            'review-state': null, 'review-state-reason': null
+            'build-number': 1,
+            state: 'pending',
+            'web-url': '',
+            'failure-reason': null,
+            'total-snapshots': 0,
+            'total-comparisons': 0,
+            'total-comparisons-finished': 0,
+            'created-at': '2024-01-01',
+            'average-duration': 0,
+            'build-count-for-average': 0,
+            'review-state': null,
+            'review-state-reason': null
           },
           relationships: {}
         }
@@ -2041,9 +2069,14 @@ describe('Server / projectConfig.cjs', () => {
               data: {
                 id: '555',
                 attributes: {
-                  state: 'finished', 'build-number': 10, 'web-url': 'url',
-                  'review-state': null, 'review-state-reason': null,
-                  branch: 'main', 'finished-at': '2024-01-01T01:00:00Z', type: 'web'
+                  state: 'finished',
+                  'build-number': 10,
+                  'web-url': 'url',
+                  'review-state': null,
+                  'review-state-reason': null,
+                  branch: 'main',
+                  'finished-at': '2024-01-01T01:00:00Z',
+                  type: 'web'
                 },
                 relationships: {
                   'base-build': { data: { id: '554', type: 'builds' } }
@@ -2249,8 +2282,11 @@ describe('Server / projectConfig.cjs', () => {
               data: {
                 id: '555',
                 attributes: {
-                  state: 'pending', 'build-number': 1, 'web-url': '',
-                  'review-state': null, 'review-state-reason': null
+                  state: 'pending',
+                  'build-number': 1,
+                  'web-url': '',
+                  'review-state': null,
+                  'review-state-reason': null
                 },
                 relationships: {}
               }
