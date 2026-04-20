@@ -1,0 +1,3 @@
+# .npmrc.config is a template with a placeholder token (_AUTH_TOKEN_),
+# not a real secret. CI replaces the placeholder via sed at build time.
+.npmrc.config

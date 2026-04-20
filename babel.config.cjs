@@ -6,7 +6,7 @@ module.exports = {
         node: '22.12'
       }
     }],
-    '@babel/preset-react'
+    ['@babel/preset-react', { runtime: 'automatic' }]
   ],
   env: {
     test: {

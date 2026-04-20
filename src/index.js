@@ -1,2 +1,3 @@
 export { default, storybook } from './storybook.js';
 export { start } from './start.js';
+export { takeStorybookSnapshots } from './snapshots.js';

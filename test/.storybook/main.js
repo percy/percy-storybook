@@ -1,6 +1,11 @@
+const path = require('path');
+
 module.exports = {
   stories: ['*.stories.js'],
-  addons: ['@storybook/addon-webpack5-compiler-babel'],
+  addons: [
+    '@storybook/addon-webpack5-compiler-babel',
+    { name: path.resolve(__dirname, '../../preset.cjs') }
+  ],
   features: {
     postcss: false
   },
