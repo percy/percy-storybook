@@ -89,7 +89,7 @@
     "@amplitude/plugin-session-replay-browser": "1.25.16",
     "@percy/cli-command": "^1.31.10",
     "@percy/config": "^1.31.10",
-    "axios": "1.13.5",
+    "axios": "1.15.0",
     "cross-spawn": "^7.0.3",
     "glob-to-regexp": "^0.4.1",
     "qs": "^6.11.0",
