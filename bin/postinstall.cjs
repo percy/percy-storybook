@@ -15,5 +15,5 @@ console.log('');
 console.log('  Open the "Percy" tab in Storybook to run');
 console.log('  visual tests directly from the UI.');
 console.log('');
-console.log(dim + '  Docs: https://www.browserstack.com/docs/percy/integrate/storybook' + reset);
+console.log(dim + '  Docs: https://www.browserstack.com/docs/percy/references/storybook-addon' + reset);
 console.log('');
