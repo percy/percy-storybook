@@ -1,6 +1,6 @@
 {
   "name": "@percy/storybook",
-  "version": "10.0.0",
+  "version": "10.0.1-beta.0",
   "description": "Storybook addons for visual testing with Percy",
   "keywords": [
     "storybook",
@@ -19,37 +19,23 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "alpha"
+    "tag": "beta"
   },
   "engines": {
     "node": ">=22.12"
   },
   "files": [
     "bin",
-    "dist",
-    "!dist/components",
-    "!dist/hooks",
-    "preset.cjs",
-    "src",
-    "!src/components",
-    "!src/hooks",
-    "!src/styles"
+    "dist"
   ],
   "bin": {
     "percy-storybook": "./bin/percy-storybook.cjs"
   },
   "main": "./dist/index.js",
-  "exports": {
-    ".": "./dist/index.js",
-    "./preset": "./preset.cjs",
-    "./manager": "./dist/manager.js",
-    "./package.json": "./package.json"
-  },
+  "exports": "./dist/index.js",
   "type": "module",
   "scripts": {
-    "postinstall": "node ./bin/postinstall.cjs",
-    "build:css": "sass src/styles/manager.scss src/styles/_compiled.css --load-path=node_modules --load-path=node_modules/@browserstack/tailwind-config --no-source-map && tailwindcss -i src/styles/_compiled.css -o dist/manager.css -c tailwind.config.cjs --minify",
-    "build": "yarn --ignore-engines run build:css && babel src --out-dir dist && rm -rf dist/chunks && vite build",
+    "build": "babel src --out-dir dist",
     "clean": "git clean -Xdf -e !node_modules -e !node_modules/**",
     "lint": "eslint --ignore-path .gitignore .",
     "readme": "percy-cli-readme",
@@ -60,40 +46,18 @@
   },
   "storybook": {
     "displayName": "Percy",
-    "icon": "https://avatars.githubusercontent.com/u/12260884",
-    "preset": "./preset.cjs"
+    "icon": "https://avatars.githubusercontent.com/u/12260884"
   },
   "@percy/cli": {
     "commands": [
       "./dist/storybook.js"
     ]
   },
-  "peerDependencies": {
-    "react": "^17.x || ^18.x || ^19.x",
-    "react-dom": "^17.x || ^18.x || ^19.x",
-    "storybook": ">=8.x"
-  },
-  "peerDependenciesMeta": {
-    "storybook": {
-      "optional": true
-    },
-    "react": {
-      "optional": true
-    },
-    "react-dom": {
-      "optional": true
-    }
-  },
   "dependencies": {
-    "@amplitude/analytics-browser": "2.35.4",
-    "@amplitude/plugin-session-replay-browser": "1.25.16",
-    "@percy/cli-command": "^1.31.10",
-    "@percy/config": "^1.31.10",
-    "axios": "1.13.5",
+    "@percy/cli-command": "^1.30.7",
     "cross-spawn": "^7.0.3",
     "glob-to-regexp": "^0.4.1",
-    "qs": "^6.11.0",
-    "react-router-dom": "7.13.1"
+    "qs": "^6.11.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.23.0",
@@ -102,24 +66,8 @@
     "@babel/eslint-plugin": "^7.19.1",
     "@babel/preset-env": "^7.22.9",
     "@babel/preset-react": "^7.23.3",
-    "@browserstack/design-stack": "8.17.0",
-    "@browserstack/design-stack-icons": "2.8.0",
-    "@browserstack/hooks": "2.5.1",
-    "@browserstack/review-viewer": "^0.1.1",
-    "@browserstack/tailwind-config": "1.2.0",
-    "@browserstack/utils": "5.10.0",
-    "@reduxjs/toolkit": "1.9.1",
-    "@rollup/plugin-babel": "^6",
-    "@rollup/plugin-commonjs": "^25",
-    "@rollup/plugin-node-resolve": "^15",
-    "@rollup/plugin-terser": "^0.4",
     "@storybook/react": "^10.1.11",
     "@storybook/react-webpack5": "^10.1.11",
-    "@tailwindcss/aspect-ratio": "0.4.2",
-    "@tailwindcss/container-queries": "0.1.1",
-    "@tailwindcss/forms": "0.5.7",
-    "@vitejs/plugin-react": "4",
-    "autoprefixer": "10.4.27",
     "babel-eslint": "^10.0.3",
     "babel-loader": "^10.0.0",
     "babel-plugin-istanbul": "^6.1.1",
@@ -130,28 +78,14 @@
     "eslint-plugin-n": "^15.4.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.1.1",
-    "eslint-plugin-react": "^7.37.5",
-    "immer": "9.0.21",
     "jasmine": "^4.5.0",
     "jasmine-spec-reporter": "^7.0.0",
-    "lodash": "4.17.21",
     "mock-require": "^3.0.3",
     "nock": "^13.2.9",
     "nyc": "^17.1.0",
-    "postcss": "8.5.8",
-    "prop-types": "15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-mentions": "4.4.10",
-    "react-redux": "8.0.5",
-    "rollup": "^3",
-    "rollup-plugin-postcss": "4.0.2",
-    "sass": "1.98.0",
-    "storybook": "^10.1.11",
-    "tailwind-scrollbar-hide": "1.1.7",
-    "tailwindcss": "3.4.3",
-    "terser": "5.46.1",
-    "vite": "6"
+    "storybook": "^10.1.11"
   },
   "resolutions": {
     "jackspeak": "2.1.1"
