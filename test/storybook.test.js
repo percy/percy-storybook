@@ -405,7 +405,15 @@ describe('percy storybook', () => {
   });
 
   it('excludes stories from snapshots with --exclude', async () => {
-    await storybook(['http://localhost:9000', '--exclude=Snapshot', '--exclude=Options']);
+    // Args and Mixed are excluded by default via story-level exclude, but global
+    // --exclude switches shouldSkipStory to use config filters and disregards
+    // story-level filters — so we add them to the CLI --exclude list here.
+    // Mixed uses percy.name: 'From params', so we match by '/params/' regex.
+    await storybook([
+      'http://localhost:9000',
+      '--exclude=Snapshot', '--exclude=Options',
+      '--exclude=Args', '--exclude=/params/'
+    ]);
 
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
@@ -414,7 +422,7 @@ describe('percy storybook', () => {
     ]));
   });
 
-  it('includes stories for snapshots with --include', async () => {
+  it('includes stories for snapshots with --include and honors story-level skip (#1286)', async () => {
     await storybook(['http://localhost:9000', '--include=Skip']);
 
     expect(logger.stderr).toEqual([]);
@@ -422,15 +430,7 @@ describe('percy storybook', () => {
       '[percy] Processing 1 snapshot...',
       '[percy] Snapshot taken: Skip: But Not Me'
     ]));
-    expect(logger.stdout).not.toEqual(jasmine.arrayContaining([
-      '[percy] Snapshot taken: Skip: Skipped'
-    ]));
-  });
-
-  it('honors story-level percy.skip when --include matches (regression: #1286)', async () => {
-    await storybook(['http://localhost:9000', '--include=Skipped']);
-
-    expect(logger.stderr).toEqual([]);
+    // Skip: Skipped has parameters.percy.skip: true — honored regardless of --include match.
     expect(logger.stdout).not.toEqual(jasmine.arrayContaining([
       '[percy] Snapshot taken: Skip: Skipped'
     ]));
