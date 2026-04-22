@@ -419,9 +419,20 @@ describe('percy storybook', () => {
 
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy] Snapshot taken: Skip: Skipped',
-      '[percy] Snapshot taken: Skip: But Not Me',
-      jasmine.stringMatching('\\[percy\\] Processing \\d snapshots?')
+      '[percy] Processing 1 snapshot...',
+      '[percy] Snapshot taken: Skip: But Not Me'
+    ]));
+    expect(logger.stdout).not.toEqual(jasmine.arrayContaining([
+      '[percy] Snapshot taken: Skip: Skipped'
+    ]));
+  });
+
+  it('honors story-level percy.skip when --include matches (regression: #1286)', async () => {
+    await storybook(['http://localhost:9000', '--include=Skipped']);
+
+    expect(logger.stderr).toEqual([]);
+    expect(logger.stdout).not.toEqual(jasmine.arrayContaining([
+      '[percy] Snapshot taken: Skip: Skipped'
     ]));
   });
 
