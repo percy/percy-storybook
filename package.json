@@ -49,7 +49,7 @@
   "scripts": {
     "postinstall": "node ./bin/postinstall.cjs",
     "build:css": "sass src/styles/manager.scss src/styles/_compiled.css --load-path=node_modules --load-path=node_modules/@browserstack/tailwind-config --no-source-map && tailwindcss -i src/styles/_compiled.css -o dist/manager.css -c tailwind.config.cjs --minify",
-    "build": "yarn --ignore-engines run build:css && babel src --out-dir dist && rm -rf dist/chunks && vite build",
+    "build": "yarn --ignore-engines run build:css && babel src --out-dir dist && rm -rf dist/chunks && vite build && node scripts/assert-prod-bundle.mjs",
     "clean": "git clean -Xdf -e !node_modules -e !node_modules/**",
     "lint": "eslint --ignore-path .gitignore .",
     "readme": "percy-cli-readme",

@@ -1,0 +1,19 @@
+{
+  "name": "percy-storybook-fixture-sb10-vite",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build --quiet"
+  },
+  "devDependencies": {
+    "@percy/storybook": "file:../../..",
+    "@storybook/react-vite": "10.3.5",
+    "@vitejs/plugin-react": "4.3.4",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "storybook": "10.3.5",
+    "vite": "6.0.7"
+  }
+}
