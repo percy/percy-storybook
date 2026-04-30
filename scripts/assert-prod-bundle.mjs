@@ -7,49 +7,25 @@
  * internals dev code assumes exists). Any dev-runtime leak in dist/ means the
  * manager will crash on first render. This script enforces that invariant.
  *
- * Allow-list is SELF-INVALIDATING: each entry names a source file; if that
- * file stops existing, the script fails. Deleting src/react19Shim.js without
- * also pruning ALLOWED_CONTAINERS trips this check.
+ * No allow-list: vite.config.mjs intentionally bundles React's PROD jsx-runtime
+ * (see the comment on the externals array there). With that in place, none of
+ * the FORBIDDEN tokens should appear anywhere in dist/.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
+// `__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED` is legitimately accessed
+// by React 18's PROD jsx-runtime (`...ReactCurrentOwner.current`), which we now
+// bundle. It is therefore NOT forbidden. Everything else here is dev-only.
 const FORBIDDEN = [
-  'ReactSharedInternals',
   'recentlyCreatedOwnerStacks',
   'getStackAddendum',
   'jsxDEV(',
   'react-jsx-runtime.development',
-  '__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED',
   '__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE',
   'jsxWithValidation',
   'printWarning'
 ];
-
-// Fingerprint uses a property-access string that Terser preserves literally
-// (minifiers keep `.propertyName` strings; only identifiers get mangled).
-// `ReactDebugCurrentFrame` appears nowhere else in dist/ per audit.
-const ALLOWED_CONTAINERS = [
-  {
-    sourceFile: 'src/react19Shim.js',
-    marker: 'ReactDebugCurrentFrame',
-    tokens: new Set([
-      'ReactSharedInternals',
-      '__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE',
-      '__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED',
-      'getStackAddendum',
-      'recentlyCreatedOwnerStacks'
-    ])
-  }
-];
-
-for (const { sourceFile } of ALLOWED_CONTAINERS) {
-  if (!existsSync(sourceFile)) {
-    console.error(`✗ allow-list references a deleted file: ${sourceFile}`);
-    console.error('  Prune scripts/assert-prod-bundle.mjs ALLOWED_CONTAINERS and re-run.');
-    process.exit(1);
-  }
-}
 
 const DIST = 'dist';
 const chunksDir = join(DIST, 'chunks');
@@ -65,20 +41,11 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-function allowedTokensFor(src) {
-  const allowed = new Set();
-  for (const { marker, tokens } of ALLOWED_CONTAINERS) {
-    if (src.includes(marker)) for (const t of tokens) allowed.add(t);
-  }
-  return allowed;
-}
-
 let failed = false;
 for (const file of files) {
   const src = readFileSync(file, 'utf8');
-  const allowed = allowedTokensFor(src);
   for (const token of FORBIDDEN) {
-    if (src.includes(token) && !allowed.has(token)) {
+    if (src.includes(token)) {
       console.error(`✗ ${file} contains forbidden token: ${token}`);
       failed = true;
     }
@@ -86,7 +53,7 @@ for (const file of files) {
 }
 
 if (failed) {
-  console.error('\nSee docs/plans/2026-04-23-fix-react-19-storybook-10-compat-plan.md');
+  console.error('\nSee docs/plans/2026-04-30-fix-bundle-prod-jsx-runtime-storybook10-plan.md');
   process.exit(1);
 }
 console.log(`✓ dist/ is production-clean (${files.length} files scanned)`);
