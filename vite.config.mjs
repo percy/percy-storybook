@@ -100,7 +100,14 @@ export default defineConfig({
     svgPlugin(),
     injectCssPlugin(),
     react({
-      jsxRuntime: 'automatic',
+      // Use CLASSIC JSX (React.createElement) instead of automatic (_jsx).
+      // Storybook 10's manager-bundler injects react-jsx-runtime.development
+      // when an addon's bundle imports react/jsx-runtime; that dev runtime
+      // crashes against production React 19 (which strips
+      // __CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE).
+      // React.createElement uses only public, non-stripped APIs and stays
+      // safe under the same prod React.
+      jsxRuntime: 'classic',
       // Many source files (ours + review-viewer) use JSX in .js files
       include: ['**/*.jsx', '**/*.js']
     })
