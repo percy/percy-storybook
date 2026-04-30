@@ -61,7 +61,6 @@ function maybeIndexFrom(from, fileIndex) {
 // Transform a stats `modules[]` entry into the indexed shape the SmartSnap graph expects.
 // Returns null when the module's id is a string — those entries are dropped (per BE contract).
 function transformModule(m, fileIndex) {
-  
   const out = {};
   if (m.id != null) out.id = maybeIndexFrom(m.id, fileIndex);
   if (typeof out.id === 'string') return null;
@@ -218,7 +217,7 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig) {
     log.debug(`SmartSnap: storybookPaths sample: ${storybookPaths.slice(0, 3).join(', ')}`);
   }
 
-  log.debug(`SmartSnap: starting graph generation job ${JSON.stringify({files, modules, packageMapping, storybookPaths, affectedNodes})}`);
+  log.debug(`SmartSnap: starting graph generation job ${JSON.stringify({ files, modules, packageMapping, storybookPaths, affectedNodes })}`);
   await percy.client.generateSmartsnapGraph(buildId, {
     files, modules, packageMapping, storybookPaths, affectedNodes
   });

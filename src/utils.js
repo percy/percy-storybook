@@ -343,19 +343,19 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
     // having to re-eval the page.
     const sampleEntry = entries
       ? (() => {
-        const firstId = Object.keys(entries)[0];
-        if (!firstId) return null;
-        const e = entries[firstId];
-        return { id: firstId, keys: Object.keys(e || {}), importPath: e?.importPath };
-      })()
+          const firstId = Object.keys(entries)[0];
+          if (!firstId) return null;
+          const e = entries[firstId];
+          return { id: firstId, keys: Object.keys(e || {}), importPath: e?.importPath };
+        })()
       : null;
     const sampleStory = stories[0]
       ? {
-        id: stories[0].id,
-        importPath: stories[0].importPath,
-        parameterKeys: stories[0].parameters ? Object.keys(stories[0].parameters) : [],
-        fileName: stories[0].parameters?.fileName
-      }
+          id: stories[0].id,
+          importPath: stories[0].importPath,
+          parameterKeys: stories[0].parameters ? Object.keys(stories[0].parameters) : [],
+          fileName: stories[0].parameters?.fileName
+        }
       : null;
     const withImportPath = stories.filter(s => s.importPath).length;
 

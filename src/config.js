@@ -229,7 +229,7 @@ export const configSchema = {
             type: 'array',
             items: { type: 'string' }
           },
-          statsFile:{
+          statsFile: {
             type: 'string'
           }
         }
