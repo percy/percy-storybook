@@ -93,7 +93,8 @@
     "cross-spawn": "^7.0.3",
     "glob-to-regexp": "^0.4.1",
     "qs": "^6.11.0",
-    "react-router-dom": "7.13.1"
+    "react-router-dom": "7.13.1",
+    "stream-json": "^1.8.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.23.0",
