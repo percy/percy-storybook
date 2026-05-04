@@ -41,6 +41,10 @@ export async function captureDOM(page, options, percy, log, story) {
 // Returns true or false if the provided story should be skipped by matching against include and
 // exclude filter options. If any global filters are provided, they will override story filters.
 function shouldSkipStory(name, options, config) {
+  // parameters.percy.skip is an opt-out switch, not a filter — honor it unconditionally,
+  // even when --include/--exclude is present. See issue #1286.
+  if (options.skip) return true;
+
   let matches = regexp => {
     /* istanbul ignore else: sanity check */
     if (typeof regexp === 'string') {
@@ -57,7 +61,7 @@ function shouldSkipStory(name, options, config) {
   let exclude = [].concat(filter?.exclude).filter(Boolean);
 
   // if included, don't skip; if excluded always exclude
-  let skip = include?.length ? !include.some(matches) : options.skip;
+  let skip = include?.length ? !include.some(matches) : false;
   if (!skip && !exclude?.some(matches)) return false;
   return true;
 }
