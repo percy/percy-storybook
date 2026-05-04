@@ -12,8 +12,12 @@ const { pick } = require('stream-json/filters/Pick');
 const { streamArray } = require('stream-json/streamers/StreamArray');
 const { streamValues } = require('stream-json/streamers/StreamValues');
 
-const NULL_RE = /\x00/g;
-const stripNull = s => (typeof s === 'string' ? s.replace(NULL_RE, '') : s);
+// Webpack/Vite stats prefix loader-resolved virtual modules with a NUL byte
+// (e.g. "\u0000/path/to/file?commonjs-es-import"). Strip it so the path lines
+// up with the absolute paths in our file index. Built via String.fromCharCode
+// to avoid embedding a control char in source / tripping no-control-regex.
+const NULL_CHAR = String.fromCharCode(0);
+const stripNull = s => (typeof s === 'string' ? s.replaceAll(NULL_CHAR, '') : s);
 
 // Status poll cadence: 12 attempts × 5s = 1 minute total.
 const POLL_INTERVAL_MS = 5000;
