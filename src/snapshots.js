@@ -286,14 +286,6 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
     let previewResource = yield fetchStorybookPreviewResource(percy, previewUrl);
     clearTimeout(logTimeout);
 
-    // SmartSnap needs `percy.build.id` before it runs, but the storybook
-    // command sets `delayUploads: true`, which defers build creation until
-    // the first snapshot upload. Flip it off here so `percy.yield.start()`
-    // creates the build eagerly and `applySmartSnap` has an id to work with.
-    if (percy.config.storybook?.smartSnap?.enabled) {
-      percy.delayUploads = false;
-    }
-
     // start percy
     yield* percy.yield.start();
     // launch the percy browser if not launched during dry-runs
