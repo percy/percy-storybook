@@ -125,7 +125,10 @@ async function readStats(statsFile, projectRoot) {
     .map(([p]) => p);
 
   const packageMapping = await readTopLevelKey(statsFile, 'package_mapping');
-  return { files, modules, packageMapping };
+  // The bundler-plugin-smartsnap emits a unique buildId per storybook build
+  // so concurrent runs against the same project don't share Redis state.
+  const buildId = await readTopLevelKey(statsFile, 'buildId');
+  return { files, modules, packageMapping, buildId };
 }
 
 function unionDiffsForCommits(commits) {
@@ -154,11 +157,6 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
   const log = logger('storybook:smartsnap');
   const { baseline, untraced, trace, bailOnChanges, statsFile } = smartSnapConfig || {};
 
-  const buildId = percy.build?.id;
-  if (!buildId) {
-    log.warn('SmartSnap: build id unavailable; running full snapshot set');
-    return snapshots;
-  }
 
   if (!buildDir) {
     log.warn('SmartSnap requires the Storybook build directory (e.g. `percy storybook ./storybook-static`); URL and `start` modes are not supported. Running full snapshot set');
@@ -187,7 +185,7 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
   }
 
   const snapshotNames = snapshots.map(s => s.name);
-  const nameToCommit = await percy.client.getSmartsnapSnapshotNameToCommit(buildId, snapshotNames);
+  const nameToCommit = await percy.client.getSmartsnapSnapshotNameToCommit(snapshotNames);
   log.debug(`SmartSnap: nameToCommit ${JSON.stringify(nameToCommit)}`);
 
   let affectedNodes;
@@ -218,7 +216,12 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
 
   const projectRoot = gitProjectRoot();
   log.debug(`SmartSnap: parsing stats file ${resolvedStatsPath}`);
-  const { files, modules, packageMapping } = await readStats(resolvedStatsPath, projectRoot);
+  const { files, modules, packageMapping, buildId } = await readStats(resolvedStatsPath, projectRoot);
+
+  if (typeof buildId !== 'string' || !buildId) {
+    log.warn(`SmartSnap: stats file at ${resolvedStatsPath} is missing a top-level "buildId" — running full snapshot set`);
+    return snapshots;
+  }
 
   // Storybook's `parameters.fileName` (and v7+ `entries[id].importPath`)
   // both come back with a leading `./` (or `.\` on Windows) — e.g.
@@ -246,7 +249,7 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
     log.debug(`SmartSnap: storybookPaths sample: ${storybookPaths.slice(0, 3).join(', ')}`);
   }
 
-  log.debug(`SmartSnap: starting graph generation job ${JSON.stringify({ files, modules, packageMapping, storybookPaths, affectedNodes })}`);
+  log.debug(`SmartSnap: starting graph generation job ${JSON.stringify({ buildId, files, modules, packageMapping, storybookPaths, affectedNodes })}`);
   await percy.client.generateSmartsnapGraph(buildId, {
     files, modules, packageMapping, storybookPaths, affectedNodes
   });
