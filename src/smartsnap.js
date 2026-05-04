@@ -165,9 +165,20 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
   // path.basename() strips any traversal segments so the resolved path can't
   // escape buildDir even if the config is hostile.
   const statsName = path.basename(statsFile || 'enriched-stats.json');
+  if (!/^[\w.-]+\.json$/i.test(statsName)) {
+    log.warn(`SmartSnap: invalid statsFile "${statsName}" — must be a .json filename; running full snapshot set`);
+    return snapshots;
+  }
   const resolvedStatsPath = path.join(path.resolve(buildDir), statsName);
-  if (!fs.existsSync(resolvedStatsPath)) {
+  let statsStat;
+  try {
+    statsStat = fs.statSync(resolvedStatsPath);
+  } catch {
     log.warn(`SmartSnap: stats file "${statsName}" not found in build directory ${buildDir}; running full snapshot set`);
+    return snapshots;
+  }
+  if (!statsStat.isFile()) {
+    log.warn(`SmartSnap: stats file "${statsName}" in ${buildDir} is not a regular file; running full snapshot set`);
     return snapshots;
   }
 
