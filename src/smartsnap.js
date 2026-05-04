@@ -39,40 +39,42 @@ function gitProjectRoot() {
   return git(['rev-parse', '--show-toplevel']).trim();
 }
 
-function listFiles(root) {
-  const out = [];
-  const walk = (dir) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (entry.name === '.git' || entry.name === 'node_modules') continue;
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (entry.isFile()) out.push(full);
-    }
-  };
-  walk(root);
-  return out;
-}
+// Paths under these directories are dependencies / framework wiring rather
+// than first-party source, so we don't track them in the file index.
+const EXCLUDED_DIRS = new Set(['node_modules', '.storybook']);
+const isExcluded = relPath => relPath.split(/[/\\]/).some(seg => EXCLUDED_DIRS.has(seg));
 
-function maybeIndexFrom(from, fileIndex) {
-  const clean = stripNull(from);
-  if (path.isAbsolute(clean)) {
-    const idx = fileIndex.get(clean);
-    if (idx !== undefined) return idx;
+// Resolve+index used for `id` and `resolvedFrom` only. Converts absolute paths
+// to projectRoot-relative form, then either returns the existing index for that
+// path or assigns the next one (= current map size). Paths inside node_modules
+// or .storybook are returned as the relative string and *not* indexed; modules
+// whose id falls into that bucket are dropped downstream by the
+// "id is string → drop" contract in transformModule.
+function resolveAndIndex(value, fileIndex, projectRoot) {
+  const clean = stripNull(value);
+  if (!path.isAbsolute(clean)) return clean;
+  const rel = path.relative(projectRoot, clean);
+  if (isExcluded(rel)) return rel;
+  let idx = fileIndex.get(rel);
+  if (idx === undefined) {
+    idx = fileIndex.size;
+    fileIndex.set(rel, idx);
   }
-  return clean;
+  return idx;
 }
 
 // Transform a stats `modules[]` entry into the indexed shape the SmartSnap graph expects.
 // Returns null when the module's id is a string — those entries are dropped (per BE contract).
-function transformModule(m, fileIndex) {
+// `from` is left as-is because it's the bundler's symbolic source (e.g. '@mui/material',
+// '../Button.jsx') — the resolved absolute path lives in `resolvedFrom`.
+function transformModule(m, fileIndex, projectRoot) {
   const out = {};
-  if (m.id != null) out.id = maybeIndexFrom(m.id, fileIndex);
+  if (m.id != null) out.id = resolveAndIndex(m.id, fileIndex, projectRoot);
   if (typeof out.id === 'string') return null;
 
   const mapRefs = (arr) => arr.map((ref) => {
     const copy = { ...ref };
-    if (typeof copy.from === 'string') copy.from = maybeIndexFrom(copy.from, fileIndex);
-    if (typeof copy.resolvedFrom === 'string') copy.resolvedFrom = maybeIndexFrom(copy.resolvedFrom, fileIndex);
+    if (typeof copy.resolvedFrom === 'string') copy.resolvedFrom = resolveAndIndex(copy.resolvedFrom, fileIndex, projectRoot);
     return copy;
   });
 
@@ -109,16 +111,18 @@ function readTopLevelKey(filePath, key) {
 }
 
 async function readStats(statsFile, projectRoot) {
-  const absFiles = listFiles(projectRoot).sort();
   const fileIndex = new Map();
-  absFiles.forEach((p, i) => fileIndex.set(p, i));
-  const files = absFiles.map(p => path.relative(projectRoot, p));
-
   const modules = [];
   await streamModules(statsFile, (m) => {
-    const t = transformModule(m, fileIndex);
+    const t = transformModule(m, fileIndex, projectRoot);
     if (t) modules.push(t);
   });
+
+  // Emit `files` ordered by encounter-time index so files[N] corresponds to
+  // every module/resolvedFrom that was assigned index N during streaming.
+  const files = [...fileIndex.entries()]
+    .sort((a, b) => a[1] - b[1])
+    .map(([p]) => p);
 
   const packageMapping = await readTopLevelKey(statsFile, 'package_mapping');
   return { files, modules, packageMapping };
