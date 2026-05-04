@@ -79,7 +79,8 @@ export const flags = [{
   multiple: true
 }, {
   name: 'smart-snap-stats-file',
-  description: 'Path to enriched-stats.json file',
+  description: 'Filename of the stats JSON inside the Storybook build directory (default: enriched-stats.json)',
   percyrc: 'storybook.smartSnap.statsFile',
-  type: 'string'
+  type: 'string',
+  default: 'enriched-stats.json'
 }];

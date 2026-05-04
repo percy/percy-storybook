@@ -146,7 +146,7 @@ async function pollGraphStatus(percy, buildId, log) {
 // Given the mapped snapshots and storybook.smartSnap config, returns the subset of snapshots
 // that the SmartSnap graph reports as affected. On any recoverable failure, returns the input
 // list unchanged so the build runs as a full snapshot pass.
-export async function applySmartSnap(percy, snapshots, smartSnapConfig) {
+export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir) {
   const log = logger('storybook:smartsnap');
   const { baseline, untraced, trace, bailOnChanges, statsFile } = smartSnapConfig || {};
 
@@ -156,8 +156,18 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig) {
     return snapshots;
   }
 
-  if (!statsFile) {
-    log.warn('SmartSnap: missing statsFile; running full snapshot set');
+  if (!buildDir) {
+    log.warn('SmartSnap requires the Storybook build directory (e.g. `percy storybook ./storybook-static`); URL and `start` modes are not supported. Running full snapshot set');
+    return snapshots;
+  }
+
+  // Treat statsFile as a flat filename anchored inside the build directory.
+  // path.basename() strips any traversal segments so the resolved path can't
+  // escape buildDir even if the config is hostile.
+  const statsName = path.basename(statsFile || 'enriched-stats.json');
+  const resolvedStatsPath = path.join(path.resolve(buildDir), statsName);
+  if (!fs.existsSync(resolvedStatsPath)) {
+    log.warn(`SmartSnap: stats file "${statsName}" not found in build directory ${buildDir}; running full snapshot set`);
     return snapshots;
   }
 
@@ -192,8 +202,8 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig) {
   }
 
   const projectRoot = gitProjectRoot();
-  log.debug(`SmartSnap: parsing stats file ${statsFile}`);
-  const { files, modules, packageMapping } = await readStats(path.resolve(statsFile), projectRoot);
+  log.debug(`SmartSnap: parsing stats file ${resolvedStatsPath}`);
+  const { files, modules, packageMapping } = await readStats(resolvedStatsPath, projectRoot);
 
   // Storybook's `parameters.fileName` (and v7+ `entries[id].importPath`)
   // both come back with a leading `./` (or `.\` on Windows) — e.g.

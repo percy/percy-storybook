@@ -274,7 +274,7 @@ async function* processStory(page, story, previewResource, percy, flags, log) {
 }
 
 // Starts the percy instance and collects Storybook snapshots, calling the callback when done
-export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags }) {
+export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildDir, flags }) {
   try {
     let aboutUrl = new URL('?path=/settings/about', baseUrl).href;
     let previewUrl = new URL('iframe.html', baseUrl).href;
@@ -340,7 +340,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     // Failures inside applySmartSnap fall back to the full snapshot set rather than aborting.
     if (storybookConfig?.smartSnap?.enabled) {
       try {
-        snapshots = yield applySmartSnap(percy, snapshots, storybookConfig.smartSnap);
+        snapshots = yield applySmartSnap(percy, snapshots, storybookConfig.smartSnap, buildDir);
       } catch (e) {
         log.warn(`SmartSnap failed (${e.message}); running full snapshot set`);
       }

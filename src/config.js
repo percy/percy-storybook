@@ -230,7 +230,8 @@ export const configSchema = {
             items: { type: 'string' }
           },
           statsFile: {
-            type: 'string'
+            type: 'string',
+            default: 'enriched-stats.json'
           }
         }
       }
