@@ -531,23 +531,23 @@ describe('percy storybook', () => {
     ]));
 
     expect(logger.stderr).toEqual(jasmine.arrayContaining([
-      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args',
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&viewMode=story',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
-        'text:Snapshot+custom+args;style.font:1rem+sans-serif',
+        'text:Snapshot+custom+args;style.font:1rem+sans-serif&viewMode=story',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
-        'text:Snapshot+custom+bold+args;style.font:1rem+sans-serif;style.fontWeight:bold',
+        'text:Snapshot+custom+bold+args;style.font:1rem+sans-serif;style.fontWeight:bold&viewMode=story',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
         'text:Snapshot+purple+args;' +
         'style.font:1rem+sans-serif;' +
         'style.fontWeight:bold;' +
-        'style.color:purple',
+        'style.color:purple&viewMode=story',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
         'null:!null;undefined:!undefined;' +
         'smallNum:3;largeNum:12000000;' +
         'date:!date(2022-01-01T00:00:00.000Z);' +
         'rgb:!rgb(20,30,40);rgba:!rgba(20,30,40,.5);' +
         'hsl:!hsl(120,80,30);hsla:!hsla(120,80,30,.5);' +
-        'shortHex:!hex(c6c);longHex:!hex(a907cf);alphaHex:!hex(a907cf9f)'
+        'shortHex:!hex(c6c);longHex:!hex(a907cf);alphaHex:!hex(a907cf9f)&viewMode=story'
     ]));
   });
 
@@ -632,13 +632,13 @@ describe('percy storybook', () => {
     ]));
 
     expect(logger.stderr).toEqual(jasmine.arrayContaining([
-      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params',
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params&viewMode=story',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
-        '&globals=text:+with+globals',
+        '&globals=text:+with+globals&viewMode=story',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
-        `&text=${encodeURIComponent(' with query params')}`,
+        `&text=${encodeURIComponent(' with query params')}&viewMode=story`,
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
-        `&args=text:Args&globals=text:+globals&text=${encodeURIComponent(' and params')}`
+        `&args=text:Args&globals=text:+globals&text=${encodeURIComponent(' and params')}&viewMode=story`
     ]));
   });
 
@@ -938,7 +938,7 @@ describe('percy storybook', () => {
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
 
-      server.reply('/iframe.html?id=todoitem--docs&viewMode=story', () => [200, 'text/html', [
+      server.reply('/iframe.html?id=todoitem--docs&viewMode=docs', () => [200, 'text/html', [
         `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
@@ -1070,7 +1070,7 @@ describe('percy storybook', () => {
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
 
-      server.reply('/iframe.html?id=todoitem--docs&viewMode=story', () => [200, 'text/html', [
+      server.reply('/iframe.html?id=todoitem--docs&viewMode=docs', () => [200, 'text/html', [
         `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
@@ -1114,7 +1114,7 @@ describe('percy storybook', () => {
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
 
-      server.reply('/iframe.html?id=todoitem--docs&viewMode=story', () => [200, 'text/html', [
+      server.reply('/iframe.html?id=todoitem--docs&viewMode=docs', () => [200, 'text/html', [
         `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);

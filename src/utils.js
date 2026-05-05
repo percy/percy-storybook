@@ -3,6 +3,10 @@ import { logger } from '@percy/cli-command';
 import spawn from 'cross-spawn';
 import globToRegExp from 'glob-to-regexp';
 
+export function viewModeFor(story) {
+  return story.type === 'docs' ? 'docs' : 'story';
+}
+
 // check storybook version
 export function checkStorybookVersion() {
   return new Promise((resolve, reject) => {
@@ -665,7 +669,7 @@ export async function captureResponsiveDOM(page, options, percy, log, story) {
       // Build the complete URL with all story parameters
       const url = new URL(story.url);
       if (!url.searchParams.has('viewMode')) {
-        url.searchParams.set('viewMode', 'story');
+        url.searchParams.set('viewMode', viewModeFor(story));
       }
       const reloadUrl = url.toString();
 
