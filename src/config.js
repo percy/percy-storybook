@@ -206,6 +206,34 @@ export const configSchema = {
             }
           }
         }
+      },
+      smartSnap: {
+        type: 'object',
+        properties: {
+          enabled: {
+            type: 'boolean',
+            default: false
+          },
+          baseline: {
+            type: 'string'
+          },
+          untraced: {
+            type: 'array',
+            items: { type: 'string' }
+          },
+          trace: {
+            type: 'boolean',
+            default: false
+          },
+          bailOnChanges: {
+            type: 'array',
+            items: { type: 'string' }
+          },
+          statsFile: {
+            type: 'string',
+            default: 'enriched-stats.json'
+          }
+        }
       }
     }
   },

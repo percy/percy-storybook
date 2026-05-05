@@ -19,6 +19,7 @@ import {
   isDocAutodoc,
   viewModeFor
 } from './utils.js';
+import { applySmartSnap } from './smartsnap.js';
 
 // Main capture function
 export async function captureDOM(page, options, percy, log, story) {
@@ -70,12 +71,14 @@ function shouldSkipStory(name, options, config) {
 // Returns snapshot config options for a Storybook story merged with global Storybook
 // options. Validation error messages will be added to the provided validations set.
 function getSnapshotConfig(story, config, invalid) {
-  let { id, ...options } = PercyConfig.migrate(story, '/storybook');
+  // importPath isn't in the /storybook schema (which is unevaluatedProperties: false),
+  // so pull it aside before validation and re-attach after merge so SmartSnap can use it.
+  let { id, importPath, ...options } = PercyConfig.migrate(story, '/storybook');
 
   let errors = PercyConfig.validate(options, '/storybook');
   for (let e of (errors || [])) invalid.set(e.path, e.message);
 
-  return PercyConfig.merge([config, options, { id }], (path, prev, next) => {
+  return PercyConfig.merge([config, options, { id, importPath }], (path, prev, next) => {
     // normalize, but do not merge include or exclude options
     if (path.length === 1 && ['include', 'exclude'].includes(path[0])) {
       return [path, [].concat(next).filter(Boolean)];
@@ -257,8 +260,8 @@ function needsFreshPage(previousStory) {
 
 // Process a single story and capture its DOM
 async function* processStory(page, story, previewResource, percy, flags, log) {
-  // Extract story details
-  let { id, args, globals, queryParams, ...options } = story;
+  // Extract story details. importPath is consumed by SmartSnap upstream and isn't a snapshot field.
+  let { id, args, globals, queryParams, importPath, ...options } = story;
 
   const enableJavaScript = options.enableJavaScript ?? percy.config.snapshot.enableJavaScript;
   if (flags.dryRun || enableJavaScript) {
@@ -279,7 +282,7 @@ async function* processStory(page, story, previewResource, percy, flags, log) {
 }
 
 // Starts the percy instance and collects Storybook snapshots, calling the callback when done
-export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags }) {
+export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildDir, flags }) {
   try {
     let aboutUrl = new URL('?path=/settings/about', baseUrl).href;
     let previewUrl = new URL('iframe.html', baseUrl).href;
@@ -316,6 +319,12 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
       )
     ]);
 
+    // Log the importPath plumbing diagnostics so we can see if SmartSnap is
+    // going to have anything to work with before mapStorybookSnapshots runs.
+    if (stories?.diagnostics) {
+      log.debug(`Story extraction diagnostics: ${JSON.stringify(stories.diagnostics)}`);
+    }
+
     // map stories to snapshot options
     let snapshots = mapStorybookSnapshots(stories, {
       config: storybookConfig,
@@ -326,6 +335,16 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
 
     // set storybook environment info
     percy.client.addEnvironmentInfo(environmentInfo);
+
+    // SmartSnap: filter snapshots down to those whose dependency graph changed.
+    // Failures inside applySmartSnap fall back to the full snapshot set rather than aborting.
+    if (storybookConfig?.smartSnap?.enabled) {
+      try {
+        snapshots = yield applySmartSnap(percy, snapshots, storybookConfig.smartSnap, buildDir);
+      } catch (e) {
+        log.warn(`SmartSnap failed (${e.message}); running full snapshot set`);
+      }
+    }
 
     // Track previous story state to determine when fresh pages are needed
     let previousStory = null;

@@ -48,4 +48,39 @@ export const flags = [{
   name: 'partial',
   description: 'Marks the build as a partial build',
   validate: () => (process.env.PERCY_PARTIAL_BUILD ||= '1')
+}, {
+  name: 'smart-snap',
+  description: 'Only snapshot stories affected by recent changes (SmartSnap)',
+  percyrc: 'storybook.smartSnap.enabled',
+  type: 'boolean',
+  default: false
+}, {
+  name: 'smart-snap-baseline',
+  description: 'Git commit/branch to compare against',
+  percyrc: 'storybook.smartSnap.baseline',
+  type: 'string'
+}, {
+  name: 'smart-snap-untraced',
+  description: 'Glob patterns to exclude from dependency tracing',
+  percyrc: 'storybook.smartSnap.untraced',
+  type: 'pattern',
+  multiple: true
+}, {
+  name: 'smart-snap-trace',
+  description: 'Show detailed trace information for debugging',
+  percyrc: 'storybook.smartSnap.trace',
+  type: 'boolean',
+  default: false
+}, {
+  name: 'smart-snap-bail-on-changes',
+  description: 'Glob patterns that trigger full build if changed',
+  percyrc: 'storybook.smartSnap.bailOnChanges',
+  type: 'pattern',
+  multiple: true
+}, {
+  name: 'smart-snap-stats-file',
+  description: 'Filename of the stats JSON inside the Storybook build directory (default: enriched-stats.json)',
+  percyrc: 'storybook.smartSnap.statsFile',
+  type: 'string',
+  default: 'enriched-stats.json'
 }];
