@@ -938,7 +938,7 @@ describe('percy storybook', () => {
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
 
-      server.reply('/iframe.html?id=todoitem--docs&viewMode=story', () => [200, 'text/html', [
+      server.reply('/iframe.html?id=todoitem--docs&viewMode=docs', () => [200, 'text/html', [
         `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
@@ -1070,7 +1070,7 @@ describe('percy storybook', () => {
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
 
-      server.reply('/iframe.html?id=todoitem--docs&viewMode=story', () => [200, 'text/html', [
+      server.reply('/iframe.html?id=todoitem--docs&viewMode=docs', () => [200, 'text/html', [
         `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
@@ -1114,7 +1114,7 @@ describe('percy storybook', () => {
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
 
-      server.reply('/iframe.html?id=todoitem--docs&viewMode=story', () => [200, 'text/html', [
+      server.reply('/iframe.html?id=todoitem--docs&viewMode=docs', () => [200, 'text/html', [
         `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);

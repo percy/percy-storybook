@@ -234,6 +234,9 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config, globalDocSe
     if (story.args) url += `&args=${buildStorybookArgsParam(story.args)}`;
     if (story.globals) url += `&globals=${buildStorybookArgsParam(story.globals)}`;
     for (let [k, v] of Object.entries(story.queryParams ?? {})) url += `&${k}=${v}`;
+    if (!story.queryParams?.viewMode) {
+      url += `&viewMode=${story.type === 'docs' ? 'docs' : 'story'}`;
+    }
     return Object.assign(story, { url });
   });
 }
@@ -340,7 +343,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
 
       try {
         // Use a single page for as many stories as possible until a context error occurs
-        yield* withPage(percy, `${previewUrl}?id=${snapshots[0].id}&viewMode=story`, async function*(page) {
+        yield* withPage(percy, snapshots[0].url, async function*(page) {
           // Process snapshots one by one with the current page
           while (snapshots.length) {
             try {

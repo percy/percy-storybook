@@ -665,7 +665,7 @@ export async function captureResponsiveDOM(page, options, percy, log, story) {
       // Build the complete URL with all story parameters
       const url = new URL(story.url);
       if (!url.searchParams.has('viewMode')) {
-        url.searchParams.set('viewMode', 'story');
+        url.searchParams.set('viewMode', story.type === 'docs' ? 'docs' : 'story');
       }
       const reloadUrl = url.toString();
 
