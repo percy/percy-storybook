@@ -65,21 +65,25 @@ function resolveAndIndex(value, fileIndex, projectRoot) {
 
 // Transform a stats `modules[]` entry into the indexed shape the SmartSnap graph expects.
 // Returns null when the module's id is a string — those entries are dropped (per BE contract).
-// `from` is left as-is because it's the bundler's symbolic source (e.g. '@mui/material',
-// '../Button.jsx') — the resolved absolute path lives in `resolvedFrom`.
+// Each `imports[i]` / `passThroughExports[i]` carries `{ type, source }` from the
+// bundler-plugin: for `type === 'src'` we translate the absolute file path to its
+// project-file index when possible; for `type === 'module'` the source is already
+// the bare package name, so we leave it alone.
 function transformModule(m, fileIndex, projectRoot) {
   const out = {};
   if (m.id != null) out.id = resolveAndIndex(m.id, fileIndex, projectRoot);
   if (typeof out.id === 'string') return null;
 
-  const mapRefs = (arr) => arr.map((ref) => {
-    const copy = { ...ref };
-    if (typeof copy.resolvedFrom === 'string') copy.resolvedFrom = resolveAndIndex(copy.resolvedFrom, fileIndex, projectRoot);
+  const mapEntry = (e) => {
+    const copy = { ...e };
+    if (copy.type === 'src' && typeof copy.source === 'string') {
+      copy.source = resolveAndIndex(copy.source, fileIndex, projectRoot);
+    }
     return copy;
-  });
+  };
 
-  if (Array.isArray(m.imports)) out.imports = mapRefs(m.imports);
-  if (Array.isArray(m.passThroughExports)) out.passThroughExports = mapRefs(m.passThroughExports);
+  if (Array.isArray(m.imports)) out.imports = m.imports.map(mapEntry);
+  if (Array.isArray(m.passThroughExports)) out.passThroughExports = m.passThroughExports.map(mapEntry);
   if (Array.isArray(m.nonPassThroughExports)) out.nonPassThroughExports = m.nonPassThroughExports;
 
   return out;
@@ -119,24 +123,15 @@ async function readStats(statsFile, projectRoot) {
   });
 
   // Emit `files` ordered by encounter-time index so files[N] corresponds to
-  // every module/resolvedFrom that was assigned index N during streaming.
+  // every module/source ref that was assigned index N during streaming.
   const files = [...fileIndex.entries()]
     .sort((a, b) => a[1] - b[1])
     .map(([p]) => p);
 
-  const packageMapping = await readTopLevelKey(statsFile, 'package_mapping');
   // The bundler-plugin-smartsnap emits a unique buildId per storybook build
   // so concurrent runs against the same project don't share Redis state.
   const buildId = await readTopLevelKey(statsFile, 'buildId');
-  return { files, modules, packageMapping, buildId };
-}
-
-function unionDiffsForCommits(commits) {
-  const union = new Set();
-  for (const c of commits) {
-    for (const f of gitDiffNames(c)) union.add(f);
-  }
-  return [...union];
+  return { files, modules, buildId };
 }
 
 async function pollGraphStatus(percy, buildId, log) {
@@ -145,7 +140,7 @@ async function pollGraphStatus(percy, buildId, log) {
     const res = await percy.client.getSmartsnapGraphStatus(buildId);
     const status = res?.status;
     log.debug(`SmartSnap: graph status (attempt ${i + 1}) = ${status}`);
-    if (status === 'done' || status === 'failed') return status;
+    if (status === 'done' || status === 'failure') return status;
   }
   return null;
 }
@@ -185,21 +180,24 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
   }
 
   const snapshotNames = snapshots.map(s => s.name);
-  const nameToCommit = await percy.client.getSmartsnapSnapshotNameToCommit(snapshotNames);
-  log.debug(`SmartSnap: nameToCommit ${JSON.stringify(nameToCommit)}`);
+  // New API shape: `{ base_build_commit_sha, snapshots: { <name>: <review_state> } }`.
+  // The single base-build commit replaces the previous per-snapshot commit map —
+  // baseline prediction now happens server-side via `Percy::BaseBuildService`,
+  // so we just diff against whatever commit it picked.
+  const baseLookup = await percy.client.getSmartsnapSnapshotNameToCommit(snapshotNames);
+  log.debug(`SmartSnap: base lookup ${JSON.stringify(baseLookup)}`);
 
   let affectedNodes;
 
   if (baseline) {
-    log.debug(`SmartSnap: diffing against baseline "${baseline}"`);
+    log.debug(`SmartSnap: diffing against explicit baseline "${baseline}"`);
     affectedNodes = gitDiffNames(baseline);
+  } else if (baseLookup?.base_build_commit_sha) {
+    log.debug(`SmartSnap: diffing against predicted base build commit "${baseLookup.base_build_commit_sha}"`);
+    affectedNodes = gitDiffNames(baseLookup.base_build_commit_sha);
   } else {
-    const commits = new Set();
-    for (const entry of Object.values(nameToCommit || {})) {
-      if (entry?.commit_sha != null) commits.add(entry.commit_sha);
-    }
-    log.debug(`SmartSnap: union diff across ${commits.size} baseline commits`);
-    affectedNodes = unionDiffsForCommits(commits);
+    log.warn('SmartSnap: API could not predict a base build commit and no explicit baseline was set; running full snapshot set');
+    return snapshots;
   }
 
   if (untraced?.length) {
@@ -216,7 +214,7 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
 
   const projectRoot = gitProjectRoot();
   log.debug(`SmartSnap: parsing stats file ${resolvedStatsPath}`);
-  const { files, modules, packageMapping, buildId } = await readStats(resolvedStatsPath, projectRoot);
+  const { files, modules, buildId } = await readStats(resolvedStatsPath, projectRoot);
 
   if (typeof buildId !== 'string' || !buildId) {
     log.warn(`SmartSnap: stats file at ${resolvedStatsPath} is missing a top-level "buildId" — running full snapshot set`);
@@ -249,9 +247,9 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
     log.debug(`SmartSnap: storybookPaths sample: ${storybookPaths.slice(0, 3).join(', ')}`);
   }
 
-  log.debug(`SmartSnap: starting graph generation job ${JSON.stringify({ buildId, files, modules, packageMapping, storybookPaths, affectedNodes })}`);
+  log.debug(`SmartSnap: starting graph generation job ${JSON.stringify({ buildId, files, modules, storybookPaths, affectedNodes })}`);
   await percy.client.generateSmartsnapGraph(buildId, {
-    files, modules, packageMapping, storybookPaths, affectedNodes
+    files, modules, storybookPaths, affectedNodes
   });
 
   const status = await pollGraphStatus(percy, buildId, log);
@@ -260,14 +258,14 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
     return snapshots;
   }
 
-  const data = await percy.client.getSmartsnapGraphData(buildId, { trace: true });
+  const data = await percy.client.getSmartsnapGraphData(buildId, { trace: trace });
 
   // Persist the rendered Drawflow visualization next to where the user ran
   // percy, so they can open it after the build finishes.
 
   log.info(`SmartSnap: graph data trace ${JSON.stringify(data)}`);
 
-  if (trace && data?.trace_graph_html) {
+  if (data?.trace_graph_html) {
     const tracePath = path.resolve(process.cwd(), 'trace.html');
     try {
       fs.writeFileSync(tracePath, data.trace_graph_html);
