@@ -94,6 +94,7 @@
     "glob-to-regexp": "^0.4.1",
     "qs": "^6.11.0",
     "react-router-dom": "7.13.1",
+    "snyk-nodejs-lockfile-parser": "2.7.1",
     "stream-json": "^1.8.0"
   },
   "devDependencies": {
