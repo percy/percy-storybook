@@ -263,7 +263,7 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
   // Persist the rendered Drawflow visualization next to where the user ran
   // percy, so they can open it after the build finishes.
 
-  log.info(`SmartSnap: graph data trace ${JSON.stringify(data)}`);
+  log.debug(`SmartSnap: affected stories result ${JSON.stringify(data?.affected_stories)}`);
 
   if (data?.trace_graph_html) {
     const tracePath = path.resolve(process.cwd(), 'trace.html');
@@ -277,12 +277,34 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
 
   const affected = new Set((data?.affected_stories || []).map(s => s.file_path));
 
+  // Snapshots whose baseline review_state is `failed` or `rejected` have no
+  // usable baseline image to diff against, and snapshots that don't appear
+  // in the base build at all are brand-new (no baseline exists yet). In
+  // both cases SmartSnap can't legitimately skip them — re-snapshot
+  // unconditionally regardless of what the affected-graph reports.
+  const baselineSnapshots = baseLookup?.snapshots || {};
+  const FORCE_RESNAPSHOT_STATES = new Set(['failed', 'rejected']);
+  const needsBaselineRefresh = name => {
+    const state = baselineSnapshots[name];
+    return state === undefined || FORCE_RESNAPSHOT_STATES.has(state);
+  };
+
   // Use the same normalization on lookup so a snapshot's `./src/...` matches
   // an affected-stories `src/...` from the API.
+  let forced = 0;
+  let affectedKept = 0;
   const filtered = snapshots.filter(s => {
+    if (needsBaselineRefresh(s.name)) {
+      forced += 1;
+      return true;
+    }
     const p = normalizeImportPath(s.importPath);
-    return p && affected.has(p);
+    if (p && affected.has(p)) {
+      affectedKept += 1;
+      return true;
+    }
+    return false;
   });
-  log.info(`SmartSnap: ${filtered.length} of ${snapshots.length} snapshots affected by changes`);
+  log.info(`SmartSnap: ${filtered.length} of ${snapshots.length} snapshots kept (${affectedKept} via affected-graph, ${forced} via missing/failed/rejected baseline)`);
   return filtered;
 }
