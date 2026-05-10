@@ -4,6 +4,7 @@ import { spawnSync } from 'child_process';
 import { createRequire } from 'module';
 import { logger } from '@percy/cli-command';
 import { matchesPattern } from './utils.js';
+import { diffLockfileDeps } from './lockfileDiff.js';
 
 // stream-json is CommonJS — load via createRequire to avoid named-import interop issues.
 const require = createRequire(import.meta.url);
@@ -194,16 +195,18 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
   log.debug(`SmartSnap: base lookup ${JSON.stringify(baseLookup)}`);
 
   let affectedNodes;
+  let baseRef;
 
   if (baseline) {
     log.debug(`SmartSnap: diffing against explicit baseline "${baseline}"`);
-    affectedNodes = gitDiffNames(baseline);
+    baseRef = baseline;
   } else if (baseLookup?.base_build_commit_sha) {
     log.debug(`SmartSnap: diffing against predicted base build commit "${baseLookup.base_build_commit_sha}"`);
-    affectedNodes = gitDiffNames(baseLookup.base_build_commit_sha);
+    baseRef = baseLookup.base_build_commit_sha;
   } else {
     throw new SmartSnapBailError('SmartSnap: API could not predict a base build commit and no explicit baseline was set; running full snapshot set');
   }
+  affectedNodes = gitDiffNames(baseRef);
 
   // HEAD already matches the base build commit (or the diff is otherwise
   // empty) — there's nothing for the dep graph to map. Bail to a full set.
@@ -218,12 +221,62 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
     throw new SmartSnapBailError(`SmartSnap: change to "${dotStorybookHit}" inside .storybook affects all stories; running full snapshot set`);
   }
 
-  // Manifest/lockfile changes mean the dependency tree itself shifted — modules
-  // not in this commit's diff may still resolve differently after install.
-  const LOCKFILES = new Set(['package.json', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']);
-  const lockHit = affectedNodes.find(p => LOCKFILES.has(path.basename(p)));
-  if (lockHit) {
-    throw new SmartSnapBailError(`SmartSnap: change to "${lockHit}" affects installed dependencies; running full snapshot set`);
+  // Manifest/lockfile changes can shift the dependency tree, so resolve the
+  // diff at the package level via snyk-nodejs-lockfile-parser and feed the
+  // changed package names back into the graph. Short-circuits below fall
+  // back to a full snapshot whenever we can't reason about the change.
+  const MANIFEST_PATHS = new Set(['package.json', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']);
+  const manifestHits = affectedNodes.filter(p => MANIFEST_PATHS.has(path.basename(p)));
+  const projectRoot = gitProjectRoot();
+
+  if (manifestHits.length > 0) {
+    // Locate the changed manifest's directory from affectedNodes (NOT the git
+    // root) — monorepos keep package.json + lockfile inside a workspace dir.
+    // If two changes land in different dirs, we'd need per-workspace resolution
+    // we don't try to do yet, so bail.
+    const uniqueDirs = [...new Set(manifestHits.map(p => path.dirname(p)))];
+    if (uniqueDirs.length > 1) {
+      throw new SmartSnapBailError(`SmartSnap: manifest changes span multiple directories (${uniqueDirs.join(', ')}); running full snapshot set`);
+    }
+    const manifestDir = uniqueDirs[0]; // repo-relative; '.' for root
+    const absManifestDir = path.resolve(projectRoot, manifestDir);
+
+    // Pick the lockfile that lives next to the changed manifest. If two
+    // coexist (e.g. a stray package-lock.json next to yarn.lock) we can't
+    // pick a canonical source, so bail.
+    const LOCKFILE_NAMES = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml'];
+    const presentLockfiles = LOCKFILE_NAMES.filter(n => fs.existsSync(path.join(absManifestDir, n)));
+    if (presentLockfiles.length === 0) {
+      throw new SmartSnapBailError(`SmartSnap: manifest changed in "${manifestDir}" but no lockfile present there; running full snapshot set`);
+    }
+    if (presentLockfiles.length > 1) {
+      throw new SmartSnapBailError(`SmartSnap: multiple lockfiles in "${manifestDir}" (${presentLockfiles.join(', ')}); cannot pick canonical; running full snapshot set`);
+    }
+    const lockfileName = presentLockfiles[0];
+    // git always uses forward slashes for its <rev>:<path> spec; build it by
+    // hand instead of path.join (which would use backslashes on Windows).
+    const lockfileRepoPath = manifestDir === '.' ? lockfileName : `${manifestDir}/${lockfileName}`;
+
+    // Resolve the lockfile at the base commit. If it wasn't tracked there
+    // (first SmartSnap run, lockfile renamed, etc.) we can't diff, so bail.
+    let oldLockfile;
+    try {
+      oldLockfile = git(['show', `${baseRef}:${lockfileRepoPath}`]);
+    } catch {
+      throw new SmartSnapBailError(`SmartSnap: lockfile "${lockfileRepoPath}" not present at base ref ${baseRef}; running full snapshot set`);
+    }
+
+    const newLockfile = fs.readFileSync(path.join(absManifestDir, lockfileName), 'utf8');
+
+    if (oldLockfile !== newLockfile) {
+      // Lockfile actually shifted — invoke the diff. If byte-identical, only
+      // package.json's non-dep fields changed and we fall through unchanged.
+      const packageJson = fs.readFileSync(path.join(absManifestDir, 'package.json'), 'utf8');
+      const packageAffected = await diffLockfileDeps({
+        packageJson, oldLockfile, newLockfile, lockfileType: lockfileName
+      });
+      log.debug(`SmartSnap: lockfile diff produced ${packageAffected.length} affected packages: ${packageAffected.join(', ')}`);
+    }
   }
 
   if (untraced?.length) {
@@ -237,7 +290,6 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
     }
   }
 
-  const projectRoot = gitProjectRoot();
   log.debug(`SmartSnap: parsing stats file ${resolvedStatsPath}`);
   const { files, modules, buildId } = await readStats(resolvedStatsPath, projectRoot);
 
