@@ -272,8 +272,11 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
       // Lockfile actually shifted — invoke the diff. If byte-identical, only
       // package.json's non-dep fields changed and we fall through unchanged.
       const packageJson = fs.readFileSync(path.join(absManifestDir, 'package.json'), 'utf8');
+      const packageJsonRepoPath = manifestDir === '.' ? "package.json" : `${manifestDir}/package.json`;
+      const oldPackageJson = git(['show', `${baseRef}:${packageJsonRepoPath}`]);
       const packageAffected = await diffLockfileDeps({
-        packageJson, oldLockfile, newLockfile, lockfileType: lockfileName
+        packageJson, oldLockfile, newLockfile, lockfileType: lockfileName,
+        oldPackageJson
       });
       log.debug(`SmartSnap: lockfile diff produced ${packageAffected.length} affected packages: ${packageAffected.join(', ')}`);
     }

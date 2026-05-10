@@ -33,30 +33,69 @@ function flattenPkgTree(tree) {
   return out;
 }
 
+// Pull `{ name -> rangeString }` from a raw package.json's `dependencies`
+// and `peerDependencies` blocks. devDeps and optionalDeps are intentionally
+// excluded — only runtime-relevant top-level packages count. Returns {} on
+// parse failure so the diff falls through to lockfile-only signal.
+function topLevelDeps(packageJsonContents) {
+  try {
+    const pkg = JSON.parse(packageJsonContents);
+    return {
+      ...(pkg.dependencies || {}),
+      ...(pkg.peerDependencies || {})
+    };
+  } catch {
+    return {};
+  }
+}
+
 // Given the project's package.json plus the old and new lockfile contents,
 // return the set of package names that were added, removed, or version-bumped.
-// The caller forwards these as additional `affectedNodes` to the SmartSnap
-// graph API, which already accepts package names alongside file paths.
-export async function diffLockfileDeps({ packageJson, oldLockfile, newLockfile, lockfileType }) {
+// Results are restricted to packages declared at the top level (dependencies
+// or peerDependencies) of either old or new package.json — transitives ride
+// along on direct-dep bumps and the BE module graph already resolves them
+// from stats `imports[]`, so surfacing them here would just be noise.
+//
+// Two complementary diffs run, both gated by top-level names:
+//   1. Resolved-version diff over the snyk PkgTree — catches lockfile entries
+//      whose version actually changed.
+//   2. Range-string diff over package.json — catches the case where a user
+//      bumped `^5.8.3` to `^5.18.0` but the lockfile already resolved to
+//      5.18.0 under the old range, so the resolved tree looks identical.
+export async function diffLockfileDeps({ packageJson, oldPackageJson, oldLockfile, newLockfile, lockfileType }) {
   const type = TYPE_BY_FILENAME[lockfileType];
   if (!type) {
     throw new Error(`Unsupported lockfile type: ${lockfileType}`);
   }
 
   const [oldTree, newTree] = await Promise.all([
-    buildDepTree(packageJson, oldLockfile, true, type),
+    buildDepTree(oldPackageJson, oldLockfile, true, type),
     buildDepTree(packageJson, newLockfile, true, type)
   ]);
 
   const oldPkgs = flattenPkgTree(oldTree);
   const newPkgs = flattenPkgTree(newTree);
 
+  const oldTopLevel = topLevelDeps(oldPackageJson);
+  const newTopLevel = topLevelDeps(packageJson);
+  const topLevelNames = new Set([...Object.keys(oldTopLevel), ...Object.keys(newTopLevel)]);
+
   const affected = new Set();
   for (const [name, version] of newPkgs) {
+    if (!topLevelNames.has(name)) continue;
     if (!oldPkgs.has(name) || oldPkgs.get(name) !== version) affected.add(name);
   }
   for (const [name] of oldPkgs) {
+    if (!topLevelNames.has(name)) continue;
     if (!newPkgs.has(name)) affected.add(name);
   }
+
+  // Range-string diff is inherently top-level since it iterates package.json
+  // directly. `!==` between the strings (or undefined) covers added, removed,
+  // and changed in a single comparison.
+  for (const name of topLevelNames) {
+    if (oldTopLevel[name] !== newTopLevel[name]) affected.add(name);
+  }
+
   return [...affected];
 }
