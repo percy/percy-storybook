@@ -23,6 +23,16 @@ const stripNull = s => (typeof s === 'string' ? s.replaceAll(NULL_CHAR, '') : s)
 const POLL_INTERVAL_MS = 5000;
 const POLL_ATTEMPTS = 12;
 
+// Thrown from any pipeline step that wants to fall back to the full snapshot
+// set. The caller in snapshots.js downgrades these to log.info — they're
+// expected, user-visible bail conditions, not crashes.
+export class SmartSnapBailError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'SmartSnapBailError';
+  }
+}
+
 function git(args) {
   const res = spawnSync('git', args, { encoding: 'utf8' });
   if (res.status !== 0) {
@@ -154,8 +164,7 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
 
 
   if (!buildDir) {
-    log.warn('SmartSnap requires the Storybook build directory (e.g. `percy storybook ./storybook-static`); URL and `start` modes are not supported. Running full snapshot set');
-    return snapshots;
+    throw new SmartSnapBailError('SmartSnap requires the Storybook build directory (e.g. `percy storybook ./storybook-static`); URL and `start` modes are not supported. Running full snapshot set');
   }
 
   // Treat statsFile as a flat filename anchored inside the build directory.
@@ -163,20 +172,17 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
   // escape buildDir even if the config is hostile.
   const statsName = path.basename(statsFile || 'enriched-stats.json');
   if (!/^[\w.-]+\.json$/i.test(statsName)) {
-    log.warn(`SmartSnap: invalid statsFile "${statsName}" — must be a .json filename; running full snapshot set`);
-    return snapshots;
+    throw new SmartSnapBailError(`SmartSnap: invalid statsFile "${statsName}" — must be a .json filename; running full snapshot set`);
   }
   const resolvedStatsPath = path.join(path.resolve(buildDir), statsName);
   let statsStat;
   try {
     statsStat = fs.statSync(resolvedStatsPath);
   } catch {
-    log.warn(`SmartSnap: stats file "${statsName}" not found in build directory ${buildDir}; running full snapshot set`);
-    return snapshots;
+    throw new SmartSnapBailError(`SmartSnap: stats file "${statsName}" not found in build directory ${buildDir}; running full snapshot set`);
   }
   if (!statsStat.isFile()) {
-    log.warn(`SmartSnap: stats file "${statsName}" in ${buildDir} is not a regular file; running full snapshot set`);
-    return snapshots;
+    throw new SmartSnapBailError(`SmartSnap: stats file "${statsName}" in ${buildDir} is not a regular file; running full snapshot set`);
   }
 
   const snapshotNames = snapshots.map(s => s.name);
@@ -196,8 +202,28 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
     log.debug(`SmartSnap: diffing against predicted base build commit "${baseLookup.base_build_commit_sha}"`);
     affectedNodes = gitDiffNames(baseLookup.base_build_commit_sha);
   } else {
-    log.warn('SmartSnap: API could not predict a base build commit and no explicit baseline was set; running full snapshot set');
-    return snapshots;
+    throw new SmartSnapBailError('SmartSnap: API could not predict a base build commit and no explicit baseline was set; running full snapshot set');
+  }
+
+  // HEAD already matches the base build commit (or the diff is otherwise
+  // empty) — there's nothing for the dep graph to map. Bail to a full set.
+  if (affectedNodes.length === 0) {
+    throw new SmartSnapBailError('SmartSnap: no files changed between HEAD and base build commit; running full snapshot set');
+  }
+
+  // A change to anything under `.storybook/` (preview config, addons, manager
+  // wiring) can affect every story's render, so the dep graph isn't enough.
+  const dotStorybookHit = affectedNodes.find(p => p.split(/[/\\]/).includes('.storybook'));
+  if (dotStorybookHit) {
+    throw new SmartSnapBailError(`SmartSnap: change to "${dotStorybookHit}" inside .storybook affects all stories; running full snapshot set`);
+  }
+
+  // Manifest/lockfile changes mean the dependency tree itself shifted — modules
+  // not in this commit's diff may still resolve differently after install.
+  const LOCKFILES = new Set(['package.json', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']);
+  const lockHit = affectedNodes.find(p => LOCKFILES.has(path.basename(p)));
+  if (lockHit) {
+    throw new SmartSnapBailError(`SmartSnap: change to "${lockHit}" affects installed dependencies; running full snapshot set`);
   }
 
   if (untraced?.length) {
@@ -207,8 +233,7 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
   if (bailOnChanges?.length) {
     const bailed = affectedNodes.find(p => bailOnChanges.some(g => matchesPattern(p, g)));
     if (bailed) {
-      log.warn(`SmartSnap: change to "${bailed}" matched bailOnChanges; running full snapshot set`);
-      return snapshots;
+      throw new SmartSnapBailError(`SmartSnap: change to "${bailed}" matched bailOnChanges; running full snapshot set`);
     }
   }
 
@@ -217,8 +242,7 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
   const { files, modules, buildId } = await readStats(resolvedStatsPath, projectRoot);
 
   if (typeof buildId !== 'string' || !buildId) {
-    log.warn(`SmartSnap: stats file at ${resolvedStatsPath} is missing a top-level "buildId" — running full snapshot set`);
-    return snapshots;
+    throw new SmartSnapBailError(`SmartSnap: stats file at ${resolvedStatsPath} is missing a top-level "buildId" — running full snapshot set`);
   }
 
   // Storybook's `parameters.fileName` (and v7+ `entries[id].importPath`)
@@ -254,8 +278,7 @@ export async function applySmartSnap(percy, snapshots, smartSnapConfig, buildDir
 
   const status = await pollGraphStatus(percy, buildId, log);
   if (status !== 'done') {
-    log.warn(`SmartSnap: graph generation did not complete (status: ${status ?? 'timed out'}); running full snapshot set`);
-    return snapshots;
+    throw new SmartSnapBailError(`SmartSnap: graph generation did not complete (status: ${status ?? 'timed out'}); running full snapshot set`);
   }
 
   const data = await percy.client.getSmartsnapGraphData(buildId, { trace: trace });

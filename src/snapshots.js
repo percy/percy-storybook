@@ -18,7 +18,7 @@ import {
   generateDocRuleOptions,
   isDocAutodoc
 } from './utils.js';
-import { applySmartSnap } from './smartsnap.js';
+import { applySmartSnap, SmartSnapBailError } from './smartsnap.js';
 
 // Main capture function
 export async function captureDOM(page, options, percy, log, story) {
@@ -334,7 +334,11 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
       try {
         snapshots = yield applySmartSnap(percy, snapshots, storybookConfig.smartSnap, buildDir);
       } catch (e) {
-        log.warn(`SmartSnap failed (${e.message}); running full snapshot set`);
+        if (e instanceof SmartSnapBailError) {
+          log.info(e.message);
+        } else {
+          log.warn(`SmartSnap failed (${e.message}); running full snapshot set`);
+        }
       }
     }
 
