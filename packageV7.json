@@ -77,9 +77,7 @@
   "dependencies": {
     "@percy/cli-command": "^1.30.7",
     "cross-spawn": "^7.0.3",
-    "qs": "^6.11.0",
-    "snyk-nodejs-lockfile-parser": "2.7.1",
-    "stream-json": "^1.8.0"
+    "qs": "^6.11.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.23.0",

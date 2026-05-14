@@ -1,4 +1,4 @@
-import { logger, PercyConfig } from '@percy/cli-command';
+import { logger, PercyConfig, applySmartSnap, SmartSnapBailError } from '@percy/cli-command';
 import { yieldAll } from '@percy/cli-command/utils';
 import qs from 'qs';
 import {
@@ -18,7 +18,6 @@ import {
   generateDocRuleOptions,
   isDocAutodoc
 } from './utils.js';
-import { applySmartSnap, SmartSnapBailError } from './smartsnap.js';
 
 // Main capture function
 export async function captureDOM(page, options, percy, log, story) {
