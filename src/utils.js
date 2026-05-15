@@ -312,14 +312,68 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       });
     }
 
+    // Stamp each story with its source `importPath` from the storyIndex so
+    // SmartSnap can map a snapshot back to the file that defines it.
+    // Try the v7+ entries map first; fall back to the older `parameters.fileName`
+    // which Storybook used to set on the story object directly.
+    const resolveImportPath = (s) => {
+      if (!s) return undefined;
+      if (entries && s.id && entries[s.id]?.importPath) return entries[s.id].importPath;
+      // older Storybook versions / non-storyIndex sources
+      return s.parameters?.fileName || s.parameters?.__id || undefined;
+    };
+    const stampImportPath = list => {
+      for (const s of list) {
+        const ip = resolveImportPath(s);
+        if (ip) s.importPath = ip;
+      }
+      return list;
+    };
+
     const storiesObj = await (window.__STORYBOOK_PREVIEW__?.extract?.());
+    let stories;
+    let source;
     if (storiesObj && !Array.isArray(storiesObj)) {
-      const stories = Object.values(storiesObj);
-      return stories.concat(docsEntries);
+      source = '__STORYBOOK_PREVIEW__.extract';
+      stories = stampImportPath(Object.values(storiesObj))
+        .concat(stampImportPath(docsEntries));
+    } else {
+      source = '__STORYBOOK_STORY_STORE__.raw';
+      await window.__STORYBOOK_STORY_STORE__?.extract?.();
+      stories = stampImportPath(window.__STORYBOOK_STORY_STORE__.raw());
     }
 
-    await window.__STORYBOOK_STORY_STORE__?.extract?.();
-    return window.__STORYBOOK_STORY_STORE__.raw();
+    // Build a diagnostics blob so the host side can log what we saw without
+    // having to re-eval the page.
+    const sampleEntry = entries
+      ? (() => {
+          const firstId = Object.keys(entries)[0];
+          if (!firstId) return null;
+          const e = entries[firstId];
+          return { id: firstId, keys: Object.keys(e || {}), importPath: e?.importPath };
+        })()
+      : null;
+    const sampleStory = stories[0]
+      ? {
+          id: stories[0].id,
+          importPath: stories[0].importPath,
+          parameterKeys: stories[0].parameters ? Object.keys(stories[0].parameters) : [],
+          fileName: stories[0].parameters?.fileName
+        }
+      : null;
+    const withImportPath = stories.filter(s => s.importPath).length;
+
+    stories.__smartsnapDiagnostics = {
+      source,
+      entriesPresent: !!entries,
+      entriesCount: entries ? Object.keys(entries).length : 0,
+      storiesTotal: stories.length,
+      storiesWithImportPath: withImportPath,
+      sampleEntry,
+      sampleStory
+    };
+
+    return stories;
   }, 5000).catch(() => Promise.reject(new Error(
     'Storybook object not found on the window. ' +
       'Open Storybook and check the console for errors.'
@@ -330,13 +384,15 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       name: story.kind ? `${story.kind}: ${story.name}` : `${story.title}: ${story.name}`,
       ...story.parameters?.percy,
       id: story.id,
+      importPath: story.importPath,
       type: story.type ? story.type : 'story',
       tags: story.tags
     }, invalid));
 
     return {
       invalid: Array.from(invalid),
-      data
+      data,
+      diagnostics: stories.__smartsnapDiagnostics
     };
   });
 }
