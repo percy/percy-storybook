@@ -83,4 +83,10 @@ export const flags = [{
   percyrc: 'storybook.smartSnap.statsFile',
   type: 'string',
   default: 'enriched-stats.json'
+}, {
+  name: 'smart-snap-fail-build-on-failure',
+  description: 'Fail the build if SmartSnap encounters any error instead of falling back to a full snapshot set',
+  percyrc: 'storybook.smartSnap.failBuildOnFailure',
+  type: 'boolean',
+  default: false
 }];

@@ -232,6 +232,10 @@ export const configSchema = {
           statsFile: {
             type: 'string',
             default: 'enriched-stats.json'
+          },
+          failBuildOnFailure: {
+            type: 'boolean',
+            default: false
           }
         }
       }

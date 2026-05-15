@@ -338,6 +338,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
         } else {
           log.warn(`SmartSnap failed (${e.message}); running full snapshot set`);
         }
+        if (storybookConfig.smartSnap.failBuildOnFailure) throw e;
       }
     }
 
