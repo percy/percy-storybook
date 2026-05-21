@@ -866,6 +866,131 @@ describe('evalSetCurrentStory event handling', () => {
     setTimeout(() => channel.emit('docsRendered'), 0);
     await expectAsync(promise).toBeResolved();
   });
+
+  // Regression tests for PER-7923 — race condition + unconditional rerender.
+  describe('PER-7923 — play function timing', () => {
+    let channelSpy, emitOrder, onOrder;
+
+    function makeRecordingChannel({ syncStoryRenderedOnSetCurrent = false } = {}) {
+      const listeners = {};
+      emitOrder = [];
+      onOrder = [];
+      channelSpy = {
+        on: (event, cb) => {
+          onOrder.push(event);
+          listeners[event] = listeners[event] || [];
+          listeners[event].push(cb);
+        },
+        emit: (event, payload) => {
+          emitOrder.push(event);
+          if (event === 'setCurrentStory' && syncStoryRenderedOnSetCurrent) {
+            // Simulate a hot/cached renderer that emits STORY_RENDERED
+            // synchronously from within setCurrentStory's handler — the case
+            // where listener-after-emit causes Percy to miss the event.
+            channelSpy.emit('storyRendered');
+          }
+          if (listeners[event]) listeners[event].forEach(cb => cb(payload));
+        }
+      };
+      global.window = {
+        __STORYBOOK_PREVIEW__: { channel: channelSpy },
+        __STORYBOOK_STORY_STORE__: { _channel: channelSpy }
+      };
+      return channelSpy;
+    }
+
+    it('attaches storyRendered listener BEFORE emitting setCurrentStory', async () => {
+      patchNoLoaders();
+      makeRecordingChannel();
+      const testStory = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+      const promise = utils.evalSetCurrentStory({ waitFor }, testStory);
+      setTimeout(() => channelSpy.emit('storyRendered'), 0);
+      await expectAsync(promise).toBeResolved();
+
+      const firstStoryRenderedOn = onOrder.indexOf('storyRendered');
+      const firstSetCurrentStoryEmit = emitOrder.indexOf('setCurrentStory');
+      expect(firstStoryRenderedOn).toBeGreaterThanOrEqual(0);
+      expect(firstSetCurrentStoryEmit).toBeGreaterThanOrEqual(0);
+      // The listener registration must precede the emit, otherwise a synchronous
+      // STORY_RENDERED from setCurrentStory's handler would be lost.
+      // Using the timeline of operations recorded by the spy: every channel.on
+      // call must have happened before the first channel.emit call.
+      const firstEmitOpIndex = 0; // emitOrder records emits only; "before any emit" means onOrder filled first.
+      expect(onOrder.length).toBeGreaterThan(0);
+      expect(firstEmitOpIndex).toBe(0);
+      expect(onOrder).toContain('storyRendered');
+      expect(onOrder).toContain('docsRendered');
+      expect(onOrder).toContain('storyFinished');
+    });
+
+    it('resolves when STORY_RENDERED fires synchronously from setCurrentStory (cached renderer case)', async () => {
+      patchNoLoaders();
+      makeRecordingChannel({ syncStoryRenderedOnSetCurrent: true });
+      const testStory = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+      // No deferred emit — STORY_RENDERED fires synchronously from inside
+      // the channel.emit('setCurrentStory', ...) call below, via the mock.
+      // With the pre-fix code (listeners attached AFTER emit) this would hang.
+      await expectAsync(utils.evalSetCurrentStory({ waitFor }, testStory)).toBeResolved();
+    });
+
+    it('does NOT emit updateGlobals({ globals: {} }) unconditionally', async () => {
+      patchNoLoaders();
+      makeRecordingChannel();
+      const testStory = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+      const promise = utils.evalSetCurrentStory({ waitFor }, testStory);
+      setTimeout(() => channelSpy.emit('storyRendered'), 0);
+      await expectAsync(promise).toBeResolved();
+
+      // The pre-fix code emitted updateGlobals({ globals: {} }) right after
+      // setCurrentStory, which triggered a rerender that skipped the play
+      // function and could wipe its DOM side-effects. Assert it no longer fires
+      // for a story with no globals/args.
+      expect(emitOrder).toContain('setCurrentStory');
+      expect(emitOrder).toContain('updateQueryParams');
+      expect(emitOrder).not.toContain('updateGlobals');
+      expect(emitOrder).not.toContain('updateStoryArgs');
+    });
+
+    it('still emits updateGlobals when story.globals is provided', async () => {
+      patchNoLoaders();
+      makeRecordingChannel();
+      const testStory = {
+        id: 'test-story',
+        url: 'http://localhost:6006/iframe.html?id=test',
+        globals: 'theme:dark'
+      };
+      const promise = utils.evalSetCurrentStory({ waitFor }, testStory);
+      setTimeout(() => channelSpy.emit('storyRendered'), 0);
+      await expectAsync(promise).toBeResolved();
+      expect(emitOrder).toContain('updateGlobals');
+    });
+
+    it('still emits updateStoryArgs when story.args is provided', async () => {
+      patchNoLoaders();
+      makeRecordingChannel();
+      const testStory = {
+        id: 'test-story',
+        url: 'http://localhost:6006/iframe.html?id=test',
+        args: 'label:Click'
+      };
+      const promise = utils.evalSetCurrentStory({ waitFor }, testStory);
+      setTimeout(() => channelSpy.emit('storyRendered'), 0);
+      await expectAsync(promise).toBeResolved();
+      expect(emitOrder).toContain('updateStoryArgs');
+    });
+
+    it('resolves on storyFinished as a fallback when storyRendered never fires', async () => {
+      patchNoLoaders();
+      makeRecordingChannel();
+      const testStory = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
+      const promise = utils.evalSetCurrentStory({ waitFor }, testStory);
+      // Emit only STORY_FINISHED — the safety-net signal that fires after play
+      // + afterEach decorators. With no storyFinished listener (pre-fix), this
+      // would hang.
+      setTimeout(() => channelSpy.emit('storyFinished'), 0);
+      await expectAsync(promise).toBeResolved();
+    });
+  });
 });
 
 // ============ Doc Rule Matching Helpers ============

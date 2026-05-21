@@ -354,13 +354,6 @@ export function evalSetCurrentStory({ waitFor }, story) {
   ))).then(channel => {
     let { id, queryParams, globals, args } = story;
 
-    // emit a series of events to render the desired story
-    channel.emit('setCurrentStory', { storyId: id });
-    channel.emit('updateGlobals', { globals: {} });
-    channel.emit('updateQueryParams', { ...queryParams });
-    if (globals) channel.emit('updateGlobals', { globals: decodeStoryArgs(globals) });
-    if (args) channel.emit('updateStoryArgs', { storyId: id, updatedArgs: decodeStoryArgs(args) });
-
     // resolve when rendered, reject on any other renderer event
     return new Promise((resolve, reject) => {
       const handleRendered = () => {
@@ -372,12 +365,30 @@ export function evalSetCurrentStory({ waitFor }, story) {
         }, 100);
       };
 
+      // Attach listeners BEFORE emitting setCurrentStory. Storybook can emit
+      // STORY_RENDERED synchronously from within setCurrentStory's handler for hot
+      // or cached renderers; if we attached after emit we'd miss the event and
+      // hang until a higher-level timeout produced a pre-play snapshot.
       channel.on('storyRendered', handleRendered);
       channel.on('docsRendered', handleRendered);
+      // STORY_FINISHED is emitted after play + afterEach decorators, and serves as a
+      // guaranteed fallback in case STORY_RENDERED is missed for any reason.
+      channel.on('storyFinished', handleRendered);
 
       channel.on('storyMissing', (err) => reject(err || new Error('Story Missing')));
       channel.on('storyErrored', (err) => reject(err || new Error('Story Errored')));
       channel.on('storyThrewException', (err) => reject(err || new Error('Story Threw Exception')));
+
+      // Emit only the events that actually need to change. The previous
+      // unconditional `updateGlobals({ globals: {} })` after setCurrentStory
+      // triggered a Storybook rerender with forceRemount=false, which skips the
+      // play function and can re-render the component tree before the play
+      // function's state updates have committed — wiping post-play DOM state
+      // (e.g. aria-expanded="true" on a clicked toggle) before Percy serializes.
+      channel.emit('setCurrentStory', { storyId: id });
+      channel.emit('updateQueryParams', { ...queryParams });
+      if (globals) channel.emit('updateGlobals', { globals: decodeStoryArgs(globals) });
+      if (args) channel.emit('updateStoryArgs', { storyId: id, updatedArgs: decodeStoryArgs(args) });
     });
 
     // Helper function to wait for all loaders to disappear
