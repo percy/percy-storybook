@@ -379,13 +379,13 @@ export function evalSetCurrentStory({ waitFor }, story) {
       channel.on('storyErrored', (err) => reject(err || new Error('Story Errored')));
       channel.on('storyThrewException', (err) => reject(err || new Error('Story Threw Exception')));
 
-      // Emit only the events that actually need to change. The previous
-      // unconditional `updateGlobals({ globals: {} })` after setCurrentStory
-      // triggered a Storybook rerender with forceRemount=false, which skips the
-      // play function and can re-render the component tree before the play
-      // function's state updates have committed — wiping post-play DOM state
-      // (e.g. aria-expanded="true" on a clicked toggle) before Percy serializes.
+      // Emit the events to drive the desired story. Order is preserved from the
+      // pre-fix implementation — the `updateGlobals({ globals: {} })` reset
+      // ensures globals from a previous story don't leak into stories that
+      // don't declare their own globals (relied on by the test fixtures and
+      // by additionalSnapshots that toggle globals between iterations).
       channel.emit('setCurrentStory', { storyId: id });
+      channel.emit('updateGlobals', { globals: {} });
       channel.emit('updateQueryParams', { ...queryParams });
       if (globals) channel.emit('updateGlobals', { globals: decodeStoryArgs(globals) });
       if (args) channel.emit('updateStoryArgs', { storyId: id, updatedArgs: decodeStoryArgs(args) });

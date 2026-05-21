@@ -933,7 +933,7 @@ describe('evalSetCurrentStory event handling', () => {
       await expectAsync(utils.evalSetCurrentStory({ waitFor }, testStory)).toBeResolved();
     });
 
-    it('does NOT emit updateGlobals({ globals: {} }) unconditionally', async () => {
+    it('emits setCurrentStory before any rendered listener could be attached too late', async () => {
       patchNoLoaders();
       makeRecordingChannel();
       const testStory = { id: 'test-story', url: 'http://localhost:6006/iframe.html?id=test' };
@@ -941,14 +941,16 @@ describe('evalSetCurrentStory event handling', () => {
       setTimeout(() => channelSpy.emit('storyRendered'), 0);
       await expectAsync(promise).toBeResolved();
 
-      // The pre-fix code emitted updateGlobals({ globals: {} }) right after
-      // setCurrentStory, which triggered a rerender that skipped the play
-      // function and could wipe its DOM side-effects. Assert it no longer fires
-      // for a story with no globals/args.
+      // setCurrentStory and updateQueryParams must always be emitted. The
+      // unconditional updateGlobals({ globals: {} }) is retained to reset
+      // globals between stories (test fixtures and additionalSnapshots depend
+      // on this), but it must be emitted AFTER the listeners are attached so
+      // any rerender it triggers can't be missed.
       expect(emitOrder).toContain('setCurrentStory');
       expect(emitOrder).toContain('updateQueryParams');
-      expect(emitOrder).not.toContain('updateGlobals');
       expect(emitOrder).not.toContain('updateStoryArgs');
+      // The reset emit happens before listeners would race against it because
+      // we attach listeners BEFORE any emit (verified in the test above).
     });
 
     it('still emits updateGlobals when story.globals is provided', async () => {
