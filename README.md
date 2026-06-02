@@ -255,6 +255,17 @@ storybook:
 See the [configuration options above](#configuration) for details about each accepted config file
 option (**note**: the `skip` and `name` parameters are _not_ accepted as Percy config file options).
 
+### Play function errors
+
+When a story's `play` function throws (for example a failed interaction or assertion), Storybook
+still renders the story, so Percy captures the snapshot — but that snapshot may not reflect the
+interaction (e.g. a click that never landed). Percy logs a warning for these stories so you know the
+interaction did not complete, and still takes the snapshot:
+
+```
+[percy] <story name>: the story's play function reported an error, so this snapshot may not reflect the interaction. <error>
+```
+
 ## Upgrading
 
 Prior versions of the Storybook SDK were drastically different than the current version. The

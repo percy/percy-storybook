@@ -203,6 +203,38 @@ describe('percy storybook', () => {
     ]));
   });
 
+  it('warns but still snapshots when a play function errors (non-blocking)', async () => {
+    // The story renders AND its play function reports an error. By default Percy
+    // captures the snapshot and warns — it must not reject the build.
+    let channel = 'channel: { emit() {}, on: (a, c) => { ' +
+      'if (a === "storyRendered") c(); ' +
+      'if (a === "playFunctionThrewException") c(new Error("Play Error")); } }';
+    server.reply('/iframe.html', () => [200, 'text/html', [
+      `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])}  }, ${channel} }</script>`,
+      `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])} }</script>`
+    ].join('')]);
+
+    server.reply('/iframe.html?id=1&viewMode=story', () => [200, 'text/html', [
+      `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])}  }, ${channel} }</script>`,
+      `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])} }</script>`
+    ].join('')]);
+
+    // Build must succeed (snapshot still taken)...
+    await expectAsync(storybook(['http://localhost:8000'])).toBeResolved();
+    // ...and a non-blocking warning must surface the play error.
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
+      jasmine.stringMatching(/play function reported an error, so this snapshot may not reflect the interaction\. Play Error/)
+    ]));
+  });
+
   describe('with PERCY_SKIP_STORY_ON_ERROR set to true', () => {
     beforeAll(() => {
       process.env.PERCY_SKIP_STORY_ON_ERROR = true;

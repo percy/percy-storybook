@@ -268,7 +268,13 @@ async function* processStory(page, story, previewResource, percy, flags, log) {
   } else {
     log.debug(`Loading story: ${options.name}`);
     // when not dry-running and javascript is not enabled, capture the story dom
-    yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
+    let renderResult = yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
+    // A play function threw but we still snapshot — warn so the user understands the
+    // snapshot may not reflect the interaction (e.g. a click that never landed).
+    if (renderResult?.playError) {
+      log.warn(`${options.name}: the story's play function reported an error, so this snapshot may ` +
+        `not reflect the interaction. ${renderResult.playError}`);
+    }
     options.domSnapshot = await captureDOM(page, options, percy, log, story);
   }
 
