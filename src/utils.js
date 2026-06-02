@@ -352,7 +352,7 @@ export function evalSetCurrentStory({ waitFor }, story) {
     'Storybook object not found on the window. ' +
       'Open Storybook and check the console for errors.'
   ))).then(channel => {
-    let { id, queryParams, globals, args, failOnStoryError } = story;
+    let { id, queryParams, globals, args } = story;
 
     // emit a series of events to render the desired story
     channel.emit('setCurrentStory', { storyId: id });
@@ -386,21 +386,14 @@ export function evalSetCurrentStory({ waitFor }, story) {
       // A failing `play` function (e.g. a thrown assertion or an interaction that
       // never lands) is reported by Storybook on these channels rather than as a
       // render exception. Without subscribing to them Percy resolves on
-      // `storyRendered` and silently snapshots the un-interacted DOM. We capture
-      // the failure so the caller can warn that the snapshot may not reflect the
-      // interaction — but we still take the snapshot (non-blocking). Teams that
-      // want CI to fail can opt in with `failOnStoryError`.
+      // `storyRendered` and silently snapshots the un-interacted DOM. Capture the
+      // failure so the caller can warn that the snapshot may not reflect the
+      // interaction — the snapshot is still taken (non-blocking).
       const handlePlayError = (err, fallback) => {
-        let message;
         try {
-          message = (err && err.message) || (typeof err === 'string' ? err : (err && JSON.stringify(err))) || fallback;
+          playError = (err && err.message) || (typeof err === 'string' ? err : (err && JSON.stringify(err))) || fallback;
         } catch (e) {
-          message = fallback;
-        }
-        if (failOnStoryError) {
-          reject(err || new Error(fallback));
-        } else {
-          playError = message;
+          playError = fallback;
         }
       };
       channel.on('playFunctionThrewException', (err) => handlePlayError(err, 'Play Function Threw Exception'));
