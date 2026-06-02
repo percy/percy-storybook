@@ -363,12 +363,16 @@ export function evalSetCurrentStory({ waitFor }, story) {
 
     // resolve when rendered, reject on any other renderer event
     return new Promise((resolve, reject) => {
+      // Capture a play-function failure (if any) so the caller can warn about it.
+      // We still resolve and snapshot the story — the failure is surfaced, not blocking.
+      let playError = null;
+
       const handleRendered = () => {
         // After the story/docs is rendered, add a small delay before checking loaders
         // This helps ensure that any post-render loader state changes have time to occur
         setTimeout(() => {
           // Wait for any loaders to disappear before resolving
-          waitForLoadersToDisappear().then(resolve).catch(reject);
+          waitForLoadersToDisappear().then(() => resolve({ playError })).catch(reject);
         }, 100);
       };
 
@@ -379,16 +383,28 @@ export function evalSetCurrentStory({ waitFor }, story) {
       channel.on('storyErrored', (err) => reject(err || new Error('Story Errored')));
       channel.on('storyThrewException', (err) => reject(err || new Error('Story Threw Exception')));
 
-      // A failing `play` function (e.g. a thrown assertion or interaction that
-      // never lands) is reported by Storybook on these channels rather than as
-      // a render exception, so without subscribing to them Percy resolves on
-      // `storyRendered` and silently snapshots the un-interacted DOM. When
-      // `failOnStoryError` is enabled, surface those failures so CI can catch
-      // broken interactive stories. Opt-in to preserve existing behavior.
-      if (failOnStoryError) {
-        channel.on('playFunctionThrewException', (err) => reject(err || new Error('Play Function Threw Exception')));
-        channel.on('unhandledErrorsWhilePlaying', (err) => reject(err || new Error('Unhandled Errors While Playing')));
-      }
+      // A failing `play` function (e.g. a thrown assertion or an interaction that
+      // never lands) is reported by Storybook on these channels rather than as a
+      // render exception. Without subscribing to them Percy resolves on
+      // `storyRendered` and silently snapshots the un-interacted DOM. We capture
+      // the failure so the caller can warn that the snapshot may not reflect the
+      // interaction — but we still take the snapshot (non-blocking). Teams that
+      // want CI to fail can opt in with `failOnStoryError`.
+      const handlePlayError = (err, fallback) => {
+        let message;
+        try {
+          message = (err && err.message) || (typeof err === 'string' ? err : (err && JSON.stringify(err))) || fallback;
+        } catch (e) {
+          message = fallback;
+        }
+        if (failOnStoryError) {
+          reject(err || new Error(fallback));
+        } else {
+          playError = message;
+        }
+      };
+      channel.on('playFunctionThrewException', (err) => handlePlayError(err, 'Play Function Threw Exception'));
+      channel.on('unhandledErrorsWhilePlaying', (err) => handlePlayError(err, 'Unhandled Errors While Playing'));
     });
 
     // Helper function to wait for all loaders to disappear

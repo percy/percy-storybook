@@ -258,14 +258,20 @@ option (**note**: the `skip` and `name` parameters are _not_ accepted as Percy c
 
 ### `failOnStoryError`
 
-By default a story whose `play` function throws (for example a failed interaction or assertion)
-still produces a snapshot and does **not** fail the build — Percy resolves once the story has
-rendered, before the interaction is verified. This means broken interactive stories can go
-unnoticed in CI.
+When a story's `play` function throws (for example a failed interaction or assertion), Storybook
+still renders the story, so Percy captures the snapshot — but that snapshot may not reflect the
+interaction (e.g. a click that never landed).
 
-Set `failOnStoryError: true` (or the `PERCY_FAIL_ON_STORY_ERROR=true` environment variable) to make
-`percy storybook` fail when a story's `play` function throws or reports an unhandled error, so CI can
-catch broken interactive stories:
+By default Percy now **logs a warning** for these stories and **still takes the snapshot** (non-blocking),
+so you understand that the interaction did not complete without losing the snapshot:
+
+```
+[percy] <story name>: the story's play function reported an error, so this snapshot may not reflect the interaction. <error>
+```
+
+Set `failOnStoryError: true` (or the `PERCY_FAIL_ON_STORY_ERROR=true` environment variable) to instead
+**fail the build** when a story's `play` function throws or reports an unhandled error, so CI can hard-fail
+on broken interactive stories:
 
 ``` yaml
 # .percy.yml

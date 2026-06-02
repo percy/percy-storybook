@@ -268,10 +268,17 @@ async function* processStory(page, story, previewResource, percy, flags, log) {
   } else {
     log.debug(`Loading story: ${options.name}`);
     // when not dry-running and javascript is not enabled, capture the story dom
-    // optionally surface play/interaction errors so broken interactive stories fail the build
+    // when failOnStoryError is set, a failing play function fails the build;
+    // otherwise the play error is reported back so we can warn (non-blocking)
     let failOnStoryError = (percy.config.storybook?.failOnStoryError ?? false) ||
       process.env.PERCY_FAIL_ON_STORY_ERROR === 'true';
-    yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams, failOnStoryError });
+    let renderResult = yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams, failOnStoryError });
+    // A play function threw but we still snapshot — warn so the user understands the
+    // snapshot may not reflect the interaction (e.g. a click that never landed).
+    if (renderResult?.playError) {
+      log.warn(`${options.name}: the story's play function reported an error, so this snapshot may ` +
+        `not reflect the interaction. ${renderResult.playError}`);
+    }
     options.domSnapshot = await captureDOM(page, options, percy, log, story);
   }
 

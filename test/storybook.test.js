@@ -239,9 +239,9 @@ describe('percy storybook', () => {
     ]));
   });
 
-  it('does not fail on a play function error by default (opt-in)', async () => {
-    // The channel offers both events; without the flag Percy only subscribes to
-    // storyRendered, so the play error is never observed and the build resolves.
+  it('warns but still snapshots when a play function errors (default, non-blocking)', async () => {
+    // The story renders AND its play function reports an error. By default Percy
+    // captures the snapshot and warns — it must not reject the build.
     let channel = 'channel: { emit() {}, on: (a, c) => { ' +
       'if (a === "storyRendered") c(); ' +
       'if (a === "playFunctionThrewException") c(new Error("Play Error")); } }';
@@ -261,8 +261,12 @@ describe('percy storybook', () => {
       ])} }</script>`
     ].join('')]);
 
-    // Without the flag, a play error must not reject the build.
+    // Build must succeed (snapshot still taken)...
     await expectAsync(storybook(['http://localhost:8000'])).toBeResolved();
+    // ...and a non-blocking warning must surface the play error.
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
+      jasmine.stringMatching(/play function reported an error, so this snapshot may not reflect the interaction\. Play Error/)
+    ]));
   });
 
   describe('with PERCY_SKIP_STORY_ON_ERROR set to true', () => {
