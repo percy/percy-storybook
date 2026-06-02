@@ -52,6 +52,7 @@ describe('percy storybook', () => {
     delete process.env.PERCY_TOKEN;
     delete process.env.PERCY_ENABLE;
     delete process.env.PERCY_CLIENT_ERROR_LOGS;
+    delete process.env.PERCY_FAIL_ON_STORY_ERROR;
   });
 
   it('snapshots live urls', async () => {
@@ -201,6 +202,67 @@ describe('percy storybook', () => {
       )
 
     ]));
+  });
+
+  it('errors when a story play function throws and PERCY_FAIL_ON_STORY_ERROR is set', async () => {
+    process.env.PERCY_FAIL_ON_STORY_ERROR = true;
+    process.env.PERCY_RETRY_STORY_ON_ERROR = false;
+    server.reply('/iframe.html', () => [200, 'text/html', [
+      `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])}  }, ${
+        'channel: { emit() {}, on: (a, c) => a === "playFunctionThrewException" && c(new Error("Play Error")) }'
+      } }</script>`,
+      `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])} }</script>`
+    ].join('')]);
+
+    server.reply('/iframe.html?id=1&viewMode=story', () => [200, 'text/html', [
+      `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])}  }, ${
+        'channel: { emit() {}, on: (a, c) => a === "playFunctionThrewException" && c(new Error("Play Error")) }'
+      } }</script>`,
+      `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])} }</script>`
+    ].join('')]);
+
+    await expectAsync(storybook(['http://localhost:8000']))
+      .toBeRejectedWithError(/Play Error\n.*\/iframe\.html.*$/s);
+
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
+      '[percy] Detected error for percy build',
+      '[percy] Failure: Snapshot command was not called',
+      jasmine.stringMatching(/^\[percy\] Error: Snapshot Name:/s)
+    ]));
+  });
+
+  it('does not fail on a play function error by default (opt-in)', async () => {
+    // The channel offers both events; without the flag Percy only subscribes to
+    // storyRendered, so the play error is never observed and the build resolves.
+    let channel = 'channel: { emit() {}, on: (a, c) => { ' +
+      'if (a === "storyRendered") c(); ' +
+      'if (a === "playFunctionThrewException") c(new Error("Play Error")); } }';
+    server.reply('/iframe.html', () => [200, 'text/html', [
+      `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])}  }, ${channel} }</script>`,
+      '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
+    ].join('')]);
+
+    server.reply('/iframe.html?id=1&viewMode=story', () => [200, 'text/html', [
+      `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])}  }, ${channel} }</script>`,
+      `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])} }</script>`
+    ].join('')]);
+
+    // Without the flag, a play error must not reject the build.
+    await expectAsync(storybook(['http://localhost:8000'])).toBeResolved();
   });
 
   describe('with PERCY_SKIP_STORY_ON_ERROR set to true', () => {

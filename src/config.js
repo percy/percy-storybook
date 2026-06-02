@@ -179,6 +179,10 @@ export const configSchema = {
       }
     ],
     properties: {
+      failOnStoryError: {
+        type: 'boolean',
+        default: false
+      },
       docs: {
         type: 'object',
         default: {},

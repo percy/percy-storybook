@@ -268,7 +268,10 @@ async function* processStory(page, story, previewResource, percy, flags, log) {
   } else {
     log.debug(`Loading story: ${options.name}`);
     // when not dry-running and javascript is not enabled, capture the story dom
-    yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
+    // optionally surface play/interaction errors so broken interactive stories fail the build
+    let failOnStoryError = (percy.config.storybook?.failOnStoryError ?? false) ||
+      process.env.PERCY_FAIL_ON_STORY_ERROR === 'true';
+    yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams, failOnStoryError });
     options.domSnapshot = await captureDOM(page, options, percy, log, story);
   }
 

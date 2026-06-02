@@ -250,10 +250,33 @@ storybook:
   additionalSnapshots: []
   include: []
   exclude: []
+  failOnStoryError: false
 ```
 
 See the [configuration options above](#configuration) for details about each accepted config file
 option (**note**: the `skip` and `name` parameters are _not_ accepted as Percy config file options).
+
+### `failOnStoryError`
+
+By default a story whose `play` function throws (for example a failed interaction or assertion)
+still produces a snapshot and does **not** fail the build — Percy resolves once the story has
+rendered, before the interaction is verified. This means broken interactive stories can go
+unnoticed in CI.
+
+Set `failOnStoryError: true` (or the `PERCY_FAIL_ON_STORY_ERROR=true` environment variable) to make
+`percy storybook` fail when a story's `play` function throws or reports an unhandled error, so CI can
+catch broken interactive stories:
+
+``` yaml
+# .percy.yml
+version: 2
+storybook:
+  failOnStoryError: true
+```
+
+``` sh
+$ PERCY_FAIL_ON_STORY_ERROR=true percy storybook ./storybook-static
+```
 
 ## Upgrading
 

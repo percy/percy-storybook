@@ -352,7 +352,7 @@ export function evalSetCurrentStory({ waitFor }, story) {
     'Storybook object not found on the window. ' +
       'Open Storybook and check the console for errors.'
   ))).then(channel => {
-    let { id, queryParams, globals, args } = story;
+    let { id, queryParams, globals, args, failOnStoryError } = story;
 
     // emit a series of events to render the desired story
     channel.emit('setCurrentStory', { storyId: id });
@@ -378,6 +378,17 @@ export function evalSetCurrentStory({ waitFor }, story) {
       channel.on('storyMissing', (err) => reject(err || new Error('Story Missing')));
       channel.on('storyErrored', (err) => reject(err || new Error('Story Errored')));
       channel.on('storyThrewException', (err) => reject(err || new Error('Story Threw Exception')));
+
+      // A failing `play` function (e.g. a thrown assertion or interaction that
+      // never lands) is reported by Storybook on these channels rather than as
+      // a render exception, so without subscribing to them Percy resolves on
+      // `storyRendered` and silently snapshots the un-interacted DOM. When
+      // `failOnStoryError` is enabled, surface those failures so CI can catch
+      // broken interactive stories. Opt-in to preserve existing behavior.
+      if (failOnStoryError) {
+        channel.on('playFunctionThrewException', (err) => reject(err || new Error('Play Function Threw Exception')));
+        channel.on('unhandledErrorsWhilePlaying', (err) => reject(err || new Error('Unhandled Errors While Playing')));
+      }
     });
 
     // Helper function to wait for all loaders to disappear
