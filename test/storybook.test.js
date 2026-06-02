@@ -213,7 +213,9 @@ describe('percy storybook', () => {
       `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
         { id: '1', kind: 'foo', name: 'bar' }
       ])}  }, ${channel} }</script>`,
-      '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
+      `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])} }</script>`
     ].join('')]);
 
     server.reply('/iframe.html?id=1&viewMode=story', () => [200, 'text/html', [
