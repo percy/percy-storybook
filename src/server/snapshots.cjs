@@ -164,9 +164,28 @@ async function runPercyBuild(channel, { baseUrl, include = [], exclude = [] }) {
 
 /* ─── Channel handlers ─────────────────────────────────────────────────── */
 
+// Serialize Percy builds. runPercyBuild mutates shared globals
+// (process.env.PERCY_TOKEN) and the .env file, so firing it concurrently for
+// rapid RUN_SNAPSHOT events races on that state, corrupts the token mid-build,
+// and spawns multiple billable builds (CWE-362). An in-flight guard rejects a
+// second trigger until the running build finishes.
+let buildRunning = false;
+
 function registerSnapshotHandlers(channel) {
-  channel.on(PERCY_EVENTS.RUN_SNAPSHOT, (data) => {
-    runPercyBuild(channel, data);
+  channel.on(PERCY_EVENTS.RUN_SNAPSHOT, async (data) => {
+    if (buildRunning) {
+      channel.emit(PERCY_EVENTS.SNAPSHOT_ERROR, {
+        message: 'A Percy build is already in progress. Please wait for it to finish before starting another.'
+      });
+      return;
+    }
+
+    buildRunning = true;
+    try {
+      await runPercyBuild(channel, data);
+    } finally {
+      buildRunning = false;
+    }
   });
 }
 

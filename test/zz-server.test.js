@@ -2736,5 +2736,27 @@ describe('Server / snapshots.cjs', () => {
 
       expect(channel.emit).toHaveBeenCalledWith(PERCY_EVENTS.SNAPSHOT_STARTED, {});
     });
+
+    it('rejects a concurrent RUN_SNAPSHOT while a build is in progress (PER-8546)', async () => {
+      registerSnapshotHandlers(channel);
+      fs.existsSync.and.returnValue(false);
+
+      // Fire two triggers without awaiting the first: the second observes the
+      // in-flight guard and is rejected instead of starting a second build.
+      let first = channel.trigger(PERCY_EVENTS.RUN_SNAPSHOT, { baseUrl: 'http://localhost:6006' });
+      let second = channel.trigger(PERCY_EVENTS.RUN_SNAPSHOT, { baseUrl: 'http://localhost:6006' });
+      await Promise.all([first, second]);
+
+      expect(channel.emit).toHaveBeenCalledWith(
+        PERCY_EVENTS.SNAPSHOT_ERROR,
+        jasmine.objectContaining({ message: jasmine.stringContaining('already in progress') })
+      );
+
+      // a later trigger (after the first finished) is allowed through again
+      channel.emit.calls.reset();
+      await channel.trigger(PERCY_EVENTS.RUN_SNAPSHOT, { baseUrl: 'http://localhost:6006' });
+      await new Promise(r => setTimeout(r, 20));
+      expect(channel.emit).toHaveBeenCalledWith(PERCY_EVENTS.SNAPSHOT_STARTED, {});
+    });
   });
 });
