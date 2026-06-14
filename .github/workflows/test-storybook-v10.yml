@@ -28,10 +28,10 @@ jobs:
         run: exit 1
         if: ${{ github.event_name == 'workflow_dispatch' && steps.regex-match.outputs && steps.regex-match.outputs.match == '' }}
       - uses: actions/checkout@8459bc0c7e3759cdf591f513d9f141a95fef0a8f
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
         with:
           node-version: ${{ matrix.node }}
-      - uses: actions/cache@v3
+      - uses: actions/cache@f4b3439a656ba812b8cb417d2d49f9c810103092 # v3.4.0
         with:
           path: node_modules
           key: ${{ runner.os }}/node-${{ matrix.node }}/${{ hashFiles('**/yarn.lock') }}
