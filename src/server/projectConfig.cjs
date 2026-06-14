@@ -276,18 +276,24 @@ function registerProjectConfigHandlers(channel) {
       });
       return;
     }
-    // Clear stale build reference — new project means old build is irrelevant
-    try {
-      let envContent = readEnvRaw();
-      envContent = setKey(envContent, 'PERCY_LAST_TRIGGER_BUILD', '');
-      writeEnvRaw(envContent);
-    } catch (err) {
-      console.warn('Failed to clear last build reference:', err.message);
-    }
 
-    writePercyYml(projectId, projectName);
+    // Validate the credentials/project access by fetching the Percy token FIRST.
+    // Only persist .percy.yml, PERCY_TOKEN and clear the build reference AFTER
+    // validation succeeds — otherwise an unvalidated (or foreign) payload could
+    // redirect future snapshots and overwrite the token before the credentials
+    // are proven good (PER-8545 / F-015).
     fetchPercyToken(projectId, username, accessKey)
       .then(percyToken => {
+        // Clear stale build reference — new project means old build is irrelevant
+        try {
+          let envContent = readEnvRaw();
+          envContent = setKey(envContent, 'PERCY_LAST_TRIGGER_BUILD', '');
+          writeEnvRaw(envContent);
+        } catch (err) {
+          console.warn('Failed to clear last build reference:', err.message);
+        }
+
+        writePercyYml(projectId, projectName);
         setPercyToken(percyToken);
         channel.emit(PERCY_EVENTS.PROJECT_CONFIG_SAVED, { success: true });
       })
