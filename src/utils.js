@@ -312,10 +312,6 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       });
     }
 
-    // Stamp each story with its source `importPath` from the storyIndex so
-    // SmartSnap can map a snapshot back to the file that defines it.
-    // Try the v7+ entries map first; fall back to the older `parameters.fileName`
-    // which Storybook used to set on the story object directly.
     const resolveImportPath = (s) => {
       if (!s) return undefined;
       if (entries && s.id && entries[s.id]?.importPath) return entries[s.id].importPath;
@@ -343,8 +339,6 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       stories = stampImportPath(window.__STORYBOOK_STORY_STORE__.raw());
     }
 
-    // Build a diagnostics blob so the host side can log what we saw without
-    // having to re-eval the page.
     const sampleEntry = entries
       ? (() => {
           const firstId = Object.keys(entries)[0];

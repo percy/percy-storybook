@@ -70,8 +70,6 @@ function shouldSkipStory(name, options, config) {
 // Returns snapshot config options for a Storybook story merged with global Storybook
 // options. Validation error messages will be added to the provided validations set.
 function getSnapshotConfig(story, config, invalid) {
-  // importPath isn't in the /storybook schema (which is unevaluatedProperties: false),
-  // so pull it aside before validation and re-attach after merge so SmartSnap can use it.
   let { id, importPath, ...options } = PercyConfig.migrate(story, '/storybook');
 
   let errors = PercyConfig.validate(options, '/storybook');
@@ -259,7 +257,7 @@ function needsFreshPage(previousStory) {
 
 // Process a single story and capture its DOM
 async function* processStory(page, story, previewResource, percy, flags, log) {
-  // Extract story details. importPath is consumed by SmartSnap upstream and isn't a snapshot field.
+  // Extract story details
   let { id, args, globals, queryParams, importPath, ...options } = story;
 
   const enableJavaScript = options.enableJavaScript ?? percy.config.snapshot.enableJavaScript;
@@ -324,8 +322,6 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
       )
     ]);
 
-    // Log the importPath plumbing diagnostics so we can see if SmartSnap is
-    // going to have anything to work with before mapStorybookSnapshots runs.
     if (stories?.diagnostics) {
       log.debug(`Story extraction diagnostics: ${JSON.stringify(stories.diagnostics)}`);
     }
@@ -341,8 +337,6 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
     // set storybook environment info
     percy.client.addEnvironmentInfo(environmentInfo);
 
-    // SmartSnap: filter snapshots down to those whose dependency graph changed.
-    // Failures inside applySmartSnap fall back to the full snapshot set rather than aborting.
     if (storybookConfig?.smartSnap?.enabled) {
       try {
         snapshots = yield applySmartSnap(percy, snapshots, storybookConfig.smartSnap, buildDir);
