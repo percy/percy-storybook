@@ -100,7 +100,14 @@ export default defineConfig({
     svgPlugin(),
     injectCssPlugin(),
     react({
-      jsxRuntime: 'automatic',
+      // Use CLASSIC JSX (React.createElement) instead of automatic (_jsx).
+      // Storybook 10's manager-bundler injects react-jsx-runtime.development
+      // when an addon's bundle imports react/jsx-runtime; that dev runtime
+      // crashes against production React 19 (which strips
+      // __CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE).
+      // React.createElement uses only public, non-stripped APIs and stays
+      // safe under the same prod React.
+      jsxRuntime: 'classic',
       // Many source files (ours + review-viewer) use JSX in .js files
       include: ['**/*.jsx', '**/*.js']
     })
@@ -132,11 +139,18 @@ export default defineConfig({
       external: (id) => {
         // Bundle relative imports and absolute paths (our source files)
         if (id.startsWith('.') || id.startsWith('/')) return false;
-        // Externalize what consumers always have in a Storybook environment
+        // Externalize what consumers always have in a Storybook environment.
+        // NOTE: `react/jsx-runtime` is intentionally NOT externalized. Storybook
+        // 10's manager-bundler resolves it against the customer's node_modules,
+        // pulling React 19's dev jsx-runtime. That dev runtime reads
+        // React.__CLIENT_INTERNALS_* — undefined on Storybook's globalized
+        // React 18 (__REACT__) — and crashes at module-init reading
+        // `recentlyCreatedOwnerStacks`. Bundling React 18's prod jsx-runtime
+        // ourselves uses __SECRET_INTERNALS_*.ReactCurrentOwner, which IS
+        // present on __REACT__, so the panel renders correctly.
         const externals = [
           'react',
           'react-dom',
-          'react/jsx-runtime',
           'react-router-dom',
           'react-router',
           'axios',

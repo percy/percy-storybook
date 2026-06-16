@@ -15,6 +15,5 @@ docs
 CLAUDE.md
 *.log
 log/
-.npmrc
 debug-storybook.log
 src/styles/_compiled.css

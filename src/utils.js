@@ -3,6 +3,10 @@ import { logger } from '@percy/cli-command';
 import spawn from 'cross-spawn';
 import globToRegExp from 'glob-to-regexp';
 
+export function viewModeFor(story) {
+  return story.type === 'docs' ? 'docs' : 'story';
+}
+
 // check storybook version
 export function checkStorybookVersion() {
   return new Promise((resolve, reject) => {
@@ -415,12 +419,16 @@ export function evalSetCurrentStory({ waitFor }, story) {
 
     // resolve when rendered, reject on any other renderer event
     return new Promise((resolve, reject) => {
+      // Capture a play-function failure (if any) so the caller can warn about it.
+      // We still resolve and snapshot the story — the failure is surfaced, not blocking.
+      let playError = null;
+
       const handleRendered = () => {
         // After the story/docs is rendered, add a small delay before checking loaders
         // This helps ensure that any post-render loader state changes have time to occur
         setTimeout(() => {
           // Wait for any loaders to disappear before resolving
-          waitForLoadersToDisappear().then(resolve).catch(reject);
+          waitForLoadersToDisappear().then(() => resolve({ playError })).catch(reject);
         }, 100);
       };
 
@@ -430,6 +438,22 @@ export function evalSetCurrentStory({ waitFor }, story) {
       channel.on('storyMissing', (err) => reject(err || new Error('Story Missing')));
       channel.on('storyErrored', (err) => reject(err || new Error('Story Errored')));
       channel.on('storyThrewException', (err) => reject(err || new Error('Story Threw Exception')));
+
+      // A failing `play` function (e.g. a thrown assertion or an interaction that
+      // never lands) is reported by Storybook on these channels rather than as a
+      // render exception. Without subscribing to them Percy resolves on
+      // `storyRendered` and silently snapshots the un-interacted DOM. Capture the
+      // failure so the caller can warn that the snapshot may not reflect the
+      // interaction — the snapshot is still taken (non-blocking).
+      const handlePlayError = (err, fallback) => {
+        try {
+          playError = (err && err.message) || (typeof err === 'string' ? err : (err && JSON.stringify(err))) || fallback;
+        } catch (e) {
+          playError = fallback;
+        }
+      };
+      channel.on('playFunctionThrewException', (err) => handlePlayError(err, 'Play Function Threw Exception'));
+      channel.on('unhandledErrorsWhilePlaying', (err) => handlePlayError(err, 'Unhandled Errors While Playing'));
     });
 
     // Helper function to wait for all loaders to disappear
@@ -721,7 +745,7 @@ export async function captureResponsiveDOM(page, options, percy, log, story) {
       // Build the complete URL with all story parameters
       const url = new URL(story.url);
       if (!url.searchParams.has('viewMode')) {
-        url.searchParams.set('viewMode', 'story');
+        url.searchParams.set('viewMode', viewModeFor(story));
       }
       const reloadUrl = url.toString();
 

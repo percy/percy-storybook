@@ -15,7 +15,9 @@ export default {
   parameters: {
     percy: {
       name: 'From params',
-      skip: true,
+      // Exclude by default so Mixed does not pollute no-filter snapshot counts.
+      // `--include=/params/` supplies a global filter which overrides story-level exclude.
+      exclude: [/.*/],
       additionalSnapshots: [{
         suffix: ' w/ globals',
         globals: { text: ' with globals' }

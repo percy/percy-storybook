@@ -16,7 +16,8 @@ import {
   hasRules,
   getDocCaptureFlagsWithRules,
   generateDocRuleOptions,
-  isDocAutodoc
+  isDocAutodoc,
+  viewModeFor
 } from './utils.js';
 
 // Main capture function
@@ -41,6 +42,10 @@ export async function captureDOM(page, options, percy, log, story) {
 // Returns true or false if the provided story should be skipped by matching against include and
 // exclude filter options. If any global filters are provided, they will override story filters.
 function shouldSkipStory(name, options, config) {
+  // parameters.percy.skip is an opt-out switch, not a filter — honor it unconditionally,
+  // even when --include/--exclude is present. See issue #1286.
+  if (options.skip) return true;
+
   let matches = regexp => {
     /* istanbul ignore else: sanity check */
     if (typeof regexp === 'string') {
@@ -57,7 +62,7 @@ function shouldSkipStory(name, options, config) {
   let exclude = [].concat(filter?.exclude).filter(Boolean);
 
   // if included, don't skip; if excluded always exclude
-  let skip = include?.length ? !include.some(matches) : options.skip;
+  let skip = include?.length ? !include.some(matches) : false;
   if (!skip && !exclude?.some(matches)) return false;
   return true;
 }
@@ -232,6 +237,9 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config, globalDocSe
     if (story.args) url += `&args=${buildStorybookArgsParam(story.args)}`;
     if (story.globals) url += `&globals=${buildStorybookArgsParam(story.globals)}`;
     for (let [k, v] of Object.entries(story.queryParams ?? {})) url += `&${k}=${v}`;
+    if (!story.queryParams?.viewMode) {
+      url += `&viewMode=${viewModeFor(story)}`;
+    }
     return Object.assign(story, { url });
   });
 }
@@ -262,7 +270,13 @@ async function* processStory(page, story, previewResource, percy, flags, log) {
   } else {
     log.debug(`Loading story: ${options.name}`);
     // when not dry-running and javascript is not enabled, capture the story dom
-    yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
+    let renderResult = yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
+    // A play function threw but we still snapshot — warn so the user understands the
+    // snapshot may not reflect the interaction (e.g. a click that never landed).
+    if (renderResult?.playError) {
+      log.warn(`${options.name}: the story's play function reported an error, so this snapshot may ` +
+        `not reflect the interaction. ${renderResult.playError}`);
+    }
     options.domSnapshot = await captureDOM(page, options, percy, log, story);
   }
 
@@ -359,7 +373,8 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
 
       try {
         // Use a single page for as many stories as possible until a context error occurs
-        yield* withPage(percy, `${previewUrl}?id=${snapshots[0].id}&viewMode=story`, async function*(page) {
+        // Only id and viewMode are needed here — args/globals are applied via evalSetCurrentStory channel events
+        yield* withPage(percy, `${previewUrl}?id=${snapshots[0].id}&viewMode=${viewModeFor(snapshots[0])}`, async function*(page) {
           // Process snapshots one by one with the current page
           while (snapshots.length) {
             try {

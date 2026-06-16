@@ -203,6 +203,38 @@ describe('percy storybook', () => {
     ]));
   });
 
+  it('warns but still snapshots when a play function errors (non-blocking)', async () => {
+    // The story renders AND its play function reports an error. By default Percy
+    // captures the snapshot and warns — it must not reject the build.
+    let channel = 'channel: { emit() {}, on: (a, c) => { ' +
+      'if (a === "storyRendered") c(); ' +
+      'if (a === "playFunctionThrewException") c(new Error("Play Error")); } }';
+    server.reply('/iframe.html', () => [200, 'text/html', [
+      `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])}  }, ${channel} }</script>`,
+      `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])} }</script>`
+    ].join('')]);
+
+    server.reply('/iframe.html?id=1&viewMode=story', () => [200, 'text/html', [
+      `<script>__STORYBOOK_PREVIEW__ = { async extract() { return ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])}  }, ${channel} }</script>`,
+      `<script>__STORYBOOK_STORY_STORE__ = { raw: () => ${JSON.stringify([
+        { id: '1', kind: 'foo', name: 'bar' }
+      ])} }</script>`
+    ].join('')]);
+
+    // Build must succeed (snapshot still taken)...
+    await expectAsync(storybook(['http://localhost:8000'])).toBeResolved();
+    // ...and a non-blocking warning must surface the play error.
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
+      jasmine.stringMatching(/play function reported an error, so this snapshot may not reflect the interaction\. Play Error/)
+    ]));
+  });
+
   describe('with PERCY_SKIP_STORY_ON_ERROR set to true', () => {
     beforeAll(() => {
       process.env.PERCY_SKIP_STORY_ON_ERROR = true;
@@ -405,7 +437,15 @@ describe('percy storybook', () => {
   });
 
   it('excludes stories from snapshots with --exclude', async () => {
-    await storybook(['http://localhost:9000', '--exclude=Snapshot', '--exclude=Options']);
+    // Args and Mixed are excluded by default via story-level exclude, but global
+    // --exclude switches shouldSkipStory to use config filters and disregards
+    // story-level filters — so we add them to the CLI --exclude list here.
+    // Mixed uses percy.name: 'From params', so we match by '/params/' regex.
+    await storybook([
+      'http://localhost:9000',
+      '--exclude=Snapshot', '--exclude=Options',
+      '--exclude=Args', '--exclude=/params/'
+    ]);
 
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
@@ -414,14 +454,17 @@ describe('percy storybook', () => {
     ]));
   });
 
-  it('includes stories for snapshots with --include', async () => {
+  it('includes stories for snapshots with --include and honors story-level skip (#1286)', async () => {
     await storybook(['http://localhost:9000', '--include=Skip']);
 
     expect(logger.stderr).toEqual([]);
     expect(logger.stdout).toEqual(jasmine.arrayContaining([
-      '[percy] Snapshot taken: Skip: Skipped',
-      '[percy] Snapshot taken: Skip: But Not Me',
-      jasmine.stringMatching('\\[percy\\] Processing \\d snapshots?')
+      '[percy] Processing 1 snapshot...',
+      '[percy] Snapshot taken: Skip: But Not Me'
+    ]));
+    // Skip: Skipped has parameters.percy.skip: true — honored regardless of --include match.
+    expect(logger.stdout).not.toEqual(jasmine.arrayContaining([
+      '[percy] Snapshot taken: Skip: Skipped'
     ]));
   });
 
@@ -520,23 +563,23 @@ describe('percy storybook', () => {
     ]));
 
     expect(logger.stderr).toEqual(jasmine.arrayContaining([
-      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args',
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&viewMode=story',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
-        'text:Snapshot+custom+args;style.font:1rem+sans-serif',
+        'text:Snapshot+custom+args;style.font:1rem+sans-serif&viewMode=story',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
-        'text:Snapshot+custom+bold+args;style.font:1rem+sans-serif;style.fontWeight:bold',
+        'text:Snapshot+custom+bold+args;style.font:1rem+sans-serif;style.fontWeight:bold&viewMode=story',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
         'text:Snapshot+purple+args;' +
         'style.font:1rem+sans-serif;' +
         'style.fontWeight:bold;' +
-        'style.color:purple',
+        'style.color:purple&viewMode=story',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=args--args&args=' +
         'null:!null;undefined:!undefined;' +
         'smallNum:3;largeNum:12000000;' +
         'date:!date(2022-01-01T00:00:00.000Z);' +
         'rgb:!rgb(20,30,40);rgba:!rgba(20,30,40,.5);' +
         'hsl:!hsl(120,80,30);hsla:!hsla(120,80,30,.5);' +
-        'shortHex:!hex(c6c);longHex:!hex(a907cf);alphaHex:!hex(a907cf9f)'
+        'shortHex:!hex(c6c);longHex:!hex(a907cf);alphaHex:!hex(a907cf9f)&viewMode=story'
     ]));
   });
 
@@ -621,13 +664,13 @@ describe('percy storybook', () => {
     ]));
 
     expect(logger.stderr).toEqual(jasmine.arrayContaining([
-      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params',
+      '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params&viewMode=story',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
-        '&globals=text:+with+globals',
+        '&globals=text:+with+globals&viewMode=story',
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
-        `&text=${encodeURIComponent(' with query params')}`,
+        `&text=${encodeURIComponent(' with query params')}&viewMode=story`,
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
-        `&args=text:Args&globals=text:+globals&text=${encodeURIComponent(' and params')}`
+        `&args=text:Args&globals=text:+globals&text=${encodeURIComponent(' and params')}&viewMode=story`
     ]));
   });
 
@@ -927,7 +970,7 @@ describe('percy storybook', () => {
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
 
-      server.reply('/iframe.html?id=todoitem--docs&viewMode=story', () => [200, 'text/html', [
+      server.reply('/iframe.html?id=todoitem--docs&viewMode=docs', () => [200, 'text/html', [
         `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
@@ -1059,7 +1102,7 @@ describe('percy storybook', () => {
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
 
-      server.reply('/iframe.html?id=todoitem--docs&viewMode=story', () => [200, 'text/html', [
+      server.reply('/iframe.html?id=todoitem--docs&viewMode=docs', () => [200, 'text/html', [
         `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
@@ -1103,7 +1146,7 @@ describe('percy storybook', () => {
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
 
-      server.reply('/iframe.html?id=todoitem--docs&viewMode=story', () => [200, 'text/html', [
+      server.reply('/iframe.html?id=todoitem--docs&viewMode=docs', () => [200, 'text/html', [
         `<script>__STORYBOOK_PREVIEW__ = ${FAKE_PREVIEW}</script>`,
         '<script>__STORYBOOK_STORY_STORE__ = { raw: () => [] }</script>'
       ].join('')]);
