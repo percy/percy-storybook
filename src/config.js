@@ -209,6 +209,7 @@ export const configSchema = {
       },
       smartSnap: {
         type: 'object',
+        unevaluatedProperties: false,
         properties: {
           enabled: {
             type: 'boolean',
