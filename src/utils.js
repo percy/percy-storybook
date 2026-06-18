@@ -267,7 +267,7 @@ export function evalStorybookEnvironmentInfo({ waitForXPath }) {
 
 // Evaluate and return serialized Storybook stories to snapshot
 /* istanbul ignore next: no instrumenting injected code */
-export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, autodocCapture = false } = {}) {
+export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, autodocCapture = false, smartSnap = false } = {}) {
   let serialize = (what, value, invalid) => {
     if (what === 'include' || what === 'exclude') {
       return [].concat(value).filter(Boolean).map(v => v.toString());
@@ -312,6 +312,8 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       });
     }
 
+    // story path (importPath) extraction is only needed by SmartSnap, so
+    // skip it entirely unless SmartSnap is enabled
     const resolveImportPath = (s) => {
       if (!s) return undefined;
       if (entries && s.id && entries[s.id]?.importPath) return entries[s.id].importPath;
@@ -319,6 +321,7 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       return s.parameters?.fileName || s.parameters?.__id || undefined;
     };
     const stampImportPath = list => {
+      if (!smartSnap) return list;
       for (const s of list) {
         const ip = resolveImportPath(s);
         if (ip) s.importPath = ip;
@@ -339,33 +342,35 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       stories = stampImportPath(window.__STORYBOOK_STORY_STORE__.raw());
     }
 
-    const sampleEntry = entries
-      ? (() => {
-          const firstId = Object.keys(entries)[0];
-          if (!firstId) return null;
-          const e = entries[firstId];
-          return { id: firstId, keys: Object.keys(e || {}), importPath: e?.importPath };
-        })()
-      : null;
-    const sampleStory = stories[0]
-      ? {
-          id: stories[0].id,
-          importPath: stories[0].importPath,
-          parameterKeys: stories[0].parameters ? Object.keys(stories[0].parameters) : [],
-          fileName: stories[0].parameters?.fileName
-        }
-      : null;
-    const withImportPath = stories.filter(s => s.importPath).length;
+    if (smartSnap) {
+      const sampleEntry = entries
+        ? (() => {
+            const firstId = Object.keys(entries)[0];
+            if (!firstId) return null;
+            const e = entries[firstId];
+            return { id: firstId, keys: Object.keys(e || {}), importPath: e?.importPath };
+          })()
+        : null;
+      const sampleStory = stories[0]
+        ? {
+            id: stories[0].id,
+            importPath: stories[0].importPath,
+            parameterKeys: stories[0].parameters ? Object.keys(stories[0].parameters) : [],
+            fileName: stories[0].parameters?.fileName
+          }
+        : null;
+      const withImportPath = stories.filter(s => s.importPath).length;
 
-    stories.__smartsnapDiagnostics = {
-      source,
-      entriesPresent: !!entries,
-      entriesCount: entries ? Object.keys(entries).length : 0,
-      storiesTotal: stories.length,
-      storiesWithImportPath: withImportPath,
-      sampleEntry,
-      sampleStory
-    };
+      stories.__smartsnapDiagnostics = {
+        source,
+        entriesPresent: !!entries,
+        entriesCount: entries ? Object.keys(entries).length : 0,
+        storiesTotal: stories.length,
+        storiesWithImportPath: withImportPath,
+        sampleEntry,
+        sampleStory
+      };
+    }
 
     return stories;
   }, 5000).catch(() => Promise.reject(new Error(
@@ -378,7 +383,7 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       name: story.kind ? `${story.kind}: ${story.name}` : `${story.title}: ${story.name}`,
       ...story.parameters?.percy,
       id: story.id,
-      importPath: story.importPath,
+      ...(smartSnap ? { importPath: story.importPath } : {}),
       type: story.type ? story.type : 'story',
       tags: story.tags
     }, invalid));
@@ -386,7 +391,7 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
     return {
       invalid: Array.from(invalid),
       data,
-      diagnostics: stories.__smartsnapDiagnostics
+      ...(smartSnap ? { diagnostics: stories.__smartsnapDiagnostics } : {})
     };
   });
 }

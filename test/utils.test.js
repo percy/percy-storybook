@@ -851,7 +851,7 @@ describe('evalStorybookStorySnapshots importPath + diagnostics (SmartSnap)', () 
       }
     });
 
-    const { data } = await utils.evalStorybookStorySnapshots({ waitFor });
+    const { data } = await utils.evalStorybookStorySnapshots({ waitFor }, { smartSnap: true });
     expect(data[0].importPath).toBe('./src/Button.stories.js');
   });
 
@@ -868,7 +868,7 @@ describe('evalStorybookStorySnapshots importPath + diagnostics (SmartSnap)', () 
       entries: { 'button--primary': { id: 'button--primary' } }
     });
 
-    const { data } = await utils.evalStorybookStorySnapshots({ waitFor });
+    const { data } = await utils.evalStorybookStorySnapshots({ waitFor }, { smartSnap: true });
     expect(data[0].importPath).toBe('./fallback/Button.stories.js');
   });
 
@@ -885,7 +885,7 @@ describe('evalStorybookStorySnapshots importPath + diagnostics (SmartSnap)', () 
       entries: undefined
     });
 
-    const { data } = await utils.evalStorybookStorySnapshots({ waitFor });
+    const { data } = await utils.evalStorybookStorySnapshots({ waitFor }, { smartSnap: true });
     expect(data[0].importPath).toBe('./legacy/Button.stories.js');
   });
 
@@ -897,7 +897,7 @@ describe('evalStorybookStorySnapshots importPath + diagnostics (SmartSnap)', () 
       entries: undefined
     });
 
-    const { data, diagnostics } = await utils.evalStorybookStorySnapshots({ waitFor });
+    const { data, diagnostics } = await utils.evalStorybookStorySnapshots({ waitFor }, { smartSnap: true });
     expect(data[0].importPath).toBeUndefined();
     expect(diagnostics.storiesWithImportPath).toBe(0);
   });
@@ -912,7 +912,7 @@ describe('evalStorybookStorySnapshots importPath + diagnostics (SmartSnap)', () 
       }
     });
 
-    const { diagnostics } = await utils.evalStorybookStorySnapshots({ waitFor });
+    const { diagnostics } = await utils.evalStorybookStorySnapshots({ waitFor }, { smartSnap: true });
     expect(diagnostics).toEqual({
       source: '__STORYBOOK_PREVIEW__.extract',
       entriesPresent: true,
@@ -948,10 +948,26 @@ describe('evalStorybookStorySnapshots importPath + diagnostics (SmartSnap)', () 
       }
     };
 
-    const { data, diagnostics } = await utils.evalStorybookStorySnapshots({ waitFor });
+    const { data, diagnostics } = await utils.evalStorybookStorySnapshots({ waitFor }, { smartSnap: true });
     expect(diagnostics.source).toBe('__STORYBOOK_STORY_STORE__.raw');
     expect(diagnostics.sampleEntry).toBeNull();
     expect(data[0].importPath).toBe('./K.stories.js');
+  });
+
+  it('does not extract importPath or diagnostics when SmartSnap is disabled', async () => {
+    setPreview({
+      extract: () => ({
+        'button--primary': { id: 'button--primary', kind: 'Button', name: 'Primary', parameters: {} }
+      }),
+      entries: {
+        'button--primary': { id: 'button--primary', importPath: './src/Button.stories.js' }
+      }
+    });
+
+    const { data, diagnostics } = await utils.evalStorybookStorySnapshots({ waitFor });
+    expect(data[0].importPath).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(data[0], 'importPath')).toBe(false);
+    expect(diagnostics).toBeUndefined();
   });
 });
 

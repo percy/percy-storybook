@@ -314,7 +314,8 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
           evalStorybookStorySnapshots,
           {
             docCapture: isDocDiscoveryEnabled,
-            autodocCapture: isAutodocDiscoveryEnabled
+            autodocCapture: isAutodocDiscoveryEnabled,
+            smartSnap: !!storybookConfig?.smartSnap?.enabled
           }
         ),
         undefined,
