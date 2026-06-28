@@ -61,8 +61,13 @@ jobs:
           yarn
           yarn build
           yarn global:link
+          # Expose the freshly built `percy` on PATH — yarn link symlinks the
+          # package but not its bin, so `npx percy` would miss it and download
+          # the unrelated public `percy`.
+          echo "$(yarn global bin)" >> "$GITHUB_PATH"
+          export PATH="$(yarn global bin):$PATH"
           cd "$GITHUB_WORKSPACE_PATH"
           yarn link `echo $PERCY_PACKAGES`
-          npx percy --version
+          percy --version
 
       - run: yarn test:coverage
