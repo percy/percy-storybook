@@ -1,5 +1,4 @@
 import { logger, PercyConfig } from '@percy/cli-command';
-import { applyRelevantGraphExtraction, RelevantGraphExtractionBailError } from '@percy/relevant-graph-extraction';
 import { yieldAll } from '@percy/cli-command/utils';
 import qs from 'qs';
 import {
@@ -340,11 +339,23 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
     percy.client.addEnvironmentInfo(environmentInfo);
 
     if (storybookConfig?.relevantGraphExtraction?.enabled) {
+      // BailError is captured outside the try so the catch can still reference it
+      // even if the lazy import failed before it could be assigned.
+      let RelevantGraphExtractionBailError;
       try {
+        // @percy/relevant-graph-extraction is an optional dependency — it pulls in a
+        // heavier Node >= 18 toolchain, so it is not a hard dependency of this SDK.
+        // Load it lazily, only when the feature is explicitly enabled, and turn a
+        // missing/incompatible install into a clear failure.
+        const mod = yield import('@percy/relevant-graph-extraction').catch(e => {
+          throw new Error(`failed to load optional dependency @percy/relevant-graph-extraction (requires Node >= 18): ${e.message}`);
+        });
+        RelevantGraphExtractionBailError = mod.RelevantGraphExtractionBailError;
+
         // applyRelevantGraphExtraction mutates `snapshots` in place, filtering it
         // down to the subset affected by the change (and leaves it untouched on a
         // recoverable bail, transparently keeping the full snapshot set).
-        yield applyRelevantGraphExtraction({
+        yield mod.applyRelevantGraphExtraction({
           client: percy.client,
           logger,
           snapshots,
@@ -352,7 +363,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
           buildDir
         });
       } catch (e) {
-        if (e instanceof RelevantGraphExtractionBailError) {
+        if (RelevantGraphExtractionBailError && e instanceof RelevantGraphExtractionBailError) {
           log.info(e.message);
         } else {
           log.warn(`RelevantGraphExtraction failed (${e.message}); running full snapshot set`);
