@@ -312,8 +312,6 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       });
     }
 
-    // story path (importPath) extraction is only needed by Relevant Graph
-    // Extraction, so skip it entirely unless that feature is enabled
     const resolveImportPath = (s) => {
       if (!s) return undefined;
       if (entries && s.id && entries[s.id]?.importPath) return entries[s.id].importPath;
