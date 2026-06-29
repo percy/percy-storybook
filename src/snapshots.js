@@ -357,7 +357,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
         if (RelevantGraphExtractionBailError && e instanceof RelevantGraphExtractionBailError) {
           log.info(e.message);
         } else {
-          log.warn(`RelevantGraphExtraction failed (${e.message}); running full snapshot set`);
+          log.warn(`RelevantGraphExtraction failed (${e.message})`);
         }
         if (storybookConfig.relevantGraphExtraction.failBuildOnFailure) throw e;
       }
