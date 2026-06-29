@@ -822,6 +822,155 @@ describe('evalStorybookStorySnapshots', () => {
   });
 });
 
+describe('evalStorybookStorySnapshots importPath + diagnostics (Relevant Graph Extraction)', () => {
+  const waitFor = fn => Promise.resolve(fn());
+
+  const setPreview = ({ extract, entries }) => {
+    global.window = {
+      __STORYBOOK_PREVIEW__: {
+        ready: () => Promise.resolve(),
+        extract,
+        storyStoreValue: entries === undefined
+          ? undefined
+          : { storyIndex: { entries } }
+      }
+    };
+  };
+
+  afterEach(() => {
+    delete global.window;
+  });
+
+  it('stamps importPath from storyIndex entries onto each story', async () => {
+    setPreview({
+      extract: () => ({
+        'button--primary': { id: 'button--primary', kind: 'Button', name: 'Primary', parameters: {} }
+      }),
+      entries: {
+        'button--primary': { id: 'button--primary', importPath: './src/Button.stories.js' }
+      }
+    });
+
+    const { data } = await utils.evalStorybookStorySnapshots({ waitFor }, { relevantGraph: true });
+    expect(data[0].importPath).toBe('./src/Button.stories.js');
+  });
+
+  it('falls back to parameters.fileName when the entry has no importPath', async () => {
+    setPreview({
+      extract: () => ({
+        'button--primary': {
+          id: 'button--primary',
+          kind: 'Button',
+          name: 'Primary',
+          parameters: { fileName: './fallback/Button.stories.js' }
+        }
+      }),
+      entries: { 'button--primary': { id: 'button--primary' } }
+    });
+
+    const { data } = await utils.evalStorybookStorySnapshots({ waitFor }, { relevantGraph: true });
+    expect(data[0].importPath).toBe('./fallback/Button.stories.js');
+  });
+
+  it('falls back to parameters.__id when neither entry importPath nor fileName exist', async () => {
+    setPreview({
+      extract: () => ({
+        'button--primary': {
+          id: 'button--primary',
+          kind: 'Button',
+          name: 'Primary',
+          parameters: { __id: './legacy/Button.stories.js' }
+        }
+      }),
+      entries: undefined
+    });
+
+    const { data } = await utils.evalStorybookStorySnapshots({ waitFor }, { relevantGraph: true });
+    expect(data[0].importPath).toBe('./legacy/Button.stories.js');
+  });
+
+  it('leaves importPath undefined when no source resolves one', async () => {
+    setPreview({
+      extract: () => ({
+        'button--primary': { id: 'button--primary', kind: 'Button', name: 'Primary', parameters: {} }
+      }),
+      entries: undefined
+    });
+
+    const { data, diagnostics } = await utils.evalStorybookStorySnapshots({ waitFor }, { relevantGraph: true });
+    expect(data[0].importPath).toBeUndefined();
+    expect(diagnostics.storiesWithImportPath).toBe(0);
+  });
+
+  it('reports diagnostics for the preview-extract source', async () => {
+    setPreview({
+      extract: () => ({
+        'button--primary': { id: 'button--primary', kind: 'Button', name: 'Primary', parameters: {} }
+      }),
+      entries: {
+        'button--primary': { id: 'button--primary', importPath: './src/Button.stories.js' }
+      }
+    });
+
+    const { diagnostics } = await utils.evalStorybookStorySnapshots({ waitFor }, { relevantGraph: true });
+    expect(diagnostics).toEqual({
+      source: '__STORYBOOK_PREVIEW__.extract',
+      entriesPresent: true,
+      entriesCount: 1,
+      storiesTotal: 1,
+      storiesWithImportPath: 1,
+      sampleEntry: {
+        id: 'button--primary',
+        keys: ['id', 'importPath'],
+        importPath: './src/Button.stories.js'
+      },
+      sampleStory: {
+        id: 'button--primary',
+        importPath: './src/Button.stories.js',
+        parameterKeys: [],
+        fileName: undefined
+      }
+    });
+  });
+
+  it('reports the story-store source when extract yields an array', async () => {
+    global.window = {
+      __STORYBOOK_PREVIEW__: {
+        ready: () => Promise.resolve(),
+        extract: () => [],
+        storyStoreValue: { storyIndex: { entries: {} } }
+      },
+      __STORYBOOK_STORY_STORE__: {
+        extract: () => Promise.resolve(),
+        raw: () => [{
+          id: 's--1', kind: 'K', name: 'N', parameters: { fileName: './K.stories.js' }
+        }]
+      }
+    };
+
+    const { data, diagnostics } = await utils.evalStorybookStorySnapshots({ waitFor }, { relevantGraph: true });
+    expect(diagnostics.source).toBe('__STORYBOOK_STORY_STORE__.raw');
+    expect(diagnostics.sampleEntry).toBeNull();
+    expect(data[0].importPath).toBe('./K.stories.js');
+  });
+
+  it('does not extract importPath or diagnostics when Relevant Graph Extraction is disabled', async () => {
+    setPreview({
+      extract: () => ({
+        'button--primary': { id: 'button--primary', kind: 'Button', name: 'Primary', parameters: {} }
+      }),
+      entries: {
+        'button--primary': { id: 'button--primary', importPath: './src/Button.stories.js' }
+      }
+    });
+
+    const { data, diagnostics } = await utils.evalStorybookStorySnapshots({ waitFor });
+    expect(data[0].importPath).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(data[0], 'importPath')).toBe(false);
+    expect(diagnostics).toBeUndefined();
+  });
+});
+
 describe('evalSetCurrentStory event handling', () => {
   let channel, waitFor;
 

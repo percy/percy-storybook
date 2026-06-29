@@ -48,4 +48,45 @@ export const flags = [{
   name: 'partial',
   description: 'Marks the build as a partial build',
   validate: () => (process.env.PERCY_PARTIAL_BUILD ||= '1')
+}, {
+  name: 'relevant-graph',
+  description: 'Only snapshot stories affected by recent changes (Relevant Graph Extraction)',
+  percyrc: 'storybook.relevantGraphExtraction.enabled',
+  type: 'boolean',
+  default: false
+}, {
+  name: 'relevant-graph-baseline',
+  description: 'Git commit/branch to compare against',
+  percyrc: 'storybook.relevantGraphExtraction.baseline',
+  type: 'string'
+}, {
+  name: 'relevant-graph-untraced',
+  description: 'Glob patterns to exclude from dependency tracing',
+  percyrc: 'storybook.relevantGraphExtraction.untraced',
+  type: 'pattern',
+  multiple: true
+}, {
+  name: 'relevant-graph-trace',
+  description: 'Show detailed trace information for debugging',
+  percyrc: 'storybook.relevantGraphExtraction.trace',
+  type: 'boolean',
+  default: false
+}, {
+  name: 'relevant-graph-bail-on-changes',
+  description: 'Glob patterns that trigger full build if changed',
+  percyrc: 'storybook.relevantGraphExtraction.bailOnChanges',
+  type: 'pattern',
+  multiple: true
+}, {
+  name: 'relevant-graph-stats-file',
+  description: 'Filename of the stats JSON inside the Storybook build directory (default: enriched-stats.json)',
+  percyrc: 'storybook.relevantGraphExtraction.statsFile',
+  type: 'string',
+  default: 'enriched-stats.json'
+}, {
+  name: 'relevant-graph-fail-build-on-failure',
+  description: 'Fail the build if Relevant Graph Extraction encounters any error instead of falling back to a full snapshot set',
+  percyrc: 'storybook.relevantGraphExtraction.failBuildOnFailure',
+  type: 'boolean',
+  default: false
 }];

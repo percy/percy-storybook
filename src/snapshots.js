@@ -1,4 +1,5 @@
 import { logger, PercyConfig } from '@percy/cli-command';
+import { applyRelevantGraphExtraction, RelevantGraphExtractionBailError } from '@percy/relevant-graph-extraction';
 import { yieldAll } from '@percy/cli-command/utils';
 import qs from 'qs';
 import {
@@ -70,12 +71,12 @@ function shouldSkipStory(name, options, config) {
 // Returns snapshot config options for a Storybook story merged with global Storybook
 // options. Validation error messages will be added to the provided validations set.
 function getSnapshotConfig(story, config, invalid) {
-  let { id, ...options } = PercyConfig.migrate(story, '/storybook');
+  let { id, importPath, ...options } = PercyConfig.migrate(story, '/storybook');
 
   let errors = PercyConfig.validate(options, '/storybook');
   for (let e of (errors || [])) invalid.set(e.path, e.message);
 
-  return PercyConfig.merge([config, options, { id }], (path, prev, next) => {
+  return PercyConfig.merge([config, options, { id, importPath }], (path, prev, next) => {
     // normalize, but do not merge include or exclude options
     if (path.length === 1 && ['include', 'exclude'].includes(path[0])) {
       return [path, [].concat(next).filter(Boolean)];
@@ -258,7 +259,7 @@ function needsFreshPage(previousStory) {
 // Process a single story and capture its DOM
 async function* processStory(page, story, previewResource, percy, flags, log) {
   // Extract story details
-  let { id, args, globals, queryParams, ...options } = story;
+  let { id, args, globals, queryParams, importPath, ...options } = story;
 
   const enableJavaScript = options.enableJavaScript ?? percy.config.snapshot.enableJavaScript;
   if (flags.dryRun || enableJavaScript) {
@@ -285,7 +286,7 @@ async function* processStory(page, story, previewResource, percy, flags, log) {
 }
 
 // Starts the percy instance and collects Storybook snapshots, calling the callback when done
-export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags }) {
+export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildDir, flags }) {
   try {
     let aboutUrl = new URL('?path=/settings/about', baseUrl).href;
     let previewUrl = new URL('iframe.html', baseUrl).href;
@@ -314,13 +315,18 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
           evalStorybookStorySnapshots,
           {
             docCapture: isDocDiscoveryEnabled,
-            autodocCapture: isAutodocDiscoveryEnabled
+            autodocCapture: isAutodocDiscoveryEnabled,
+            relevantGraph: !!storybookConfig?.relevantGraphExtraction?.enabled
           }
         ),
         undefined,
         { from: 'preview url' }
       )
     ]);
+
+    if (stories?.diagnostics) {
+      log.debug(`Story extraction diagnostics: ${JSON.stringify(stories.diagnostics)}`);
+    }
 
     // map stories to snapshot options
     let snapshots = mapStorybookSnapshots(stories, {
@@ -332,6 +338,28 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
 
     // set storybook environment info
     percy.client.addEnvironmentInfo(environmentInfo);
+
+    if (storybookConfig?.relevantGraphExtraction?.enabled) {
+      try {
+        // applyRelevantGraphExtraction mutates `snapshots` in place, filtering it
+        // down to the subset affected by the change (and leaves it untouched on a
+        // recoverable bail, transparently keeping the full snapshot set).
+        yield applyRelevantGraphExtraction({
+          client: percy.client,
+          logger,
+          snapshots,
+          config: storybookConfig.relevantGraphExtraction,
+          buildDir
+        });
+      } catch (e) {
+        if (e instanceof RelevantGraphExtractionBailError) {
+          log.info(e.message);
+        } else {
+          log.warn(`RelevantGraphExtraction failed (${e.message}); running full snapshot set`);
+        }
+        if (storybookConfig.relevantGraphExtraction.failBuildOnFailure) throw e;
+      }
+    }
 
     // Track previous story state to determine when fresh pages are needed
     let previousStory = null;
