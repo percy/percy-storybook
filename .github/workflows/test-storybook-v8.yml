@@ -29,11 +29,11 @@ jobs:
         run: exit 1
         if: ${{ github.event_name == 'workflow_dispatch' && steps.regex-match.outputs && steps.regex-match.outputs.match == '' }}
       - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac
-      - uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ matrix.node }}
       - run: ./prepare-storybook-tests.sh 8
-      - uses: actions/cache@f4b3439a656ba812b8cb417d2d49f9c810103092 # v3.4.0
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: node_modules
           key: ${{ runner.os }}/node-${{ matrix.node }}/${{ hashFiles('**/yarn.lock') }}
@@ -45,6 +45,7 @@ jobs:
           PERCY_POSTINSTALL_BROWSER: true
       - run: yarn build
       - name: Debug npm info storybook
+        continue-on-error: true
         run: |
           echo "Running npx storybook --version..."
           npx storybook --version
