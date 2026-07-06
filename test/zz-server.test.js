@@ -2484,6 +2484,10 @@ describe('Server / projectConfig.cjs', () => {
           projectId: 42, projectName: 'P'
         });
 
+        // build reference is now cleared only AFTER the token fetch validates
+        // the credentials (PER-8545 / F-015), so wait for the async fetch
+        await new Promise(r => setTimeout(r, 50));
+
         // Check that writeEnvRaw was called to clear the build reference
         const writeCalls = fs.writeFileSync.calls.allArgs();
         const envWrites = writeCalls.filter(c => c[0].endsWith('.env'));
