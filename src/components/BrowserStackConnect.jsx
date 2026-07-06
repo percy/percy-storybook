@@ -56,12 +56,12 @@ export function BrowserStackConnect({ onAuthenticated }) {
   const hadExistingCreds = useRef(false);
 
   const emit = useChannel({
-    [PERCY_EVENTS.BS_CREDENTIALS_LOADED]: ({ username: u, accessKey: k }) => {
+    [PERCY_EVENTS.BS_CREDENTIALS_LOADED]: ({ username: u }) => {
+      // The server only sends the username back — the access key is a secret and
+      // is never returned to the browser, so the user re-enters it here.
       setUsername(u || '');
-      setAccessKey(k || '');
       usernameRef.current = u || '';
-      accessKeyRef.current = k || '';
-      hadExistingCreds.current = !!(u && k);
+      hadExistingCreds.current = !!u;
     },
     [PERCY_EVENTS.CREDENTIALS_VALIDATED]: ({ valid, error }) => {
       if (valid) {

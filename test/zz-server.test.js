@@ -583,14 +583,23 @@ describe('Server / credentials.cjs', () => {
   });
 
   describe('registerCredentialHandlers', () => {
-    let channel;
+    let channel, originalFetch;
 
     beforeEach(() => {
+      originalFetch = globalThis.fetch;
       channel = createMockChannel();
       registerCredentialHandlers(channel);
+      // Default: credentials verify successfully against Percy.
+      globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(mockResponse({}, { ok: true }));
+      spyOn(fs, 'mkdirSync');
+      spyOn(fs, 'appendFileSync');
     });
 
-    it('emits loaded credentials on LOAD_BS_CREDENTIALS', async () => {
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+    });
+
+    it('emits the username (never the access key) on LOAD_BS_CREDENTIALS', async () => {
       fs.existsSync.and.returnValue(true);
       fs.readFileSync.and.callFake((p) => {
         if (p.endsWith('.env')) return 'BROWSERSTACK_USERNAME=u\nBROWSERSTACK_ACCESS_KEY=k';
@@ -601,21 +610,23 @@ describe('Server / credentials.cjs', () => {
       await channel.trigger(PERCY_EVENTS.LOAD_BS_CREDENTIALS);
       expect(channel.emit).toHaveBeenCalledWith(
         PERCY_EVENTS.BS_CREDENTIALS_LOADED,
-        jasmine.objectContaining({ username: 'u', accessKey: 'k' })
+        jasmine.objectContaining({ username: 'u' })
       );
+      const payload = channel.emit.calls.mostRecent().args[1];
+      expect(payload.accessKey).toBeUndefined();
     });
 
-    it('emits empty creds on LOAD_BS_CREDENTIALS error', async () => {
+    it('emits empty username on LOAD_BS_CREDENTIALS error', async () => {
       fs.existsSync.and.callFake(() => { throw new Error('disk error'); });
 
       await channel.trigger(PERCY_EVENTS.LOAD_BS_CREDENTIALS);
       expect(channel.emit).toHaveBeenCalledWith(
         PERCY_EVENTS.BS_CREDENTIALS_LOADED,
-        { username: '', accessKey: '', projectName: '' }
+        { username: '', projectName: '' }
       );
     });
 
-    it('saves credentials on SAVE_BS_CREDENTIALS', async () => {
+    it('saves credentials on SAVE_BS_CREDENTIALS when they verify', async () => {
       fs.existsSync.and.returnValue(false);
 
       await channel.trigger(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
@@ -625,9 +636,26 @@ describe('Server / credentials.cjs', () => {
         PERCY_EVENTS.BS_CREDENTIALS_SAVED,
         { success: true }
       );
+      expect(fs.writeFileSync).toHaveBeenCalled();
     });
 
-    it('emits error on SAVE_BS_CREDENTIALS failure', async () => {
+    it('rejects SAVE_BS_CREDENTIALS when credentials do not verify', async () => {
+      fs.existsSync.and.returnValue(false);
+      globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(
+        mockResponse({}, { ok: false, status: 401 })
+      );
+
+      await channel.trigger(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
+        username: 'bad', accessKey: 'creds'
+      });
+      expect(channel.emit).toHaveBeenCalledWith(
+        PERCY_EVENTS.BS_CREDENTIALS_SAVED,
+        { success: false, error: 'Credentials could not be verified' }
+      );
+      expect(fs.writeFileSync).not.toHaveBeenCalled();
+    });
+
+    it('emits error on SAVE_BS_CREDENTIALS write failure', async () => {
       fs.writeFileSync.and.throwError('write error');
       fs.existsSync.and.returnValue(false);
 
@@ -640,13 +668,26 @@ describe('Server / credentials.cjs', () => {
       );
     });
 
-    it('populates session cache on SET_SESSION_CREDENTIALS', async () => {
+    it('populates session cache on SET_SESSION_CREDENTIALS when they verify', async () => {
       await channel.trigger(PERCY_EVENTS.SET_SESSION_CREDENTIALS, {
         username: 'sess-u', accessKey: 'sess-k'
       });
       const creds = getSessionCredentials();
       expect(creds.username).toBe('sess-u');
       expect(creds.accessKey).toBe('sess-k');
+    });
+
+    it('ignores SET_SESSION_CREDENTIALS when credentials do not verify', async () => {
+      globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(
+        mockResponse({}, { ok: false, status: 401 })
+      );
+
+      await channel.trigger(PERCY_EVENTS.SET_SESSION_CREDENTIALS, {
+        username: 'bad', accessKey: 'creds'
+      });
+      const creds = getSessionCredentials();
+      expect(creds.username).toBe('');
+      expect(creds.accessKey).toBe('');
     });
 
     it('populates session cache on successful SAVE_BS_CREDENTIALS', async () => {
@@ -673,6 +714,9 @@ describe('Server / percyApi.cjs', () => {
     channel = createMockChannel();
     registerPercyApiHandlers(channel);
     spyOn(fs, 'existsSync').and.returnValue(true);
+    // FETCH_PROJECTS / CREATE_PROJECT now read server-side credentials; default
+    // to an empty .env so the tests fall back to the payload credentials.
+    spyOn(fs, 'readFileSync').and.returnValue('');
     spyOn(fs, 'mkdirSync');
     spyOn(fs, 'appendFileSync');
   });
@@ -999,7 +1043,7 @@ describe('Server / buildItems.cjs', () => {
     registerBuildItemsHandlers(channel);
     spyOn(fs, 'existsSync').and.returnValue(true);
     spyOn(fs, 'readFileSync').and.callFake((p) => {
-      if (p.endsWith('.env')) return 'BROWSERSTACK_USERNAME=u\nBROWSERSTACK_ACCESS_KEY=k';
+      if (p.endsWith('.env')) return 'BROWSERSTACK_USERNAME=u\nBROWSERSTACK_ACCESS_KEY=k\nPERCY_TOKEN=web_percytoken';
       if (p.endsWith('package.json')) return '{"name":"app"}';
       return '';
     });
@@ -1034,9 +1078,31 @@ describe('Server / buildItems.cjs', () => {
         buildId: '123',
         items: json.data,
         filters: json.meta.filters,
-        authToken: jasmine.any(String)
+        // Only the project-scoped Percy token is handed to the browser,
+        // encoded as a basic-auth value (token as username, empty password).
+        authToken: basicAuth('web_percytoken', '')
       })
     );
+    // The account-level BrowserStack credentials must never be sent to the browser.
+    const payload = channel.emit.calls.mostRecent().args[1];
+    expect(payload.username).toBeUndefined();
+    expect(payload.accessKey).toBeUndefined();
+    expect(payload.authToken).not.toBe(basicAuth('u', 'k'));
+  });
+
+  it('omits authToken when no PERCY_TOKEN is present', async () => {
+    fs.readFileSync.and.callFake((p) => {
+      if (p.endsWith('.env')) return 'BROWSERSTACK_USERNAME=u\nBROWSERSTACK_ACCESS_KEY=k';
+      if (p.endsWith('package.json')) return '{"name":"app"}';
+      return '';
+    });
+    globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(
+      mockResponse({ data: [], meta: {} })
+    );
+
+    await channel.trigger(PERCY_EVENTS.FETCH_BUILD_ITEMS, { buildId: '1', meta: {} });
+    const payload = channel.emit.calls.mostRecent().args[1];
+    expect(payload.authToken).toBeUndefined();
   });
 
   it('filters out non-numeric browser IDs', async () => {
@@ -2046,12 +2112,14 @@ describe('Server / projectConfig.cjs', () => {
           PERCY_EVENTS.PROJECT_CONFIG_LOADED,
           jasmine.objectContaining({
             credentialsValid: true,
-            username: 'u',
-            accessKey: 'k',
             project: { id: 42, name: 'Proj' },
             hasValidToken: true
           })
         );
+        // Credentials must never be sent back to the browser.
+        const loaded = channel.emit.calls.mostRecent().args[1];
+        expect(loaded.username).toBeUndefined();
+        expect(loaded.accessKey).toBeUndefined();
       });
 
       it('auto-fetches token when project exists but PERCY_TOKEN is missing', async () => {

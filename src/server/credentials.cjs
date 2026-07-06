@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const { PERCY_EVENTS } = require('../constants.cjs');
 const { getEnvPath, setKey, readEnvRaw, writeEnvRaw } = require('./env.cjs');
+const { loggedFetch } = require('./apiLogger.cjs');
+const { PERCY_API_BASE, basicAuth } = require('./utils.cjs');
 
 /* ─── Session cache ─────────────────────────────────────────────────────
  * Holds credentials in server memory when the user declines .env consent.
@@ -73,24 +75,62 @@ function writeBsCredentials(username, accessKey) {
   writeEnvRaw(content);
 }
 
+/**
+ * Verify a username/access key against the Percy user endpoint.
+ * Returns true only on a 2xx response.
+ */
+async function verifyCredentials(username, accessKey) {
+  if (!username || !accessKey) return false;
+  try {
+    const res = await loggedFetch(
+      `${PERCY_API_BASE}/user`,
+      {
+        headers: {
+          Authorization: `Basic ${basicAuth(username, accessKey)}`,
+          'Content-Type': 'application/json'
+        }
+      },
+      'verify-credentials'
+    );
+    return !!res.ok;
+  } catch {
+    return false;
+  }
+}
+
 /* ─── Channel handlers ─────────────────────────────────────────────────── */
 
 function registerCredentialHandlers(channel) {
-  // When the panel mounts, send it the current .env values
+  // When the panel mounts, tell it which username is on file so the form can
+  // pre-fill it. The access key is a secret and is NEVER sent back to the
+  // browser — the user re-enters it (or the stored value is used server-side).
   channel.on(PERCY_EVENTS.LOAD_BS_CREDENTIALS, () => {
     try {
       const creds = readBsCredentials();
-      channel.emit(PERCY_EVENTS.BS_CREDENTIALS_LOADED, creds);
+      channel.emit(PERCY_EVENTS.BS_CREDENTIALS_LOADED, {
+        username: creds.username,
+        projectName: creds.projectName
+      });
     } catch (err) {
       channel.emit(PERCY_EVENTS.BS_CREDENTIALS_LOADED, {
-        username: '', accessKey: '', projectName: ''
+        username: '', projectName: ''
       });
     }
   });
 
-  // When the user clicks Authenticate, persist to .env
-  channel.on(PERCY_EVENTS.SAVE_BS_CREDENTIALS, ({ username, accessKey }) => {
+  // When the user clicks Authenticate, persist to .env — but only after the
+  // credentials are proven valid against Percy, so a forged event cannot write
+  // arbitrary values into the project's .env.
+  channel.on(PERCY_EVENTS.SAVE_BS_CREDENTIALS, async ({ username, accessKey }) => {
     try {
+      const valid = await verifyCredentials(username, accessKey);
+      if (!valid) {
+        channel.emit(PERCY_EVENTS.BS_CREDENTIALS_SAVED, {
+          success: false,
+          error: 'Credentials could not be verified'
+        });
+        return;
+      }
       writeBsCredentials(username, accessKey);
       // Also populate session cache so in-flight handlers see the update immediately
       setSessionCredentials(username, accessKey);
@@ -105,8 +145,13 @@ function registerCredentialHandlers(channel) {
 
   // Session-only mode: user declined to persist to .env, but credentials
   // must still be accessible to server handlers for the current session.
-  channel.on(PERCY_EVENTS.SET_SESSION_CREDENTIALS, ({ username, accessKey }) => {
-    setSessionCredentials(username, accessKey);
+  // Only cache them after they verify against Percy, so an unauthenticated or
+  // forged event cannot seed (or clobber a working) session with credentials
+  // that later privileged handlers would use for API calls.
+  channel.on(PERCY_EVENTS.SET_SESSION_CREDENTIALS, async ({ username, accessKey }) => {
+    if (await verifyCredentials(username, accessKey)) {
+      setSessionCredentials(username, accessKey);
+    }
   });
 }
 

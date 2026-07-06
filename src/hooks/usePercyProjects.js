@@ -59,13 +59,10 @@ export function usePercyProjects(username, accessKey, initialSearch = '') {
     }
   });
 
-  // Fetch when debounced search changes
+  // Fetch when debounced search changes.
+  // Credentials live server-side (in .env or the validated session cache); the
+  // server reads them itself, so we no longer gate on client-held creds.
   useEffect(() => {
-    if (!username || !accessKey) {
-      setInitialLoading(false);
-      return;
-    }
-
     pageRef.current = 0;
     setLoading(true);
     setError('');
