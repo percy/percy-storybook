@@ -690,6 +690,17 @@ describe('Server / credentials.cjs', () => {
       expect(creds.accessKey).toBe('');
     });
 
+    it('ignores SET_SESSION_CREDENTIALS when the verification request throws', async () => {
+      globalThis.fetch = jasmine.createSpy('fetch').and.rejectWith(new Error('network down'));
+
+      await channel.trigger(PERCY_EVENTS.SET_SESSION_CREDENTIALS, {
+        username: 'net-u', accessKey: 'net-k'
+      });
+      const creds = getSessionCredentials();
+      expect(creds.username).toBe('');
+      expect(creds.accessKey).toBe('');
+    });
+
     it('populates session cache on successful SAVE_BS_CREDENTIALS', async () => {
       fs.existsSync.and.returnValue(false);
       await channel.trigger(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
