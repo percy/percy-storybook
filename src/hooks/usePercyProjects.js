@@ -60,9 +60,24 @@ export function usePercyProjects(username, accessKey, initialSearch = '') {
   });
 
   // Fetch when debounced search changes.
-  // Credentials live server-side (in .env or the validated session cache); the
-  // server reads them itself, so we no longer gate on client-held creds.
+  //
+  // The server prefers its own stored credentials (.env or the validated
+  // session cache) and reads them itself. We still pass the client-held pair to
+  // cover a session-only race: SET_SESSION_CREDENTIALS verification is async, so
+  // a FETCH_PROJECTS fired before the server cache is seeded would otherwise
+  // have no credentials to use. The payload is the fallback for exactly that
+  // window; it is ignored once the cache is populated.
+  //
+  // Guard against firing a credential-less request: with no username/access key
+  // on either side the server would attempt basicAuth('', '') and 401. Skip the
+  // fetch entirely until we actually have a client-held pair to send.
   useEffect(() => {
+    if (!username || !accessKey) {
+      setLoading(false);
+      setInitialLoading(false);
+      return;
+    }
+
     pageRef.current = 0;
     setLoading(true);
     setError('');

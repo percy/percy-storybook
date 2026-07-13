@@ -3,7 +3,7 @@
 const fs = require('fs');
 const { PERCY_EVENTS } = require('../constants.cjs');
 const { getPercyYmlPath, readEnv, readEnvRaw, setKey, writeEnvRaw } = require('./env.cjs');
-const { readBsCredentials } = require('./credentials.cjs');
+const { readBsCredentials, resolveBsCredentials } = require('./credentials.cjs');
 const { loggedFetch } = require('./apiLogger.cjs');
 const { PERCY_API_BASE, validateBuildId, basicAuth } = require('./utils.cjs');
 
@@ -269,10 +269,9 @@ function registerProjectConfigHandlers(channel) {
     // Prefer the credentials already stored server-side (.env or the validated
     // session cache) over anything supplied in the payload. Falling back to the
     // payload only when nothing is stored covers the first-time session-only
-    // flow, but a request can no longer override known-good credentials.
-    const envCreds = readBsCredentials();
-    const username = envCreds.username || payloadUser;
-    const accessKey = envCreds.accessKey || payloadKey;
+    // flow, but a request can no longer override known-good credentials. Pairs
+    // are selected atomically so a stored username never mixes with a payload key.
+    const { username, accessKey } = resolveBsCredentials({ username: payloadUser, accessKey: payloadKey });
     if (!username || !accessKey) {
       channel.emit(PERCY_EVENTS.PROJECT_CONFIG_SAVED, {
         success: false,

@@ -1,14 +1,17 @@
 import fs from 'fs';
 import path from 'path';
-import { PERCY_EVENTS } from '../src/constants.cjs';
+import { PERCY_EVENTS, CHANNEL_AUTH } from '../src/constants.cjs';
+import { CHANNEL_AUTH as CHANNEL_AUTH_ESM } from '../src/constants.js';
+import * as preset from '../preset.cjs';
 import { PERCY_API_BASE, validateBuildId, basicAuth } from '../src/server/utils.cjs';
+import { withNonce, getPercyNonce } from '../src/utils/channelNonce.js';
 import {
   getEnvPath, getPercyYmlPath, parseEnv, setKey,
   readEnv, readEnvRaw, writeEnvRaw
 } from '../src/server/env.cjs';
 import { logApiCall, loggedFetch, getApiLogPath } from '../src/server/apiLogger.cjs';
 import {
-  readBsCredentials, writeBsCredentials,
+  readBsCredentials, writeBsCredentials, resolveBsCredentials,
   getSessionCredentials, setSessionCredentials, clearSessionCredentials,
   registerCredentialHandlers
 } from '../src/server/credentials.cjs';
@@ -534,6 +537,42 @@ describe('Server / credentials.cjs', () => {
     });
   });
 
+  describe('resolveBsCredentials', () => {
+    it('prefers a complete stored pair over the payload', () => {
+      fs.existsSync.and.returnValue(true);
+      fs.readFileSync.and.callFake((p) => {
+        if (p.endsWith('.env')) return 'BROWSERSTACK_USERNAME=stored-u\nBROWSERSTACK_ACCESS_KEY=stored-k';
+        if (p.endsWith('package.json')) return '{"name":"app"}';
+        return '';
+      });
+      expect(resolveBsCredentials({ username: 'evil-u', accessKey: 'evil-k' }))
+        .toEqual({ username: 'stored-u', accessKey: 'stored-k' });
+    });
+
+    it('falls back to the payload when nothing is stored', () => {
+      fs.existsSync.and.returnValue(false);
+      expect(resolveBsCredentials({ username: 'payload-u', accessKey: 'payload-k' }))
+        .toEqual({ username: 'payload-u', accessKey: 'payload-k' });
+    });
+
+    it('does not mix a partial stored pair with the payload (atomic selection)', () => {
+      fs.existsSync.and.returnValue(true);
+      fs.readFileSync.and.callFake((p) => {
+        // username on file but NO access key — must not pair with the payload key
+        if (p.endsWith('.env')) return 'BROWSERSTACK_USERNAME=stored-u';
+        if (p.endsWith('package.json')) return '{"name":"app"}';
+        return '';
+      });
+      expect(resolveBsCredentials({ username: 'payload-u', accessKey: 'payload-k' }))
+        .toEqual({ username: 'payload-u', accessKey: 'payload-k' });
+    });
+
+    it('defaults to empty strings when neither stored nor payload creds exist', () => {
+      fs.existsSync.and.returnValue(false);
+      expect(resolveBsCredentials()).toEqual({ username: '', accessKey: '' });
+    });
+  });
+
   describe('session credentials cache', () => {
     it('getSessionCredentials returns empty strings by default', () => {
       const creds = getSessionCredentials();
@@ -625,8 +664,37 @@ describe('Server / credentials.cjs', () => {
       await channel.trigger(PERCY_EVENTS.LOAD_BS_CREDENTIALS);
       expect(channel.emit).toHaveBeenCalledWith(
         PERCY_EVENTS.BS_CREDENTIALS_LOADED,
-        { username: '', projectName: '' }
+        { username: '', projectName: '', hasStoredAccessKey: false }
       );
+    });
+
+    it('reports hasStoredAccessKey:true when a complete pair is on file', async () => {
+      fs.existsSync.and.returnValue(true);
+      fs.readFileSync.and.callFake((p) => {
+        if (p.endsWith('.env')) return 'BROWSERSTACK_USERNAME=u\nBROWSERSTACK_ACCESS_KEY=k';
+        if (p.endsWith('package.json')) return '{"name":"app"}';
+        return '';
+      });
+
+      await channel.trigger(PERCY_EVENTS.LOAD_BS_CREDENTIALS);
+      const payload = channel.emit.calls.mostRecent().args[1];
+      expect(payload.hasStoredAccessKey).toBe(true);
+      // still never leaks the key itself
+      expect(payload.accessKey).toBeUndefined();
+    });
+
+    it('reports hasStoredAccessKey:false when only the username is on file', async () => {
+      fs.existsSync.and.returnValue(true);
+      fs.readFileSync.and.callFake((p) => {
+        if (p.endsWith('.env')) return 'BROWSERSTACK_USERNAME=u';
+        if (p.endsWith('package.json')) return '{"name":"app"}';
+        return '';
+      });
+
+      await channel.trigger(PERCY_EVENTS.LOAD_BS_CREDENTIALS);
+      const payload = channel.emit.calls.mostRecent().args[1];
+      expect(payload.username).toBe('u');
+      expect(payload.hasStoredAccessKey).toBe(false);
     });
 
     it('saves credentials on SAVE_BS_CREDENTIALS when they verify', async () => {
@@ -653,9 +721,61 @@ describe('Server / credentials.cjs', () => {
       });
       expect(channel.emit).toHaveBeenCalledWith(
         PERCY_EVENTS.BS_CREDENTIALS_SAVED,
-        { success: false, error: 'Credentials could not be verified' }
+        { success: false, error: 'Credentials could not be verified', retryable: false }
       );
       expect(fs.writeFileSync).not.toHaveBeenCalled();
+    });
+
+    it('surfaces a retryable error on SAVE_BS_CREDENTIALS when Percy is unreachable (5xx)', async () => {
+      fs.existsSync.and.returnValue(false);
+      globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(
+        mockResponse({}, { ok: false, status: 503 })
+      );
+
+      await channel.trigger(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
+        username: 'u', accessKey: 'k'
+      });
+      expect(channel.emit).toHaveBeenCalledWith(
+        PERCY_EVENTS.BS_CREDENTIALS_SAVED,
+        jasmine.objectContaining({ success: false, retryable: true })
+      );
+      expect(fs.writeFileSync).not.toHaveBeenCalled();
+    });
+
+    it('surfaces a retryable error on SAVE_BS_CREDENTIALS when the verify request throws', async () => {
+      fs.existsSync.and.returnValue(false);
+      globalThis.fetch = jasmine.createSpy('fetch').and.rejectWith(new Error('network down'));
+
+      await channel.trigger(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
+        username: 'u', accessKey: 'k'
+      });
+      expect(channel.emit).toHaveBeenCalledWith(
+        PERCY_EVENTS.BS_CREDENTIALS_SAVED,
+        jasmine.objectContaining({ success: false, retryable: true })
+      );
+    });
+
+    it('rejects SAVE_BS_CREDENTIALS without calling Percy when creds are empty', async () => {
+      fs.existsSync.and.returnValue(false);
+
+      await channel.trigger(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
+        username: '', accessKey: ''
+      });
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+      expect(channel.emit).toHaveBeenCalledWith(
+        PERCY_EVENTS.BS_CREDENTIALS_SAVED,
+        { success: false, error: 'Credentials could not be verified', retryable: false }
+      );
+    });
+
+    it('applies a timeout signal to the verification request', async () => {
+      fs.existsSync.and.returnValue(false);
+
+      await channel.trigger(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
+        username: 'u', accessKey: 'k'
+      });
+      const opts = globalThis.fetch.calls.mostRecent().args[1];
+      expect(opts.signal).toEqual(jasmine.any(AbortSignal));
     });
 
     it('emits error on SAVE_BS_CREDENTIALS write failure', async () => {
@@ -678,6 +798,58 @@ describe('Server / credentials.cjs', () => {
       const creds = getSessionCredentials();
       expect(creds.username).toBe('sess-u');
       expect(creds.accessKey).toBe('sess-k');
+    });
+
+    it('acknowledges SET_SESSION_CREDENTIALS success once verified', async () => {
+      await channel.trigger(PERCY_EVENTS.SET_SESSION_CREDENTIALS, {
+        username: 'sess-u', accessKey: 'sess-k'
+      });
+      expect(channel.emit).toHaveBeenCalledWith(
+        PERCY_EVENTS.SESSION_CREDENTIALS_SET,
+        { success: true }
+      );
+    });
+
+    it('acknowledges SET_SESSION_CREDENTIALS auth failure on 401 (not retryable)', async () => {
+      globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(
+        mockResponse({}, { ok: false, status: 401 })
+      );
+
+      await channel.trigger(PERCY_EVENTS.SET_SESSION_CREDENTIALS, {
+        username: 'bad', accessKey: 'creds'
+      });
+      expect(channel.emit).toHaveBeenCalledWith(
+        PERCY_EVENTS.SESSION_CREDENTIALS_SET,
+        { success: false, error: 'Credentials could not be verified', retryable: false }
+      );
+    });
+
+    it('acknowledges SET_SESSION_CREDENTIALS auth failure on 403 (not retryable)', async () => {
+      globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(
+        mockResponse({}, { ok: false, status: 403 })
+      );
+
+      await channel.trigger(PERCY_EVENTS.SET_SESSION_CREDENTIALS, {
+        username: 'u', accessKey: 'k'
+      });
+      expect(channel.emit).toHaveBeenCalledWith(
+        PERCY_EVENTS.SESSION_CREDENTIALS_SET,
+        { success: false, error: 'Credentials could not be verified', retryable: false }
+      );
+    });
+
+    it('acknowledges SET_SESSION_CREDENTIALS network failure (retryable) on 5xx', async () => {
+      globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(
+        mockResponse({}, { ok: false, status: 500 })
+      );
+
+      await channel.trigger(PERCY_EVENTS.SET_SESSION_CREDENTIALS, {
+        username: 'u', accessKey: 'k'
+      });
+      expect(channel.emit).toHaveBeenCalledWith(
+        PERCY_EVENTS.SESSION_CREDENTIALS_SET,
+        jasmine.objectContaining({ success: false, retryable: true })
+      );
     });
 
     it('ignores SET_SESSION_CREDENTIALS when credentials do not verify', async () => {
@@ -2526,6 +2698,35 @@ describe('Server / projectConfig.cjs', () => {
         );
       });
 
+      it('uses stored .env credentials over payload credentials (stored wins)', async () => {
+        fs.existsSync.and.returnValue(true);
+        fs.readFileSync.and.callFake((p) => {
+          if (p.endsWith('.env')) return 'BROWSERSTACK_USERNAME=u\nBROWSERSTACK_ACCESS_KEY=k';
+          if (p.endsWith('.percy.yml')) return '';
+          if (p.endsWith('package.json')) return '{"name":"app"}';
+          return '';
+        });
+
+        globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(
+          mockResponse({ data: [{ attributes: { role: 'master', token: 'tok1' } }] })
+        );
+
+        await channel.trigger(PERCY_EVENTS.SAVE_PROJECT_CONFIG, {
+          projectId: 42,
+          projectName: 'P',
+          username: 'evil-u',
+          accessKey: 'evil-k'
+        });
+
+        await new Promise(r => setTimeout(r, 50));
+
+        // The token fetch must authenticate with the STORED pair, never the
+        // payload's forged pair.
+        const authHeader = globalThis.fetch.calls.mostRecent().args[1].headers.Authorization;
+        expect(authHeader).toBe(`Basic ${basicAuth('u', 'k')}`);
+        expect(authHeader).not.toBe(`Basic ${basicAuth('evil-u', 'evil-k')}`);
+      });
+
       it('emits error when token fetch fails', async () => {
         fs.existsSync.and.returnValue(true);
         fs.readFileSync.and.callFake((p) => {
@@ -2897,10 +3098,32 @@ describe('Server / channelAuth.cjs', () => {
   });
 
   describe('PRIVILEGED_EVENTS', () => {
+    // Every server-registered event that mutates state (writes .env/.percy.yml,
+    // POSTs to Percy, or approves/rejects/deletes/merges a build). Enumerated
+    // explicitly so a newly added ungated write fails CI here.
+    const MUTATING_EVENTS = [
+      PERCY_EVENTS.SAVE_BS_CREDENTIALS,
+      PERCY_EVENTS.SET_SESSION_CREDENTIALS,
+      PERCY_EVENTS.SAVE_PROJECT_CONFIG,
+      PERCY_EVENTS.CREATE_PROJECT,
+      PERCY_EVENTS.RUN_SNAPSHOT,
+      PERCY_EVENTS.APPROVE_BUILD,
+      PERCY_EVENTS.REJECT_BUILD,
+      PERCY_EVENTS.DELETE_BUILD,
+      PERCY_EVENTS.MERGE_BUILD
+    ];
+
+    it('gates every state-mutating event', () => {
+      for (const event of MUTATING_EVENTS) {
+        expect(PRIVILEGED_EVENTS.has(event)).withContext(event).toBe(true);
+      }
+    });
+
     it('covers every state-mutating event and no read-only ones', () => {
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.SAVE_BS_CREDENTIALS)).toBe(true);
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.SET_SESSION_CREDENTIALS)).toBe(true);
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.SAVE_PROJECT_CONFIG)).toBe(true);
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.CREATE_PROJECT)).toBe(true);
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.RUN_SNAPSHOT)).toBe(true);
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.APPROVE_BUILD)).toBe(true);
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.REJECT_BUILD)).toBe(true);
@@ -2909,6 +3132,7 @@ describe('Server / channelAuth.cjs', () => {
       // read-only fetch/load events stay open
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.LOAD_BS_CREDENTIALS)).toBe(false);
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.FETCH_BUILD_STATUS)).toBe(false);
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.FETCH_PROJECTS)).toBe(false);
     });
   });
 
@@ -2964,5 +3188,149 @@ describe('Server / channelAuth.cjs', () => {
       guarded.emit(PERCY_EVENTS.BUILD_APPROVED, { ok: true });
       expect(channel.emit).toHaveBeenCalledWith(PERCY_EVENTS.BUILD_APPROVED, { ok: true });
     });
+
+    it('emits UNAUTHORIZED with the rejected event name when the nonce is bad', () => {
+      const channel = createMockChannel();
+      const guarded = guardChannel(channel, NONCE);
+      spyOn(console, 'warn');
+      guarded.on(PERCY_EVENTS.CREATE_PROJECT, jasmine.createSpy('create'));
+      channel.trigger(PERCY_EVENTS.CREATE_PROJECT, { [NONCE_FIELD]: 'forged' });
+      expect(channel.emit).toHaveBeenCalledWith(
+        PERCY_EVENTS.UNAUTHORIZED, { event: PERCY_EVENTS.CREATE_PROJECT }
+      );
+    });
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  constants — CJS/ESM wire-protocol parity                                */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+describe('constants — CJS/ESM parity', () => {
+  it('CHANNEL_AUTH is identical across the CJS and ESM constants', () => {
+    // Both server (cjs) and manager (esm) sides must agree on the nonce field
+    // and meta name, or the gate would silently reject every legitimate event.
+    expect(CHANNEL_AUTH).toEqual(CHANNEL_AUTH_ESM);
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  channelNonce.js — manager-side nonce helper                             */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+describe('Manager / channelNonce.js', () => {
+  let originalDocument;
+
+  beforeEach(() => {
+    originalDocument = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  });
+
+  afterEach(() => {
+    if (originalDocument) Object.defineProperty(globalThis, 'document', originalDocument);
+    else delete globalThis.document;
+  });
+
+  // Specs run in definition order (jasmine random:false). The module memoises
+  // the nonce once it reads a non-empty value, so the empty-result branches are
+  // exercised first, the latch second, and memoisation last.
+
+  it('returns empty string when there is no document (server/SSR)', () => {
+    delete globalThis.document;
+    expect(getPercyNonce()).toBe('');
+  });
+
+  it('returns empty string when the meta tag is absent', () => {
+    globalThis.document = { querySelector: () => null };
+    expect(getPercyNonce()).toBe('');
+  });
+
+  it('returns empty string when the meta tag has no content attribute', () => {
+    globalThis.document = { querySelector: () => ({ getAttribute: () => null }) };
+    expect(getPercyNonce()).toBe('');
+  });
+
+  it('returns empty string when reading the document throws', () => {
+    globalThis.document = { querySelector: () => { throw new Error('boom'); } };
+    expect(getPercyNonce()).toBe('');
+  });
+
+  it('reads and caches the nonce from the meta tag', () => {
+    globalThis.document = {
+      querySelector: () => ({ getAttribute: () => 'nonce-abc' })
+    };
+    expect(getPercyNonce()).toBe('nonce-abc');
+  });
+
+  it('withNonce attaches the cached nonce under the NONCE_FIELD key', () => {
+    delete globalThis.document; // value is memoised, no document needed
+    expect(withNonce({ a: 1 })).toEqual({ a: 1, [NONCE_FIELD]: 'nonce-abc' });
+  });
+
+  it('withNonce defaults to an empty payload', () => {
+    expect(withNonce()).toEqual({ [NONCE_FIELD]: 'nonce-abc' });
+  });
+
+  it('memoises the nonce even after the meta tag disappears', () => {
+    globalThis.document = { querySelector: () => null };
+    expect(getPercyNonce()).toBe('nonce-abc');
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  preset.cjs — end-to-end channel wiring                                  */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+describe('preset.cjs (integration wiring)', () => {
+  let channel, originalFetch, nonce;
+
+  beforeEach(() => {
+    clearSessionCredentials();
+    originalFetch = globalThis.fetch;
+    globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(
+      mockResponse({ data: { id: '7', attributes: { name: 'P' } } })
+    );
+    spyOn(fs, 'existsSync').and.returnValue(false);
+    spyOn(fs, 'readFileSync').and.returnValue('');
+    spyOn(fs, 'writeFileSync');
+    spyOn(fs, 'mkdirSync');
+    spyOn(fs, 'appendFileSync');
+    channel = createMockChannel();
+    nonce = getOrCreateNonce();
+  });
+
+  afterEach(() => {
+    clearSessionCredentials();
+    globalThis.fetch = originalFetch;
+  });
+
+  it('drops a privileged event that lacks the nonce and emits UNAUTHORIZED', async () => {
+    await preset.experimental_serverChannel(channel);
+    await channel.trigger(PERCY_EVENTS.CREATE_PROJECT, {
+      projectName: 'P', username: 'u', accessKey: 'k'
+    });
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(channel.emit).toHaveBeenCalledWith(
+      PERCY_EVENTS.UNAUTHORIZED, { event: PERCY_EVENTS.CREATE_PROJECT }
+    );
+  });
+
+  it('runs a privileged handler when the payload carries getOrCreateNonce()', async () => {
+    await preset.experimental_serverChannel(channel);
+    await channel.trigger(PERCY_EVENTS.CREATE_PROJECT, {
+      projectName: 'P', username: 'u', accessKey: 'k', [NONCE_FIELD]: nonce
+    });
+    expect(globalThis.fetch).toHaveBeenCalled();
+  });
+
+  it('managerHead injects a <meta> whose content is getOrCreateNonce()', () => {
+    const head = preset.managerHead('<title>x</title>');
+    expect(head).toContain(`name="${CHANNEL_AUTH.META_NAME}"`);
+    expect(head).toContain(`content="${getOrCreateNonce()}"`);
+  });
+
+  it('managerEntries appends the built manager entry', () => {
+    const entries = preset.managerEntries(['existing']);
+    expect(entries[0]).toBe('existing');
+    expect(entries[entries.length - 1]).toContain('manager.js');
   });
 });

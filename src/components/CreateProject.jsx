@@ -53,7 +53,7 @@ export function CreateProject({ username, accessKey, onProjectCreated, onBack })
     if (!name || loading) return;
     setLoading(true);
     setError('');
-    emit(PERCY_EVENTS.CREATE_PROJECT, { username, accessKey, projectName: name });
+    emit(PERCY_EVENTS.CREATE_PROJECT, withNonce({ username, accessKey, projectName: name }));
   };
 
   const handleRetry = () => {

@@ -23,6 +23,7 @@ const PRIVILEGED_EVENTS = new Set([
   PERCY_EVENTS.SAVE_BS_CREDENTIALS,
   PERCY_EVENTS.SET_SESSION_CREDENTIALS,
   PERCY_EVENTS.SAVE_PROJECT_CONFIG,
+  PERCY_EVENTS.CREATE_PROJECT,
   PERCY_EVENTS.RUN_SNAPSHOT,
   PERCY_EVENTS.APPROVE_BUILD,
   PERCY_EVENTS.REJECT_BUILD,
@@ -76,6 +77,10 @@ function guardChannel(channel, nonce) {
             `[percy] Rejected unauthenticated "${event}" request on the Storybook ` +
             'server channel (missing or invalid nonce).'
           );
+          // Signal the UI so a privileged action started with a missing/stale
+          // nonce (e.g. after a dev-server restart) surfaces an error and clears
+          // its loading state instead of spinning forever.
+          channel.emit(PERCY_EVENTS.UNAUTHORIZED, { event });
           return undefined;
         }
         const clean = { ...payload };
