@@ -21,6 +21,9 @@ import {
   registerProjectConfigHandlers
 } from '../src/server/projectConfig.cjs';
 import { runPercyBuild, registerSnapshotHandlers, runAsyncGenerator } from '../src/server/snapshots.cjs';
+import {
+  PRIVILEGED_EVENTS, NONCE_FIELD, generateNonce, getOrCreateNonce, safeEqual, guardChannel
+} from '../src/server/channelAuth.cjs';
 
 /* ─── Test helpers ────────────────────────────────────────────────────── */
 
@@ -2840,6 +2843,126 @@ describe('Server / snapshots.cjs', () => {
       await channel.trigger(PERCY_EVENTS.RUN_SNAPSHOT, { baseUrl: 'http://localhost:6006' });
       await new Promise(r => setTimeout(r, 20));
       expect(channel.emit).toHaveBeenCalledWith(PERCY_EVENTS.SNAPSHOT_STARTED, {});
+    });
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  channelAuth.cjs — nonce gate for state-mutating channel events          */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+describe('Server / channelAuth.cjs', () => {
+  describe('generateNonce', () => {
+    it('returns a 64-char hex string (32 random bytes)', () => {
+      const n = generateNonce();
+      expect(typeof n).toBe('string');
+      expect(n).toMatch(/^[0-9a-f]{64}$/);
+    });
+
+    it('produces a different value each call', () => {
+      expect(generateNonce()).not.toBe(generateNonce());
+    });
+  });
+
+  describe('getOrCreateNonce', () => {
+    it('returns a stable value across calls within the process', () => {
+      const a = getOrCreateNonce();
+      const b = getOrCreateNonce();
+      expect(a).toMatch(/^[0-9a-f]{64}$/);
+      expect(b).toBe(a);
+    });
+  });
+
+  describe('safeEqual', () => {
+    it('is true for identical strings', () => {
+      expect(safeEqual('abc123', 'abc123')).toBe(true);
+    });
+
+    it('is false for same-length differing strings', () => {
+      expect(safeEqual('abcdef', 'abcxyz')).toBe(false);
+    });
+
+    it('is false for different-length strings', () => {
+      expect(safeEqual('abc', 'abcdef')).toBe(false);
+    });
+
+    it('is false when the first arg is not a string', () => {
+      expect(safeEqual(undefined, 'abc')).toBe(false);
+      expect(safeEqual(123, 'abc')).toBe(false);
+    });
+
+    it('is false when the second arg is not a string', () => {
+      expect(safeEqual('abc', null)).toBe(false);
+    });
+  });
+
+  describe('PRIVILEGED_EVENTS', () => {
+    it('covers every state-mutating event and no read-only ones', () => {
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.SAVE_BS_CREDENTIALS)).toBe(true);
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.SET_SESSION_CREDENTIALS)).toBe(true);
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.SAVE_PROJECT_CONFIG)).toBe(true);
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.RUN_SNAPSHOT)).toBe(true);
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.APPROVE_BUILD)).toBe(true);
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.REJECT_BUILD)).toBe(true);
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.DELETE_BUILD)).toBe(true);
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.MERGE_BUILD)).toBe(true);
+      // read-only fetch/load events stay open
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.LOAD_BS_CREDENTIALS)).toBe(false);
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.FETCH_BUILD_STATUS)).toBe(false);
+    });
+  });
+
+  describe('guardChannel', () => {
+    const NONCE = 'the-correct-nonce';
+
+    it('passes read-only events straight through with the payload intact', () => {
+      const channel = createMockChannel();
+      const guarded = guardChannel(channel, NONCE);
+      const handler = jasmine.createSpy('load');
+      guarded.on(PERCY_EVENTS.LOAD_BS_CREDENTIALS, handler);
+      channel.trigger(PERCY_EVENTS.LOAD_BS_CREDENTIALS, { foo: 'bar' });
+      expect(handler).toHaveBeenCalledWith({ foo: 'bar' });
+    });
+
+    it('runs a privileged handler when the nonce matches, stripped from payload', () => {
+      const channel = createMockChannel();
+      const guarded = guardChannel(channel, NONCE);
+      const handler = jasmine.createSpy('approve');
+      guarded.on(PERCY_EVENTS.APPROVE_BUILD, handler);
+      channel.trigger(PERCY_EVENTS.APPROVE_BUILD, { buildId: '42', [NONCE_FIELD]: NONCE });
+      expect(handler).toHaveBeenCalledWith({ buildId: '42' });
+      // the nonce field is not forwarded to the real handler
+      expect(handler.calls.mostRecent().args[0][NONCE_FIELD]).toBeUndefined();
+    });
+
+    it('drops a privileged event with a wrong nonce and warns', () => {
+      const channel = createMockChannel();
+      const guarded = guardChannel(channel, NONCE);
+      const handler = jasmine.createSpy('delete');
+      const warn = spyOn(console, 'warn');
+      guarded.on(PERCY_EVENTS.DELETE_BUILD, handler);
+      channel.trigger(PERCY_EVENTS.DELETE_BUILD, { buildId: '42', [NONCE_FIELD]: 'forged' });
+      expect(handler).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalled();
+    });
+
+    it('drops a privileged event with a missing nonce / null payload and warns', () => {
+      const channel = createMockChannel();
+      const guarded = guardChannel(channel, NONCE);
+      const handler = jasmine.createSpy('save');
+      const warn = spyOn(console, 'warn');
+      guarded.on(PERCY_EVENTS.SAVE_BS_CREDENTIALS, handler);
+      channel.trigger(PERCY_EVENTS.SAVE_BS_CREDENTIALS, { username: 'x' }); // no nonce
+      channel.trigger(PERCY_EVENTS.SAVE_BS_CREDENTIALS, null); // null payload
+      expect(handler).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledTimes(2);
+    });
+
+    it('delegates emit to the underlying channel', () => {
+      const channel = createMockChannel();
+      const guarded = guardChannel(channel, NONCE);
+      guarded.emit(PERCY_EVENTS.BUILD_APPROVED, { ok: true });
+      expect(channel.emit).toHaveBeenCalledWith(PERCY_EVENTS.BUILD_APPROVED, { ok: true });
     });
   });
 });

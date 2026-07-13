@@ -88,6 +88,14 @@ const BUILD_STATES = {
 
 const DEFAULT_WIDTHS = [375, 1280];
 
+// Channel authentication (CSRF gate for state-mutating server-channel events).
+const CHANNEL_AUTH = {
+  // Field carrying the per-session nonce on state-mutating channel payloads.
+  NONCE_FIELD: '__percyNonce',
+  // <meta> name the server injects into the (same-origin) manager document.
+  META_NAME: 'percy-addon-nonce'
+};
+
 module.exports = {
   ADDON_ID,
   PANEL_ID,
@@ -97,5 +105,6 @@ module.exports = {
   SNAPSHOT_TYPES,
   SNAPSHOT_STATUS,
   BUILD_STATES,
-  DEFAULT_WIDTHS
+  DEFAULT_WIDTHS,
+  CHANNEL_AUTH
 };

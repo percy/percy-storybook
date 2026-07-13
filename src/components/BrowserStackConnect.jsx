@@ -10,6 +10,7 @@ import MdOutlineVisibilityOff from '@browserstack/design-stack-icons/dist/MdOutl
 import ArrowTopRightOnSquareIcon from '@browserstack/design-stack-icons/dist/ArrowTopRightOnSquareIcon';
 import { MdInfoOutline } from '@browserstack/design-stack-icons';
 import { PERCY_EVENTS } from '../constants.js';
+import { withNonce } from '../utils/channelNonce.js';
 
 /* ─── Styled components (layout only) ──────────────────────────────────── */
 
@@ -68,10 +69,10 @@ export function BrowserStackConnect({ onAuthenticated }) {
         setValidationError('');
         // Re-auth (credentials already in .env) — skip consent, save directly
         if (hadExistingCreds.current) {
-          emit(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
+          emit(PERCY_EVENTS.SAVE_BS_CREDENTIALS, withNonce({
             username: usernameRef.current,
             accessKey: accessKeyRef.current
-          });
+          }));
         } else {
           // First-time — show consent before writing to .env
           setLoading(false);
@@ -108,10 +109,10 @@ export function BrowserStackConnect({ onAuthenticated }) {
   function handleConsentAccept() {
     setShowConsent(false);
     setLoading(true);
-    emit(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
+    emit(PERCY_EVENTS.SAVE_BS_CREDENTIALS, withNonce({
       username: usernameRef.current,
       accessKey: accessKeyRef.current
-    });
+    }));
   }
 
   function handleConsentDecline() {
@@ -119,10 +120,10 @@ export function BrowserStackConnect({ onAuthenticated }) {
     // Session-only mode: push credentials to the server's in-memory cache
     // so server handlers (build polling, project fetch, etc.) can use them
     // without reading from .env.
-    emit(PERCY_EVENTS.SET_SESSION_CREDENTIALS, {
+    emit(PERCY_EVENTS.SET_SESSION_CREDENTIALS, withNonce({
       username: usernameRef.current,
       accessKey: accessKeyRef.current
-    });
+    }));
     onAuthenticated && onAuthenticated(usernameRef.current, accessKeyRef.current, true);
   }
 

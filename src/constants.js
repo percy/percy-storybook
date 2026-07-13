@@ -88,3 +88,12 @@ export const BUILD_STATES = {
 };
 
 export const DEFAULT_WIDTHS = [375, 1280];
+
+// Channel authentication (CSRF gate for state-mutating server-channel events).
+// Keep in sync with constants.cjs.
+export const CHANNEL_AUTH = {
+  // Field carrying the per-session nonce on state-mutating channel payloads.
+  NONCE_FIELD: '__percyNonce',
+  // <meta> name the server injects into the (same-origin) manager document.
+  META_NAME: 'percy-addon-nonce'
+};

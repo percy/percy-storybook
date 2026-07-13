@@ -3,6 +3,7 @@ import { useChannel } from 'storybook/manager-api';
 import { Alert, AlertDescription, Button, InputField } from '@browserstack/design-stack';
 import { MdArrowBack } from '@browserstack/design-stack-icons';
 import { PERCY_EVENTS } from '../constants.js';
+import { withNonce } from '../utils/channelNonce.js';
 import { Container, BackLink, Title, AlertWrapper, FieldWrapper } from './CreateProject.styles.js';
 
 export function CreateProject({ username, accessKey, onProjectCreated, onBack }) {
@@ -23,12 +24,12 @@ export function CreateProject({ username, accessKey, onProjectCreated, onBack })
         // Project created — now save config (write .percy.yml + fetch token)
         setCreatedProject(project);
         createdProjectRef.current = project;
-        emit(PERCY_EVENTS.SAVE_PROJECT_CONFIG, {
+        emit(PERCY_EVENTS.SAVE_PROJECT_CONFIG, withNonce({
           projectId: project.id,
           projectName: project.name,
           username,
           accessKey
-        });
+        }));
       } else {
         setError(errMsg || 'Failed to create project. Please try again.');
         setLoading(false);
@@ -59,12 +60,12 @@ export function CreateProject({ username, accessKey, onProjectCreated, onBack })
     if (!createdProject || loading) return;
     setLoading(true);
     setError('');
-    emit(PERCY_EVENTS.SAVE_PROJECT_CONFIG, {
+    emit(PERCY_EVENTS.SAVE_PROJECT_CONFIG, withNonce({
       projectId: createdProject.id,
       projectName: createdProject.name,
       username,
       accessKey
-    });
+    }));
   };
 
   const handleChange = (e) => {
