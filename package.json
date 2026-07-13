@@ -151,7 +151,7 @@
     "tailwind-scrollbar-hide": "1.1.7",
     "tailwindcss": "3.4.3",
     "terser": "5.46.1",
-    "vite": "6"
+    "vite": "8"
   },
   "resolutions": {
     "jackspeak": "2.1.1"
