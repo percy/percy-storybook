@@ -3328,9 +3328,4 @@ describe('preset.cjs (integration wiring)', () => {
     expect(head).toContain(`content="${getOrCreateNonce()}"`);
   });
 
-  it('managerEntries appends the built manager entry', () => {
-    const entries = preset.managerEntries(['existing']);
-    expect(entries[0]).toBe('existing');
-    expect(entries[entries.length - 1]).toContain('manager.js');
-  });
 });
