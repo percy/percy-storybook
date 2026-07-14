@@ -3327,5 +3327,4 @@ describe('preset.cjs (integration wiring)', () => {
     expect(head).toContain(`name="${CHANNEL_AUTH.META_NAME}"`);
     expect(head).toContain(`content="${getOrCreateNonce()}"`);
   });
-
 });
