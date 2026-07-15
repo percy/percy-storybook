@@ -33,7 +33,7 @@ export const storybook = command('storybook', {
       StorybookConfig.configSchema
     ]
   }
-}, async function*({ percy, args, flags, exit }) {
+}, async function*({ percy, args, flags, exit, log }) {
   if (!percy) exit(0, 'Percy is disabled');
   let { takeStorybookSnapshots } = yield import('./snapshots.js');
   let { createServer } = yield import('@percy/cli-command/utils');
@@ -43,6 +43,21 @@ export const storybook = command('storybook', {
     baseUrl: args.url ?? server?.address(),
     flags
   });
+
+  // Per-build Storybook hosting (PER-8973). Opt-in via `storybook.uploadBundle`
+  // (.percy.yml) or `--upload-bundle`, directory mode only (URL mode has no on-disk
+  // bundle). Best-effort: it runs after the snapshot run is the source of truth and can
+  // never fail the build.
+  if (args.serve && percy.config.storybook?.uploadBundle) {
+    yield* percy.yield.flush(); // ensure the build has been created (delayUploads: true)
+    let { uploadStorybookBundle } = yield import('./upload-bundle.js');
+    yield uploadStorybookBundle({
+      percy,
+      log,
+      directory: args.serve,
+      buildId: percy.build?.id
+    });
+  }
 });
 
 export default storybook;
