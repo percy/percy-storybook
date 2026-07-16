@@ -1,4 +1,4 @@
-import { logger, PercyConfig } from '@percy/cli-command';
+import { logger, PercyConfig, applyIntelliStory, IntelliStoryBailError } from '@percy/cli-command';
 import { yieldAll } from '@percy/cli-command/utils';
 import qs from 'qs';
 import {
@@ -70,12 +70,12 @@ function shouldSkipStory(name, options, config) {
 // Returns snapshot config options for a Storybook story merged with global Storybook
 // options. Validation error messages will be added to the provided validations set.
 function getSnapshotConfig(story, config, invalid) {
-  let { id, ...options } = PercyConfig.migrate(story, '/storybook');
+  let { id, importPath, ...options } = PercyConfig.migrate(story, '/storybook');
 
   let errors = PercyConfig.validate(options, '/storybook');
   for (let e of (errors || [])) invalid.set(e.path, e.message);
 
-  return PercyConfig.merge([config, options, { id }], (path, prev, next) => {
+  return PercyConfig.merge([config, options, { id, importPath }], (path, prev, next) => {
     // normalize, but do not merge include or exclude options
     if (path.length === 1 && ['include', 'exclude'].includes(path[0])) {
       return [path, [].concat(next).filter(Boolean)];
@@ -256,9 +256,10 @@ function needsFreshPage(previousStory) {
 }
 
 // Process a single story and capture its DOM
-async function* processStory(page, story, previewResource, percy, flags, log) {
-  // Extract story details
-  let { id, args, globals, queryParams, ...options } = story;
+export async function* processStory(page, story, previewResource, percy, flags, log) {
+  // Extract story details. importPath is internal IntelliStory plumbing used only to map a
+  // snapshot back to its source file — strip it here so it never leaks into the captured snapshot.
+  let { id, args, globals, queryParams, importPath, ...options } = story;
 
   const enableJavaScript = options.enableJavaScript ?? percy.config.snapshot.enableJavaScript;
   if (flags.dryRun || enableJavaScript) {
@@ -284,8 +285,32 @@ async function* processStory(page, story, previewResource, percy, flags, log) {
   return options;
 }
 
+// Filters the mapped snapshot set through IntelliStory, which only snapshots stories whose
+// dependency graph changed relative to a baseline. IntelliStory is off unless explicitly
+// enabled; any IntelliStory error falls back to the full snapshot set, and a bail is logged
+// at info level. When failBuildOnFailure is set the error is re-thrown so the build fails
+// instead of silently running the full set. The `apply` seam exists so the orchestration
+// branches can be exercised in isolation by tests.
+export async function applyIntelliStoryFilter(
+  percy, snapshots, intelliStoryConfig, buildDir, log, apply = applyIntelliStory
+) {
+  if (!intelliStoryConfig?.enabled) return snapshots;
+
+  try {
+    return await apply(percy, snapshots, intelliStoryConfig, buildDir);
+  } catch (e) {
+    if (e instanceof IntelliStoryBailError) {
+      log.info(e.message);
+    } else {
+      log.warn(`IntelliStory failed (${e.message}); running full snapshot set`);
+    }
+    if (intelliStoryConfig.failBuildOnFailure) throw e;
+    return snapshots;
+  }
+}
+
 // Starts the percy instance and collects Storybook snapshots, calling the callback when done
-export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags }) {
+export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildDir, flags }) {
   try {
     let aboutUrl = new URL('?path=/settings/about', baseUrl).href;
     let previewUrl = new URL('iframe.html', baseUrl).href;
@@ -314,13 +339,18 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
           evalStorybookStorySnapshots,
           {
             docCapture: isDocDiscoveryEnabled,
-            autodocCapture: isAutodocDiscoveryEnabled
+            autodocCapture: isAutodocDiscoveryEnabled,
+            intelliStory: !!storybookConfig?.intelliStory?.enabled
           }
         ),
         undefined,
         { from: 'preview url' }
       )
     ]);
+
+    if (stories?.diagnostics) {
+      log.debug(`Story extraction diagnostics: ${JSON.stringify(stories.diagnostics)}`);
+    }
 
     // map stories to snapshot options
     let snapshots = mapStorybookSnapshots(stories, {
@@ -332,6 +362,9 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
 
     // set storybook environment info
     percy.client.addEnvironmentInfo(environmentInfo);
+
+    // narrow the snapshot set to the stories affected by recent changes (IntelliStory)
+    snapshots = yield applyIntelliStoryFilter(percy, snapshots, storybookConfig?.intelliStory, buildDir, log);
 
     // Track previous story state to determine when fresh pages are needed
     let previousStory = null;
