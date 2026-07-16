@@ -257,8 +257,6 @@ function needsFreshPage(previousStory) {
 
 // Process a single story and capture its DOM
 export async function* processStory(page, story, previewResource, percy, flags, log) {
-  // Extract story details. importPath is internal IntelliStory plumbing used only to map a
-  // snapshot back to its source file — strip it here so it never leaks into the captured snapshot.
   let { id, args, globals, queryParams, importPath, ...options } = story;
 
   const enableJavaScript = options.enableJavaScript ?? percy.config.snapshot.enableJavaScript;
@@ -285,12 +283,6 @@ export async function* processStory(page, story, previewResource, percy, flags, 
   return options;
 }
 
-// Filters the mapped snapshot set through IntelliStory, which only snapshots stories whose
-// dependency graph changed relative to a baseline. IntelliStory is off unless explicitly
-// enabled; any IntelliStory error falls back to the full snapshot set, and a bail is logged
-// at info level. When failBuildOnFailure is set the error is re-thrown so the build fails
-// instead of silently running the full set. The `apply` seam exists so the orchestration
-// branches can be exercised in isolation by tests.
 export async function applyIntelliStoryFilter(
   percy, snapshots, intelliStoryConfig, buildDir, log, apply = applyIntelliStory
 ) {
@@ -363,7 +355,6 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
     // set storybook environment info
     percy.client.addEnvironmentInfo(environmentInfo);
 
-    // narrow the snapshot set to the stories affected by recent changes (IntelliStory)
     snapshots = yield applyIntelliStoryFilter(percy, snapshots, storybookConfig?.intelliStory, buildDir, log);
 
     // Track previous story state to determine when fresh pages are needed

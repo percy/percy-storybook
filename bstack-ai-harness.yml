@@ -1,0 +1,41 @@
+schema: 1
+packageVersion: "1.1.182"
+stacks:
+  - stack-org
+  - stack-domain-percy-cli
+  - stack-lang-nodejs
+managedFiles:
+  - .claude/skills/stack:pr-review/SKILL.md
+  - .claude/skills/stack:security-review/SKILL.md
+  - .claude/agents/stack:code-reviewer.md
+  - .claude/agents/stack:security-auditor.md
+  - .claude/skills/stack:percy-cli-code-review/SKILL.md
+  - .claude/skills/stack:percy-cli-debugging/SKILL.md
+  - .claude/skills/stack:percy-cli-feature-dev/SKILL.md
+  - .claude/agents/stack:percy-cli-code-reviewer.md
+  - .claude/agents/stack:percy-cli-feature-builder.md
+  - .claude/agents/stack:percy-cli-security-auditor.md
+  - .claude/agents/stack:percy-cli-version-bump.md
+  - .claude/rules/api-design.md
+  - .claude/rules/commit-conventions.md
+  - .claude/rules/database-migrations.md
+  - .claude/rules/frontend-components.md
+  - .claude/rules/security.md
+  - .claude/knowledge/org/SECURITY-POLICY.md
+  - .claude/knowledge/org/coding-guidelines.md
+  - .claude/knowledge/org/security-rules.md
+  - .claude/knowledge/domain/DEPENDENCIES.md
+  - .claude/knowledge/domain/DEPLOYMENT.md
+  - .claude/knowledge/domain/ERROR-CATALOG.md
+  - .claude/knowledge/domain/FEATURE-FLAGS.md
+  - .claude/knowledge/domain/GLOSSARY.md
+  - .claude/knowledge/domain/PACKAGE-MAP.md
+  - .claude/knowledge/domain/PERFORMANCE.md
+  - .claude/knowledge/domain/PRODUCT.md
+  - .claude/knowledge/domain/SETUP.md
+  - .claude/knowledge/domain/TESTING.md
+  - .claude/knowledge/domain/learnings.md
+  - .claude/knowledge/lang/nodejs/nodejs-conventions.md
+  - CLAUDE.md
+  - .claude/stack-harness.yml
+  - .claude/settings.json

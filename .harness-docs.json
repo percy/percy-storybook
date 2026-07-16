@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "files": {
+    ".claude/knowledge/org/SECURITY-POLICY.md": {
+      "hash": "4c3147c788dd04b5f4b99dddb403927f535bd6bffa9c5aad0a7418998ec044da",
+      "stack": "stack-org"
+    },
+    ".claude/knowledge/org/coding-guidelines.md": {
+      "hash": "d40302bc4c084317a12a15ecbe9c106c4432ec1ad37876325058b00147d2bed1",
+      "stack": "stack-org"
+    },
+    ".claude/knowledge/org/security-rules.md": {
+      "hash": "36631517cfc53b85d236f324504793280242ea4d34164346678ecab8bf0bf2b8",
+      "stack": "stack-org"
+    },
+    ".claude/knowledge/domain/DEPENDENCIES.md": {
+      "hash": "26c9341285b60469da59e08c296735e6c51eccd6dfe984601a767cc1b33b9075",
+      "stack": "stack-domain-percy-cli"
+    },
+    ".claude/knowledge/domain/DEPLOYMENT.md": {
+      "hash": "9fa7a63b827c4ff53f5357a2b7d648a0e20eb5ad4a2c81fb03c9ec2b41c9b0bd",
+      "stack": "stack-domain-percy-cli"
+    },
+    ".claude/knowledge/domain/ERROR-CATALOG.md": {
+      "hash": "b04a2847dcc6ee02cde4bcbccf1be860bc23f7c285f9c719ade59108be585fd0",
+      "stack": "stack-domain-percy-cli"
+    },
+    ".claude/knowledge/domain/FEATURE-FLAGS.md": {
+      "hash": "991d1d789fcbb3d4a7b9d0e662a9531386496e1f6e8dff976297401d9ffa1603",
+      "stack": "stack-domain-percy-cli"
+    },
+    ".claude/knowledge/domain/GLOSSARY.md": {
+      "hash": "1d3faf72dbdda6bb9eec4991b3585a6e82c958ac2123badf966fcc2012cc9115",
+      "stack": "stack-domain-percy-cli"
+    },
+    ".claude/knowledge/domain/PACKAGE-MAP.md": {
+      "hash": "2414b310e22c4b92033dc168b1db7386b5f946b05068e936da27fb883a61dbef",
+      "stack": "stack-domain-percy-cli"
+    },
+    ".claude/knowledge/domain/PERFORMANCE.md": {
+      "hash": "18e8e876cf377b2c875576549ee21fc7515cd8dcfcfbb35bcb88a864ca37519b",
+      "stack": "stack-domain-percy-cli"
+    },
+    ".claude/knowledge/domain/PRODUCT.md": {
+      "hash": "47e874139b1bf48c899d204dbb33b51ef592636e9b6181cadb25e8db740aa82b",
+      "stack": "stack-domain-percy-cli"
+    },
+    ".claude/knowledge/domain/SETUP.md": {
+      "hash": "08b06b5e7d159a6bba0d1777c3ebd81191809d16e01198cd56f1fdeab5725057",
+      "stack": "stack-domain-percy-cli"
+    },
+    ".claude/knowledge/domain/TESTING.md": {
+      "hash": "8d48ad0b562178dc6a9ac203bb2ed73942da89fae9108ca4086c97edcc970bbf",
+      "stack": "stack-domain-percy-cli"
+    },
+    ".claude/knowledge/domain/learnings.md": {
+      "hash": "b1b7adfe85c7fae7c9495d876ada349ff10542d8badac1ee55045e631f883c2d",
+      "stack": "stack-domain-percy-cli"
+    },
+    ".claude/knowledge/lang/nodejs/nodejs-conventions.md": {
+      "hash": "00e051d6e82975af53728c06aa4602c1e55c6af92a7ef34042b3fc4e70c35565",
+      "stack": "stack-lang-nodejs"
+    }
+  }
+}

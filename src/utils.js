@@ -312,12 +312,9 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       });
     }
 
-    // story path (importPath) extraction is only needed by IntelliStory, so
-    // skip it entirely unless IntelliStory is enabled
     const resolveImportPath = (s) => {
       if (!s) return undefined;
       if (entries && s.id && entries[s.id]?.importPath) return entries[s.id].importPath;
-      // older Storybook versions / non-storyIndex sources
       return s.parameters?.fileName || s.parameters?.__id || undefined;
     };
     const stampImportPath = list => {
