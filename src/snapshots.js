@@ -1,4 +1,4 @@
-import { logger, PercyConfig, applyIntelliStory, IntelliStoryBailError } from '@percy/cli-command';
+import { logger, PercyConfig, applyIntelliStory, writeIntelliStoryTrace, IntelliStoryBailError } from '@percy/cli-command';
 import { yieldAll } from '@percy/cli-command/utils';
 import qs from 'qs';
 import {
@@ -320,6 +320,16 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
     yield percy.browser.launch();
 
     const storybookConfig = percy.config.storybook;
+    const intelliStoryEnabled = !!storybookConfig?.intelliStory?.enabled;
+
+    // IntelliStory selects snapshots server-side against the real Percy build,
+    // so the build must exist before any snapshots are posted. Storybook delays
+    // uploads (the build is otherwise created lazily on the first flush), so
+    // create it up front here. Skipped on dry runs, where no build is created.
+    if (intelliStoryEnabled && !percy.dryRun) {
+      yield* percy.yield.startBuild();
+    }
+
     const { isDocDiscoveryEnabled, isAutodocDiscoveryEnabled, globalDocSettings } = getDocCaptureFlagsWithRules(storybookConfig);
 
     let [environmentInfo, stories] = yield* yieldAll([
@@ -440,8 +450,28 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
       }
     }
 
-    // Will stop once snapshots are done processing
+    // Will stop once snapshots are done processing (this finalizes the build)
     yield* percy.yield.stop();
+
+    if (intelliStoryEnabled && !percy.dryRun && percy.build?.id) {
+      // Summarize the server-side selection outcome, derived from each snapshot
+      // create response code (201 kept / 204 skipped) tallied in @percy/client.
+      const stats = percy.client.intelliStoryStats;
+      if (stats) {
+        const kept = stats.graphKept + stats.forcedKept;
+        const total = kept + stats.skipped;
+        log.info(`IntelliStory: ${kept} of ${total} snapshots kept (${stats.graphKept} via affected-graph, ${stats.forcedKept} via missing/failed/rejected baseline)`);
+      }
+
+      // After finalize, the IntelliStory graph job's data is available from job
+      // status, so fetch it once more and write the trace. Never let a trace
+      // failure fail an otherwise-successful build.
+      try {
+        yield writeIntelliStoryTrace(percy, storybookConfig.intelliStory, log);
+      } catch (e) {
+        log.debug(`IntelliStory: failed to write trace after finalize: ${e.message}`);
+      }
+    }
   } catch (error) {
     // force stop and re-throw
     await percy.stop(true);
