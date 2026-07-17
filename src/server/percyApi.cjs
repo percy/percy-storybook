@@ -2,6 +2,7 @@
 
 const { PERCY_EVENTS } = require('../constants.cjs');
 const { loggedFetch } = require('./apiLogger.cjs');
+const { resolveBsCredentials } = require('./credentials.cjs');
 const { PERCY_API_BASE, basicAuth } = require('./utils.cjs');
 
 const PAGE_LIMIT = 30;
@@ -50,8 +51,13 @@ function registerPercyApiHandlers(channel) {
    * Payload: { username, accessKey, search, page }
    * Response: { projects: [...], hasMore: bool } or { error: string }
    */
-  channel.on(PERCY_EVENTS.FETCH_PROJECTS, async ({ username, accessKey, search, page = 0 }) => {
+  channel.on(PERCY_EVENTS.FETCH_PROJECTS, async ({ username: payloadUser, accessKey: payloadKey, search, page = 0 }) => {
     try {
+      // Prefer server-side credentials; fall back to the payload only for the
+      // first-time session-only flow before they have been cached. Selected
+      // atomically so a stored username is never paired with a payload key.
+      const { username, accessKey } = resolveBsCredentials({ username: payloadUser, accessKey: payloadKey });
+
       const params = new URLSearchParams({
         'filter[product]': 'web',
         origin: 'percy_web',
@@ -105,8 +111,13 @@ function registerPercyApiHandlers(channel) {
    * Payload: { username, accessKey, projectName }
    * Response: { project: { id, name } } or { error: string }
    */
-  channel.on(PERCY_EVENTS.CREATE_PROJECT, async ({ username, accessKey, projectName }) => {
+  channel.on(PERCY_EVENTS.CREATE_PROJECT, async ({ username: payloadUser, accessKey: payloadKey, projectName }) => {
     try {
+      // Prefer server-side credentials; fall back to the payload only for the
+      // first-time session-only flow before they have been cached. Selected
+      // atomically so a stored username is never paired with a payload key.
+      const { username, accessKey } = resolveBsCredentials({ username: payloadUser, accessKey: payloadKey });
+
       const res = await loggedFetch(
         `${PERCY_API_BASE}/projects`,
         {

@@ -3,6 +3,7 @@
 const { PERCY_EVENTS } = require('../constants.cjs');
 const { loggedFetch } = require('./apiLogger.cjs');
 const { readBsCredentials } = require('./credentials.cjs');
+const { readEnv } = require('./env.cjs');
 const { PERCY_API_BASE, validateBuildId, basicAuth } = require('./utils.cjs');
 
 /* ─── Channel handlers ────────────────────────────────────────────────── */
@@ -11,11 +12,12 @@ function registerBuildItemsHandlers(channel) {
   /**
    * FETCH_BUILD_ITEMS
    * Fetches build items from Percy API with filters extracted from build metadata.
-   * Also includes the Percy auth token for the review-viewer package.
    *
-   * NOTE: The Percy token is sent to the browser so that review-viewer can make
-   * direct API calls to percy.io. This is acceptable for a localhost dev tool.
-   * The token is project-scoped (not account-wide).
+   * The build-items request itself is made server-side using the BrowserStack
+   * credentials, which never leave the Node process. For the review-viewer
+   * package (which makes its own direct calls to percy.io) we hand the browser
+   * only the project-scoped Percy token as a basic-auth value — never the
+   * account-level BrowserStack username/access key.
    *
    * Payload: { buildId, meta }
    * Response: { buildId, items, filters, authToken } or { error, buildId }
@@ -66,12 +68,20 @@ function registerBuildItemsHandlers(channel) {
 
       const json = await res.json();
 
-      channel.emit(PERCY_EVENTS.BUILD_ITEMS_FETCHED, {
+      // Only the project-scoped Percy token (written to .env during project
+      // setup) may be handed to the browser for review-viewer's direct percy.io
+      // calls. It is sent as a basic-auth value (token as username, empty
+      // password). Never send the BrowserStack username/access key.
+      const percyToken = readEnv().PERCY_TOKEN;
+
+      const payload = {
         buildId: id,
         items: json.data || [],
-        filters: json.meta?.filters || null,
-        authToken: basicAuth(username, accessKey)
-      });
+        filters: json.meta?.filters || null
+      };
+      if (percyToken) payload.authToken = basicAuth(percyToken, '');
+
+      channel.emit(PERCY_EVENTS.BUILD_ITEMS_FETCHED, payload);
     } catch (err) {
       channel.emit(PERCY_EVENTS.BUILD_ITEMS_FETCHED, {
         error: err.message, buildId: String(buildId)

@@ -10,6 +10,7 @@ import MdOutlineVisibilityOff from '@browserstack/design-stack-icons/dist/MdOutl
 import ArrowTopRightOnSquareIcon from '@browserstack/design-stack-icons/dist/ArrowTopRightOnSquareIcon';
 import { MdInfoOutline } from '@browserstack/design-stack-icons';
 import { PERCY_EVENTS } from '../constants.js';
+import { withNonce } from '../utils/channelNonce.js';
 
 /* ─── Styled components (layout only) ──────────────────────────────────── */
 
@@ -56,22 +57,25 @@ export function BrowserStackConnect({ onAuthenticated }) {
   const hadExistingCreds = useRef(false);
 
   const emit = useChannel({
-    [PERCY_EVENTS.BS_CREDENTIALS_LOADED]: ({ username: u, accessKey: k }) => {
+    [PERCY_EVENTS.BS_CREDENTIALS_LOADED]: ({ username: u, hasStoredAccessKey }) => {
+      // The server only sends the username back — the access key is a secret and
+      // is never returned to the browser, so the user re-enters it here.
       setUsername(u || '');
-      setAccessKey(k || '');
       usernameRef.current = u || '';
-      accessKeyRef.current = k || '';
-      hadExistingCreds.current = !!(u && k);
+      // Only treat this as a re-auth (and skip the persistence-consent prompt)
+      // when a COMPLETE stored pair exists. A .env with a username but no access
+      // key must still ask for consent before the freshly typed key is written.
+      hadExistingCreds.current = !!(u && hasStoredAccessKey);
     },
     [PERCY_EVENTS.CREDENTIALS_VALIDATED]: ({ valid, error }) => {
       if (valid) {
         setValidationError('');
         // Re-auth (credentials already in .env) — skip consent, save directly
         if (hadExistingCreds.current) {
-          emit(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
+          emit(PERCY_EVENTS.SAVE_BS_CREDENTIALS, withNonce({
             username: usernameRef.current,
             accessKey: accessKeyRef.current
-          });
+          }));
         } else {
           // First-time — show consent before writing to .env
           setLoading(false);
@@ -87,6 +91,19 @@ export function BrowserStackConnect({ onAuthenticated }) {
       if (success) {
         setSaveError('');
         onAuthenticated && onAuthenticated(usernameRef.current, accessKeyRef.current, false);
+      } else {
+        setSaveError(error || 'Failed to save credentials');
+      }
+    },
+    // Session-only mode: only transition to authenticated once the server has
+    // acknowledged that the credentials verified and were cached. Transitioning
+    // synchronously would leave the UI "authenticated" even when verification
+    // silently failed.
+    [PERCY_EVENTS.SESSION_CREDENTIALS_SET]: ({ success, error }) => {
+      setLoading(false);
+      if (success) {
+        setSaveError('');
+        onAuthenticated && onAuthenticated(usernameRef.current, accessKeyRef.current, true);
       } else {
         setSaveError(error || 'Failed to save credentials');
       }
@@ -108,22 +125,25 @@ export function BrowserStackConnect({ onAuthenticated }) {
   function handleConsentAccept() {
     setShowConsent(false);
     setLoading(true);
-    emit(PERCY_EVENTS.SAVE_BS_CREDENTIALS, {
+    emit(PERCY_EVENTS.SAVE_BS_CREDENTIALS, withNonce({
       username: usernameRef.current,
       accessKey: accessKeyRef.current
-    });
+    }));
   }
 
   function handleConsentDecline() {
     setShowConsent(false);
-    // Session-only mode: push credentials to the server's in-memory cache
-    // so server handlers (build polling, project fetch, etc.) can use them
-    // without reading from .env.
-    emit(PERCY_EVENTS.SET_SESSION_CREDENTIALS, {
+    setSaveError('');
+    setLoading(true);
+    // Session-only mode: push credentials to the server's in-memory cache so
+    // server handlers (build polling, project fetch, etc.) can use them without
+    // reading from .env. Wait for the SESSION_CREDENTIALS_SET ack before
+    // transitioning to authenticated — the server only caches them after they
+    // verify, so a failed verification must not present as authenticated.
+    emit(PERCY_EVENTS.SET_SESSION_CREDENTIALS, withNonce({
       username: usernameRef.current,
       accessKey: accessKeyRef.current
-    });
-    onAuthenticated && onAuthenticated(usernameRef.current, accessKeyRef.current, true);
+    }));
   }
 
   return (

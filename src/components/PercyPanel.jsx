@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Alert, AlertDescription, Button, LoaderV2 } from '@browserstack/design-stack';
+import { Alert, AlertTitle, AlertDescription, Button, LoaderV2 } from '@browserstack/design-stack';
 import { MdOutlineOpenInNew, MdOutlineVpnKey } from '@browserstack/design-stack-icons';
 import DSIBStack from '@browserstack/design-stack-icons/dist/DSIBStack';
 import { useChannel } from 'storybook/manager-api';
@@ -49,6 +49,10 @@ export function PercyPanel({ active }) {
   // Dynamic view switching based on story navigation
   useAutoViewSwitch({ currentStory, storyIdSet, itemsLoading, hasPreviousBuild, view, transition, VIEWS });
 
+  // Session-expired: the server rejected a privileged event for a stale/missing
+  // nonce (e.g. after a Storybook restart). Surface a recovery message.
+  const [sessionExpired, setSessionExpired] = useState(false);
+
   // Listen for build status updates triggered by approve-build re-fetch
   const emitChannel = useChannel({
     [PERCY_EVENTS.BUILD_STATUS_FETCHED]: (data) => {
@@ -57,7 +61,11 @@ export function PercyPanel({ active }) {
         reviewState: data.reviewState,
         reviewStateReason: data.reviewStateReason
       });
-    }
+    },
+    // A privileged action was rejected by the server-channel nonce gate. Show a
+    // recovery message; rendering it unmounts every in-flight view so no loading
+    // spinner is left hanging forever waiting on a response that will never come.
+    [PERCY_EVENTS.UNAUTHORIZED]: () => setSessionExpired(true)
   });
 
   const handleBuildApproved = useCallback(() => {
@@ -74,6 +82,22 @@ export function PercyPanel({ active }) {
   const [sessionBannerDismissed, setSessionBannerDismissed] = useState(false);
 
   if (!active) return null;
+
+  if (sessionExpired) {
+    return (
+      <Wrapper>
+        <div style={{ padding: 16, flexShrink: 0 }}>
+          <Alert variant="error">
+            <AlertTitle>Session expired</AlertTitle>
+            <AlertDescription>
+              Your Percy session is no longer valid (the Storybook server may have
+              restarted). Please refresh the page to continue.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </Wrapper>
+    );
+  }
 
   const handleAuthenticated = (username, accessKey, isSessionOnly) => {
     if (isSessionOnly) setSessionOnly(true);
