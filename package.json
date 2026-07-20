@@ -91,6 +91,7 @@
     "@percy/config": "^1.31.10",
     "axios": "1.17.0",
     "cross-spawn": "^7.0.3",
+    "form-data": "4.0.5",
     "glob-to-regexp": "^0.4.1",
     "qs": "^6.11.0",
     "react-router-dom": "7.13.1"
