@@ -455,12 +455,11 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
 
     if (intelliStoryEnabled && !percy.dryRun && percy.build?.id) {
       // Summarize the server-side selection outcome, derived from each snapshot
-      // create response code (201 kept / 204 skipped) tallied in @percy/client.
+      // create response (skipped-via-smartsnap) tallied in @percy/client.
       const stats = percy.client.intelliStoryStats;
       if (stats) {
-        const kept = stats.graphKept + stats.forcedKept;
-        const total = kept + stats.skipped;
-        log.info(`IntelliStory: ${kept} of ${total} snapshots kept (${stats.graphKept} via affected-graph, ${stats.forcedKept} via missing/failed/rejected baseline)`);
+        const total = stats.kept + stats.skipped;
+        log.info(`IntelliStory: ${stats.kept} of ${total} snapshots kept`);
       }
 
       // After finalize, the IntelliStory graph job's data is available from job
