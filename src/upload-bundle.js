@@ -1,96 +1,110 @@
 /**
- * Per-build Storybook hosting upload (PER-8973). After a directory-mode `percy storybook`
- * run, zips the built storybook-static directory and uploads it to percy-api for hosting.
+ * Per-build Storybook hosting upload (PER-8973) — content-addressable, direct-to-GCS.
  *
- * Talks to percy-api directly via axios (percy.client.post is JSON-only), reusing
- * percy.client.token + apiUrl so env overrides track the rest of the SDK.
+ * Flow (see the PER-8973 design comments):
+ *   1. Walk the built storybook-static dir, SHA-256 every file -> manifest [{path, sha, size}].
+ *   2. POST /check -> the API returns the MISSING shas, each with a signed PUT URL + the
+ *      exact headers to replay (dedup: already-stored files are skipped).
+ *   3. PUT each missing file's bytes DIRECTLY to GCS (bounded parallelism). Bytes never
+ *      touch percy-api.
+ *   4. POST /commit with the manifest (path -> sha) to finalize the build.
  *
- * Guarantees:
- *   - Best-effort: every failure is logged and swallowed. Never throws, never exits non-zero.
- *   - Opt-in only (the caller checks storybook.uploadBundle before invoking).
- *   - 200 MB zip cap: over the cap, we skip the upload and send a failure beacon so the
- *     review page shows an actionable "unavailable" state instead of silently nothing.
- *   - Retries transient failures (network / 5xx / 429) with capped exponential backoff
- *     (total horizon ~65s — this runs inside the customer's CI, so it must not hang it).
- *   - On terminal failure, sends a best-effort failure beacon (state_hint=failed).
+ * Talks to percy-api via axios (percy.client.post is JSON-only), reusing percy.client.token
+ * + apiUrl. Best-effort: every failure is logged and swallowed; on terminal failure a
+ * beacon marks the bundle failed so it surfaces on the review page. Never throws / exits nonzero.
  */
 
-import { PassThrough } from 'node:stream';
-import archiver from 'archiver';
-import FormData from 'form-data';
+import { createHash } from 'node:crypto';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import path from 'node:path';
 import axios from 'axios';
 
-export const MAX_BUNDLE_BYTES = 200 * 1024 * 1024; // 200 MB
-const MAX_ATTEMPTS = 3;
-const BACKOFF_MS = [5000, 15000, 45000]; // capped horizon ~65s
+export const MAX_FILE_BYTES = 50 * 1024 * 1024; // per-file cap (matches API MAX_FILE_BYTES)
+export const MAX_BUNDLE_BYTES = 1024 * 1024 * 1024; // per-build total cap
+export const MAX_FILE_COUNT = 5000;
+const UPLOAD_CONCURRENCY = 12;
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+function sha256Hex(buf) {
+  return createHash('sha256').update(buf).digest('hex');
 }
 
-// Retry only on transient failures; a 4xx (e.g. 403 feature_disabled, 401, 404) is terminal.
-function isRetryable(err) {
-  const status = err.response?.status;
-  if (status == null) return true; // network / timeout — no response
-  return status === 429 || status >= 500;
+// Recursively list files under dir as { relPath (posix), absPath, size }.
+function walkFiles(dir) {
+  const out = [];
+  const walk = (abs, rel) => {
+    for (const entry of readdirSync(abs, { withFileTypes: true })) {
+      const childAbs = path.join(abs, entry.name);
+      const childRel = rel ? `${rel}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) {
+        walk(childAbs, childRel);
+      } else if (entry.isFile()) {
+        out.push({ relPath: childRel, absPath: childAbs, size: statSync(childAbs).size });
+      }
+      // symlinks/other types are skipped — only regular files are hosted
+    }
+  };
+  walk(dir, '');
+  return out;
 }
 
-/** Streams a directory into a single in-memory zip Buffer via archiver. */
-async function zipDirectory(directory) {
-  return new Promise((resolve, reject) => {
-    const archive = archiver('zip', { zlib: { level: 9 } });
-    const chunks = [];
-    const sink = new PassThrough();
-
-    archive.on('error', reject);
-    sink.on('error', reject);
-    sink.on('data', chunk => chunks.push(chunk));
-    sink.on('end', () => resolve(Buffer.concat(chunks)));
-
-    archive.pipe(sink);
-    archive.directory(directory, false);
-    archive.finalize();
+// Build the manifest by hashing every file. Returns { entries, totalBytes }.
+function buildManifest(dir) {
+  const entries = walkFiles(dir).map(f => {
+    const bytes = readFileSync(f.absPath);
+    return { path: f.relPath, sha256: sha256Hex(bytes), size: f.size, absPath: f.absPath };
   });
+  const totalBytes = entries.reduce((n, e) => n + e.size, 0);
+  return { entries, totalBytes };
 }
 
-function endpoint(apiUrl, buildId) {
-  return `${apiUrl}/builds/${buildId}/storybook_bundle`;
+function endpoint(apiUrl, buildId, suffix) {
+  return `${apiUrl}/builds/${buildId}/storybook_bundle${suffix}`;
 }
 
 function authHeaders(token, extra = {}) {
   return { ...extra, Authorization: `Token token=${token}` };
 }
 
-/**
- * Best-effort failure beacon: creates a `failed` bundle row (no file) so the failure is
- * visible on the review page and counted in the hosting-success metric.
- */
 async function sendFailureBeacon({ apiUrl, token, buildId, reason, log }) {
   try {
+    const FormData = (await import('form-data')).default;
     const form = new FormData();
     form.append('state_hint', 'failed');
     form.append('reason', reason);
-    await axios.post(endpoint(apiUrl, buildId), form, {
+    await axios.post(endpoint(apiUrl, buildId, ''), form, {
       headers: authHeaders(token, form.getHeaders())
     });
   } catch {
-    // The beacon itself is best-effort; nothing more to do.
     log?.debug?.('Storybook bundle failure beacon could not be delivered');
   }
 }
 
+// Run tasks with bounded concurrency; rejects on the first failure.
+async function runBounded(items, limit, fn) {
+  const queue = [...items];
+  const workers = Array.from({ length: Math.min(limit, queue.length) }, async () => {
+    while (queue.length) {
+      const item = queue.shift();
+      await fn(item);
+    }
+  });
+  await Promise.all(workers);
+}
+
 /**
  * @param {Object} args
- * @param {Object} args.percy     percy core instance (has .client with apiUrl + token)
- * @param {Object} args.log       logger (info/warn/debug)
- * @param {string} args.directory absolute path to the static Storybook build dir
- * @param {string|number} args.buildId the Percy build id
- * @param {number} [args.maxBytes] zip size cap (defaults to MAX_BUNDLE_BYTES; overridable for tests)
+ * @param {Object} args.percy      percy core instance (.client has apiUrl + token)
+ * @param {Object} args.log        logger (info/warn/debug)
+ * @param {string} args.directory  absolute path to the static Storybook build dir
+ * @param {string|number} args.buildId
+ * @param {Object} [args.caps]     override {maxFileBytes, maxBundleBytes, maxFileCount} (tests)
  */
-export async function uploadStorybookBundle({ percy, log, directory, buildId, maxBytes = MAX_BUNDLE_BYTES }) {
+export async function uploadStorybookBundle({ percy, log, directory, buildId, caps = {} }) {
+  const maxFileBytes = caps.maxFileBytes ?? MAX_FILE_BYTES;
+  const maxBundleBytes = caps.maxBundleBytes ?? MAX_BUNDLE_BYTES;
+  const maxFileCount = caps.maxFileCount ?? MAX_FILE_COUNT;
   const apiUrl = percy?.client?.apiUrl;
   const token = percy?.client?.token;
-
   if (!apiUrl || !token || !buildId || !directory) {
     log?.warn?.(
       'Storybook bundle upload skipped: missing ' +
@@ -99,53 +113,66 @@ export async function uploadStorybookBundle({ percy, log, directory, buildId, ma
     return;
   }
 
-  let zipBuffer;
+  let entries, totalBytes;
   try {
-    zipBuffer = await zipDirectory(directory);
+    ({ entries, totalBytes } = buildManifest(directory));
   } catch (err) {
-    log?.warn?.(`Storybook bundle upload skipped: could not zip directory: ${err.message}`);
+    log?.warn?.(`Storybook bundle upload skipped: could not read build dir: ${err.message}`);
     await sendFailureBeacon({ apiUrl, token, buildId, reason: 'client_failed', log });
     return;
   }
 
-  if (zipBuffer.length > maxBytes) {
+  // Client-side quota pre-check (the API enforces the same before signing).
+  const oversize = entries.find(e => e.size > maxFileBytes);
+  if (entries.length > maxFileCount || totalBytes > maxBundleBytes || oversize) {
     log?.warn?.(
-      `Storybook bundle (${Math.round(zipBuffer.length / 1024 / 1024)} MB) exceeds the ` +
-      `${Math.round(maxBytes / 1024 / 1024)} MB hosting limit and was not uploaded. Trim ` +
-      'addons or large static assets, or contact support to raise the limit.'
+      'Storybook bundle exceeds hosting limits ' +
+      `(${entries.length} files, ${Math.round(totalBytes / 1024 / 1024)} MB) and was not uploaded. ` +
+      'Trim addons or large static assets, or contact support to raise the limit.'
     );
     await sendFailureBeacon({ apiUrl, token, buildId, reason: 'size_cap', log });
     return;
   }
 
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    const form = new FormData();
-    form.append('bundle', zipBuffer, { filename: 'bundle.zip', contentType: 'application/zip' });
-    try {
-      await axios.post(endpoint(apiUrl, buildId), form, {
-        headers: authHeaders(token, form.getHeaders()),
+  try {
+    // (1) /check — one call: which shas are missing + their signed PUT URLs.
+    const checkRes = await axios.post(
+      endpoint(apiUrl, buildId, '/check'),
+      { files: entries.map(e => ({ path: e.path, sha256: e.sha256, size: e.size })) },
+      { headers: authHeaders(token) }
+    );
+    const missing = checkRes.data?.missing || [];
+    const bySha = new Map(entries.map(e => [e.sha256, e]));
+
+    // (2)+(3) PUT each missing blob directly to GCS, replaying the signed headers verbatim.
+    await runBounded(missing, UPLOAD_CONCURRENCY, async ({ sha256, signed_url: url, headers }) => {
+      const entry = bySha.get(sha256);
+      if (!entry) return;
+      await axios.put(url, readFileSync(entry.absPath), {
+        headers: { ...(headers || {}), 'Content-Type': 'application/octet-stream' },
         maxContentLength: Infinity,
         maxBodyLength: Infinity
       });
-      log?.info?.(`Uploaded Storybook bundle for build #${buildId}`);
-      return;
-    } catch (err) {
-      const status = err.response?.status;
-      const detail = status ? `HTTP ${status}` : err.message;
+    });
 
-      if (!isRetryable(err)) {
-        // Terminal (e.g. 403 feature_disabled): not a client upload failure worth a beacon.
-        log?.warn?.(`Storybook bundle upload skipped: ${detail}`);
-        return;
-      }
-      if (attempt < MAX_ATTEMPTS) {
-        log?.debug?.(`Storybook bundle upload attempt ${attempt} failed (${detail}); retrying`);
-        await sleep(BACKOFF_MS[attempt - 1]);
-        continue;
-      }
-      log?.warn?.(`Storybook bundle upload failed after ${MAX_ATTEMPTS} attempts: ${detail}`);
-      await sendFailureBeacon({ apiUrl, token, buildId, reason: 'client_failed', log });
+    // (4) /commit — finalize the build with the manifest.
+    await axios.post(
+      endpoint(apiUrl, buildId, '/commit'),
+      { manifest: entries.map(e => ({ path: e.path, sha256: e.sha256 })) },
+      { headers: authHeaders(token) }
+    );
+
+    log?.info?.(`Uploaded Storybook bundle for build #${buildId} (${entries.length} files, ${missing.length} new)`);
+  } catch (err) {
+    const status = err.response?.status;
+    const detail = status ? `HTTP ${status}` : err.message;
+    // A 403 feature_disabled is terminal but not a client upload failure worth a beacon.
+    if (status === 403) {
+      log?.warn?.(`Storybook bundle upload skipped: ${detail}`);
+      return;
     }
+    log?.warn?.(`Storybook bundle upload failed: ${detail}`);
+    await sendFailureBeacon({ apiUrl, token, buildId, reason: 'client_failed', log });
   }
 }
 
