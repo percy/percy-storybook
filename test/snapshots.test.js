@@ -1,4 +1,7 @@
 import * as utils from '../src/utils.js';
+import { IntelliStoryBailError, PercyConfig } from '@percy/cli-command';
+import * as CoreConfig from '@percy/core/config';
+import { applyIntelliStoryFilter, processStory } from '../src/snapshots.js';
 
 describe('captureDOM behavior', () => {
   let page, percy, log, previewResource, captureDOM;
@@ -288,5 +291,132 @@ describe('takeStorybookSnapshots behaviour', () => {
     );
     delete process.env.PERCY_STORYBOOK_DOC_CAPTURE;
     delete process.env.PERCY_STORYBOOK_AUTODOC_CAPTURE;
+  });
+});
+
+describe('applyIntelliStoryFilter (IntelliStory orchestration)', () => {
+  let percy, log, snapshots, buildDir;
+
+  beforeEach(() => {
+    percy = { client: {} };
+    log = {
+      info: jasmine.createSpy('info'),
+      warn: jasmine.createSpy('warn'),
+      debug: jasmine.createSpy('debug')
+    };
+    snapshots = [
+      { name: 'A', importPath: './a.stories.js' },
+      { name: 'B', importPath: './b.stories.js' }
+    ];
+    buildDir = './build';
+  });
+
+  it('returns the full set unchanged when IntelliStory is disabled', async () => {
+    let apply = jasmine.createSpy('apply');
+    let result = await applyIntelliStoryFilter(percy, snapshots, { enabled: false }, buildDir, log, apply);
+    expect(result).toBe(snapshots);
+    expect(apply).not.toHaveBeenCalled();
+  });
+
+  it('returns the full set unchanged when there is no IntelliStory config', async () => {
+    let apply = jasmine.createSpy('apply');
+    let result = await applyIntelliStoryFilter(percy, snapshots, undefined, buildDir, log, apply);
+    expect(result).toBe(snapshots);
+    expect(apply).not.toHaveBeenCalled();
+  });
+
+  it('reassigns snapshots to the filtered set on success', async () => {
+    let filtered = [snapshots[0]];
+    let config = { enabled: true, baseline: 'main' };
+    let apply = jasmine.createSpy('apply').and.returnValue(Promise.resolve(filtered));
+
+    let result = await applyIntelliStoryFilter(percy, snapshots, config, buildDir, log, apply);
+
+    expect(apply).toHaveBeenCalledWith(percy, snapshots, config, buildDir);
+    expect(result).toBe(filtered);
+    expect(log.info).not.toHaveBeenCalled();
+    expect(log.warn).not.toHaveBeenCalled();
+  });
+
+  it('logs a bail at info level and falls back to the full set', async () => {
+    let apply = jasmine.createSpy('apply')
+      .and.callFake(() => Promise.reject(new IntelliStoryBailError('nothing changed')));
+
+    let result = await applyIntelliStoryFilter(percy, snapshots, { enabled: true }, buildDir, log, apply);
+
+    expect(log.info).toHaveBeenCalledWith('nothing changed');
+    expect(log.warn).not.toHaveBeenCalled();
+    expect(result).toBe(snapshots);
+  });
+
+  it('warns and falls back to the full set on a generic error', async () => {
+    let apply = jasmine.createSpy('apply')
+      .and.callFake(() => Promise.reject(new Error('boom')));
+
+    let result = await applyIntelliStoryFilter(percy, snapshots, { enabled: true }, buildDir, log, apply);
+
+    expect(log.warn).toHaveBeenCalledWith('IntelliStory failed (boom); running full snapshot set');
+    expect(log.info).not.toHaveBeenCalled();
+    expect(result).toBe(snapshots);
+  });
+
+  it('re-throws a generic error when failBuildOnFailure is set', async () => {
+    let err = new Error('boom');
+    let apply = jasmine.createSpy('apply').and.callFake(() => Promise.reject(err));
+
+    await expectAsync(
+      applyIntelliStoryFilter(percy, snapshots, { enabled: true, failBuildOnFailure: true }, buildDir, log, apply)
+    ).toBeRejectedWith(err);
+
+    expect(log.warn).toHaveBeenCalled();
+  });
+
+  it('re-throws a bail when failBuildOnFailure is set', async () => {
+    let err = new IntelliStoryBailError('nothing changed');
+    let apply = jasmine.createSpy('apply').and.callFake(() => Promise.reject(err));
+
+    await expectAsync(
+      applyIntelliStoryFilter(percy, snapshots, { enabled: true, failBuildOnFailure: true }, buildDir, log, apply)
+    ).toBeRejectedWith(err);
+
+    expect(log.info).toHaveBeenCalledWith('nothing changed');
+  });
+});
+
+describe('processStory importPath stripping', () => {
+  let page, percy, log, previewResource;
+
+  beforeEach(() => {
+    // processStory validates against the core '/snapshot/dom' schema; other suites reset the
+    // shared schema registry, so (re)register it here to keep this test order-independent.
+    PercyConfig.addSchema(CoreConfig.schemas);
+    page = { eval: jasmine.createSpy('eval') };
+    percy = {
+      config: { snapshot: { enableJavaScript: false } },
+      snapshot: jasmine.createSpy('snapshot')
+    };
+    log = { debug: jasmine.createSpy('debug'), warn: jasmine.createSpy('warn') };
+    previewResource = { content: '<html>preview</html>' };
+  });
+
+  it('strips importPath so it never reaches the captured snapshot options', async () => {
+    let story = {
+      id: 'button--primary',
+      name: 'Button: Primary',
+      importPath: './src/Button.stories.js',
+      url: 'http://localhost:6006/iframe.html?id=button--primary'
+    };
+
+    // dry-run path uses the preview DOM and avoids page.eval / captureDOM
+    let gen = processStory(page, story, previewResource, percy, { dryRun: true }, log);
+    let { value: options } = await gen.next();
+
+    expect(Object.prototype.hasOwnProperty.call(options, 'importPath')).toBe(false);
+    expect(options.name).toBe('Button: Primary');
+    expect(options.domSnapshot).toBe('<html>preview</html>');
+    // processStory returns the options the caller hands to percy.snapshot(); the absence of
+    // importPath here guarantees the internal plumbing never leaks into a snapshot
+    expect(page.eval).not.toHaveBeenCalled();
+    expect(percy.snapshot).not.toHaveBeenCalled();
   });
 });

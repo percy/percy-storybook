@@ -87,8 +87,8 @@
   "dependencies": {
     "@amplitude/analytics-browser": "2.35.4",
     "@amplitude/plugin-session-replay-browser": "1.25.16",
-    "@percy/cli-command": "^1.31.10",
-    "@percy/config": "^1.31.10",
+    "@percy/cli-command": "1.32.4",
+    "@percy/config": "1.32.4",
     "axios": "1.17.0",
     "cross-spawn": "^7.0.3",
     "glob-to-regexp": "^0.4.1",

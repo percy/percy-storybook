@@ -1,4 +1,4 @@
-import { logger, PercyConfig } from '@percy/cli-command';
+import { logger, PercyConfig, applyIntelliStory, writeIntelliStoryTrace, IntelliStoryBailError } from '@percy/cli-command';
 import { yieldAll } from '@percy/cli-command/utils';
 import qs from 'qs';
 import {
@@ -70,12 +70,12 @@ function shouldSkipStory(name, options, config) {
 // Returns snapshot config options for a Storybook story merged with global Storybook
 // options. Validation error messages will be added to the provided validations set.
 function getSnapshotConfig(story, config, invalid) {
-  let { id, ...options } = PercyConfig.migrate(story, '/storybook');
+  let { id, importPath, ...options } = PercyConfig.migrate(story, '/storybook');
 
   let errors = PercyConfig.validate(options, '/storybook');
   for (let e of (errors || [])) invalid.set(e.path, e.message);
 
-  return PercyConfig.merge([config, options, { id }], (path, prev, next) => {
+  return PercyConfig.merge([config, options, { id, importPath }], (path, prev, next) => {
     // normalize, but do not merge include or exclude options
     if (path.length === 1 && ['include', 'exclude'].includes(path[0])) {
       return [path, [].concat(next).filter(Boolean)];
@@ -256,9 +256,8 @@ function needsFreshPage(previousStory) {
 }
 
 // Process a single story and capture its DOM
-async function* processStory(page, story, previewResource, percy, flags, log) {
-  // Extract story details
-  let { id, args, globals, queryParams, ...options } = story;
+export async function* processStory(page, story, previewResource, percy, flags, log) {
+  let { id, args, globals, queryParams, importPath, ...options } = story;
 
   const enableJavaScript = options.enableJavaScript ?? percy.config.snapshot.enableJavaScript;
   if (flags.dryRun || enableJavaScript) {
@@ -284,8 +283,26 @@ async function* processStory(page, story, previewResource, percy, flags, log) {
   return options;
 }
 
+export async function applyIntelliStoryFilter(
+  percy, snapshots, intelliStoryConfig, buildDir, log, apply = applyIntelliStory
+) {
+  if (!intelliStoryConfig?.enabled) return snapshots;
+
+  try {
+    return await apply(percy, snapshots, intelliStoryConfig, buildDir);
+  } catch (e) {
+    if (e instanceof IntelliStoryBailError) {
+      log.info(e.message);
+    } else {
+      log.warn(`IntelliStory failed (${e.message}); running full snapshot set`);
+    }
+    if (intelliStoryConfig.failBuildOnFailure) throw e;
+    return snapshots;
+  }
+}
+
 // Starts the percy instance and collects Storybook snapshots, calling the callback when done
-export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags }) {
+export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildDir, flags }) {
   try {
     let aboutUrl = new URL('?path=/settings/about', baseUrl).href;
     let previewUrl = new URL('iframe.html', baseUrl).href;
@@ -303,6 +320,16 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
     yield percy.browser.launch();
 
     const storybookConfig = percy.config.storybook;
+    const intelliStoryEnabled = !!storybookConfig?.intelliStory?.enabled;
+
+    // IntelliStory selects snapshots server-side against the real Percy build,
+    // so the build must exist before any snapshots are posted. Storybook delays
+    // uploads (the build is otherwise created lazily on the first flush), so
+    // create it up front here. Skipped on dry runs, where no build is created.
+    if (intelliStoryEnabled && !percy.dryRun) {
+      yield* percy.yield.startBuild();
+    }
+
     const { isDocDiscoveryEnabled, isAutodocDiscoveryEnabled, globalDocSettings } = getDocCaptureFlagsWithRules(storybookConfig);
 
     let [environmentInfo, stories] = yield* yieldAll([
@@ -314,13 +341,18 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
           evalStorybookStorySnapshots,
           {
             docCapture: isDocDiscoveryEnabled,
-            autodocCapture: isAutodocDiscoveryEnabled
+            autodocCapture: isAutodocDiscoveryEnabled,
+            intelliStory: !!storybookConfig?.intelliStory?.enabled
           }
         ),
         undefined,
         { from: 'preview url' }
       )
     ]);
+
+    if (stories?.diagnostics) {
+      log.debug(`Story extraction diagnostics: ${JSON.stringify(stories.diagnostics)}`);
+    }
 
     // map stories to snapshot options
     let snapshots = mapStorybookSnapshots(stories, {
@@ -332,6 +364,8 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
 
     // set storybook environment info
     percy.client.addEnvironmentInfo(environmentInfo);
+
+    snapshots = yield applyIntelliStoryFilter(percy, snapshots, storybookConfig?.intelliStory, buildDir, log);
 
     // Track previous story state to determine when fresh pages are needed
     let previousStory = null;
@@ -416,8 +450,27 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
       }
     }
 
-    // Will stop once snapshots are done processing
+    // Will stop once snapshots are done processing (this finalizes the build)
     yield* percy.yield.stop();
+
+    if (intelliStoryEnabled && !percy.dryRun && percy.build?.id) {
+      // Summarize the server-side selection outcome, derived from each snapshot
+      // create response (skipped-via-smartsnap) tallied in @percy/client.
+      const stats = percy.client.intelliStoryStats;
+      if (stats) {
+        const total = stats.kept + stats.skipped;
+        log.info(`IntelliStory: filtered out ${stats.skipped} of ${total} snapshots with no detected changes; the remaining ${stats.kept} were processed.`);
+      }
+
+      // After finalize, the IntelliStory graph job's data is available from job
+      // status, so fetch it once more and write the trace. Never let a trace
+      // failure fail an otherwise-successful build.
+      try {
+        yield writeIntelliStoryTrace(percy, storybookConfig.intelliStory, log);
+      } catch (e) {
+        log.debug(`IntelliStory: failed to write trace after finalize: ${e.message}`);
+      }
+    }
   } catch (error) {
     // force stop and re-throw
     await percy.stop(true);
