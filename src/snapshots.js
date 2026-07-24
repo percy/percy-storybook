@@ -459,7 +459,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
       const stats = percy.client.intelliStoryStats;
       if (stats) {
         const total = stats.kept + stats.skipped;
-        log.info(`IntelliStory: ${stats.kept} of ${total} snapshots kept`);
+        log.info(`IntelliStory: filtered out ${stats.skipped} of ${total} snapshots with no detected changes; the remaining ${stats.kept} were processed.`);
       }
 
       // After finalize, the IntelliStory graph job's data is available from job
