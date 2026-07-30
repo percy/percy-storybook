@@ -1,12 +1,14 @@
 /**
- * Per-build Storybook hosting upload (PER-8973) — content-addressable, direct-to-GCS.
+ * Per-build Storybook hosting upload (PER-8973) — content-addressable, via the verifier
+ * middleman (Flow B).
  *
  * Flow (see the PER-8973 design comments):
  *   1. Walk the built storybook-static dir, SHA-256 every file -> manifest [{path, sha, size}].
- *   2. POST /check -> the API returns the MISSING shas, each with a signed PUT URL + the
- *      exact headers to replay (dedup: already-stored files are skipped).
- *   3. PUT each missing file's bytes DIRECTLY to GCS (bounded parallelism). Bytes never
- *      touch percy-api.
+ *   2. POST /check -> the API returns the MISSING shas + the verifier upload URL + a
+ *      short-lived upload token (dedup: already-stored files are skipped).
+ *   3. POST each missing file's bytes to the verifier (bounded parallelism), with the upload
+ *      token + declared sha. The verifier re-hashes and writes the CAS blob only if it matches.
+ *      Bytes never touch percy-api; nothing unverified reaches GCS.
  *   4. POST /commit with the manifest (path -> sha) to finalize the build.
  *
  * Talks to percy-api via axios (percy.client.post is JSON-only), reusing percy.client.token
@@ -104,7 +106,10 @@ export async function uploadStorybookBundle({ percy, log, directory, buildId, ca
   const maxBundleBytes = caps.maxBundleBytes ?? MAX_BUNDLE_BYTES;
   const maxFileCount = caps.maxFileCount ?? MAX_FILE_COUNT;
   const apiUrl = percy?.client?.apiUrl;
-  const token = percy?.client?.token;
+  // Resolve the token the same way the client does for requests: explicit token, then
+  // PERCY_TOKEN env (this.env.token), then config. Reading the raw `client.token` misses the
+  // common env case (token only lives in this.env.token) and silently skips the upload.
+  const token = percy?.client?.getToken?.(false) ?? percy?.client?.token;
   if (!apiUrl || !token || !buildId || !directory) {
     log?.warn?.(
       'Storybook bundle upload skipped: missing ' +
@@ -135,21 +140,33 @@ export async function uploadStorybookBundle({ percy, log, directory, buildId, ca
   }
 
   try {
-    // (1) /check — one call: which shas are missing + their signed PUT URLs.
+    // (1) /check — one call: which shas are missing + the verifier upload URL + upload token.
     const checkRes = await axios.post(
       endpoint(apiUrl, buildId, '/check'),
       { files: entries.map(e => ({ path: e.path, sha256: e.sha256, size: e.size })) },
       { headers: authHeaders(token) }
     );
     const missing = checkRes.data?.missing || [];
+    const uploadUrl = checkRes.data?.upload_url;
+    const uploadToken = checkRes.data?.upload_token;
     const bySha = new Map(entries.map(e => [e.sha256, e]));
 
-    // (2)+(3) PUT each missing blob directly to GCS, replaying the signed headers verbatim.
-    await runBounded(missing, UPLOAD_CONCURRENCY, async ({ sha256, signed_url: url, headers }) => {
+    if (missing.length && (!uploadUrl || !uploadToken)) {
+      throw new Error('Storybook /check did not return an upload endpoint (upload_url/upload_token)');
+    }
+
+    // (2)+(3) POST each missing blob to the verifier middleman (Flow B). It re-hashes the bytes
+    // and writes them to the content-addressed store only if they match — bytes never touch the
+    // API, and nothing unverified reaches GCS.
+    await runBounded(missing, UPLOAD_CONCURRENCY, async ({ sha256 }) => {
       const entry = bySha.get(sha256);
       if (!entry) return;
-      await axios.put(url, readFileSync(entry.absPath), {
-        headers: { ...(headers || {}), 'Content-Type': 'application/octet-stream' },
+      await axios.post(uploadUrl, readFileSync(entry.absPath), {
+        headers: {
+          'X-Upload-Token': uploadToken,
+          'X-Expected-Sha': sha256,
+          'Content-Type': 'application/octet-stream'
+        },
         maxContentLength: Infinity,
         maxBodyLength: Infinity
       });

@@ -6,6 +6,7 @@ import axios from 'axios';
 import { uploadStorybookBundle, MAX_FILE_COUNT } from '../src/upload-bundle.js';
 
 const sha256 = s => createHash('sha256').update(s).digest('hex');
+const UPLOAD_URL = 'http://verifier.test/verify-upload';
 
 describe('uploadStorybookBundle (CAS)', () => {
   let directory;
@@ -16,11 +17,14 @@ describe('uploadStorybookBundle (CAS)', () => {
   let indexSha;
   let appSha;
 
-  // Route axios.post by URL: /check returns the missing set, /commit + beacon resolve.
+  // Route axios.post by URL: /check returns the missing set + verifier upload url/token;
+  // verify-upload, /commit, and the beacon all resolve.
   function stubPost({ missing }) {
     postSpy = spyOn(axios, 'post').and.callFake((url) => {
-      if (url.endsWith('/check')) return Promise.resolve({ data: { missing } });
-      return Promise.resolve({ status: 201 }); // /commit or beacon
+      if (url.endsWith('/check')) {
+        return Promise.resolve({ data: { missing, upload_url: UPLOAD_URL, upload_token: 'tok' } });
+      }
+      return Promise.resolve({ status: 201 }); // verify-upload, /commit, or beacon
     });
   }
 
@@ -39,24 +43,19 @@ describe('uploadStorybookBundle (CAS)', () => {
 
   afterEach(() => rmSync(directory, { recursive: true, force: true }));
 
-  it('hashes files, checks, PUTs only missing blobs to GCS, then commits', async () => {
-    stubPost({
-      missing: [
-        { sha256: indexSha, signed_url: 'https://gcs/index', headers: { 'x-goog-content-sha256': indexSha } },
-        { sha256: appSha, signed_url: 'https://gcs/app', headers: { 'x-goog-content-sha256': appSha } }
-      ]
-    });
+  it('hashes files, checks, POSTs only missing blobs to the verifier, then commits', async () => {
+    stubPost({ missing: [{ sha256: indexSha }, { sha256: appSha }] });
 
     await uploadStorybookBundle({ percy, log, directory, buildId: 42 });
 
     const checkCall = postSpy.calls.all().find(c => c.args[0].endsWith('/check'));
     expect(checkCall.args[1].files.map(f => f.sha256).sort()).toEqual([indexSha, appSha].sort());
 
-    // Both missing blobs PUT directly to GCS, replaying the signed content-sha header.
-    expect(putSpy).toHaveBeenCalledTimes(2);
-    const putUrls = putSpy.calls.all().map(c => c.args[0]).sort();
-    expect(putUrls).toEqual(['https://gcs/app', 'https://gcs/index']);
-    expect(putSpy.calls.first().args[2].headers['x-goog-content-sha256']).toBeDefined();
+    // Both missing blobs POSTed to the verifier with the upload token + declared sha.
+    const uploadCalls = postSpy.calls.all().filter(c => c.args[0] === UPLOAD_URL);
+    expect(uploadCalls.length).toBe(2);
+    expect(uploadCalls.every(c => c.args[2].headers['X-Upload-Token'] === 'tok')).toBe(true);
+    expect(uploadCalls.map(c => c.args[2].headers['X-Expected-Sha']).sort()).toEqual([indexSha, appSha].sort());
 
     // Commit sent the full manifest (path -> sha).
     const commitCall = postSpy.calls.all().find(c => c.args[0].endsWith('/commit'));
@@ -66,16 +65,13 @@ describe('uploadStorybookBundle (CAS)', () => {
   });
 
   it('uploads only the missing shas (dedup) — already-stored files are skipped', async () => {
-    stubPost({
-      missing: [
-        { sha256: appSha, signed_url: 'https://gcs/app', headers: {} }
-      ]
-    });
+    stubPost({ missing: [{ sha256: appSha }] });
 
     await uploadStorybookBundle({ percy, log, directory, buildId: 42 });
 
-    expect(putSpy).toHaveBeenCalledTimes(1);
-    expect(putSpy.calls.first().args[0]).toBe('https://gcs/app');
+    const uploadCalls = postSpy.calls.all().filter(c => c.args[0] === UPLOAD_URL);
+    expect(uploadCalls.length).toBe(1);
+    expect(uploadCalls[0].args[2].headers['X-Expected-Sha']).toBe(appSha);
     expect(postSpy.calls.all().some(c => c.args[0].endsWith('/commit'))).toBe(true);
   });
 
@@ -123,9 +119,14 @@ describe('uploadStorybookBundle (CAS)', () => {
   });
 
   describe('failure beacon', () => {
-    it('beacons client_failed when a GCS PUT fails', async () => {
-      stubPost({ missing: [{ sha256: indexSha, signed_url: 'https://gcs/index', headers: {} }] });
-      putSpy.and.returnValue(Promise.reject(new Error('ECONNRESET')));
+    it('beacons client_failed when a blob upload to the verifier fails', async () => {
+      postSpy = spyOn(axios, 'post').and.callFake((url) => {
+        if (url.endsWith('/check')) {
+          return Promise.resolve({ data: { missing: [{ sha256: indexSha }], upload_url: UPLOAD_URL, upload_token: 'tok' } });
+        }
+        if (url === UPLOAD_URL) return Promise.reject(new Error('ECONNRESET'));
+        return Promise.resolve({ status: 201 }); // /commit or beacon
+      });
       await uploadStorybookBundle({ percy, log, directory, buildId: 42 });
       const beacon = postSpy.calls.all().find(c => c.args[0].endsWith('/storybook_bundle'));
       expect(beacon).toBeDefined();
