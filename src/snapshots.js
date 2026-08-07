@@ -119,6 +119,20 @@ function shardSnapshots(snapshots, { shardSize, shardCount, shardIndex }) {
   return snapshots.splice(size * shardIndex, size);
 }
 
+// Recursively encode booleans in Storybook's canonical `!true`/`!false` URL form.
+// encodeStoryArgs leaves booleans as-is (fine for capture, which applies args via
+// channel events), but a URL deep-link needs the banged form to decode to a boolean.
+function bangBooleans(value) {
+  if (typeof value === 'boolean') return `!${value}`;
+  if (Array.isArray(value)) return value.map(bangBooleans);
+  if (value && Object.getPrototypeOf(value) === Object.prototype) {
+    return Object.entries(value).reduce((acc, [k, v]) => (
+      Object.assign(acc, { [k]: bangBooleans(v) })
+    ), {});
+  }
+  return value;
+}
+
 // Transforms a set of pre-encoded args into a single query parameter value
 function buildStorybookArgsParam(args) {
   let argsParam = qs.stringify(args, {
@@ -243,9 +257,12 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config, globalDocSe
     // Carry the story identity with the snapshot (see the `storybook` property of the
     // snapshot schema in @percy/core). Persisted by the API so the review UI can
     // deep-link the hosted bundle to the exact variant this snapshot captured.
+    // Booleans use Storybook's canonical `!true`/`!false` URL form — the manager
+    // decodes those to real booleans, while a plain `false` would apply as the
+    // truthy string "false".
     let storybook = { id: story.id };
-    if (argsParam) storybook.args = argsParam;
-    if (globalsParam) storybook.globals = globalsParam;
+    if (story.args) storybook.args = buildStorybookArgsParam(bangBooleans(story.args));
+    if (story.globals) storybook.globals = buildStorybookArgsParam(bangBooleans(story.globals));
     return Object.assign(story, { url, storybook });
   });
 }

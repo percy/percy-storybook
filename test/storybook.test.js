@@ -453,6 +453,8 @@ describe('percy storybook', () => {
       id: 'args--args',
       args: 'text:Snapshot+custom+args;style.font:1rem+sans-serif'
     });
+    // booleans use Storybook's canonical !true/!false URL form
+    expect(byName['Special Args'].args).toContain('bool:!true');
   });
 
   it('excludes stories from snapshots with --exclude', async () => {
@@ -598,7 +600,7 @@ describe('percy storybook', () => {
         'date:!date(2022-01-01T00:00:00.000Z);' +
         'rgb:!rgb(20,30,40);rgba:!rgba(20,30,40,.5);' +
         'hsl:!hsl(120,80,30);hsla:!hsla(120,80,30,.5);' +
-        'shortHex:!hex(c6c);longHex:!hex(a907cf);alphaHex:!hex(a907cf9f)&viewMode=story'
+        'shortHex:!hex(c6c);longHex:!hex(a907cf);alphaHex:!hex(a907cf9f);bool:true&viewMode=story'
     ]));
   });
 
