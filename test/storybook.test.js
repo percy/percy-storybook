@@ -436,6 +436,25 @@ describe('percy storybook', () => {
     expect(logger.stderr).toEqual([]);
   });
 
+  it('attaches the story identity to each snapshot', async () => {
+    // eslint-disable-next-line import/no-extraneous-dependencies
+    let { Percy } = await import('@percy/core');
+    spyOn(Percy.prototype, 'snapshot').and.callThrough();
+
+    await storybook(['http://localhost:9000', '--dry-run', '--include=Args']);
+
+    let options = Percy.prototype.snapshot.calls.allArgs().flat().flat();
+    let byName = Object.fromEntries(options.map(o => [o.name, o.storybook]));
+
+    // plain story: id only
+    expect(byName.Args).toEqual({ id: 'args--args' });
+    // additionalSnapshots variant: same id, its own encoded args
+    expect(byName['Custom Args']).toEqual({
+      id: 'args--args',
+      args: 'text:Snapshot+custom+args;style.font:1rem+sans-serif'
+    });
+  });
+
   it('excludes stories from snapshots with --exclude', async () => {
     // Args and Mixed are excluded by default via story-level exclude, but global
     // --exclude switches shouldSkipStory to use config filters and disregards

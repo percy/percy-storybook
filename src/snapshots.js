@@ -231,14 +231,22 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config, globalDocSe
 
   // remove filter options and generate story snapshot URLs
   return snapshots.map(({ skip, include, exclude, ...story }) => {
+    let argsParam = story.args && buildStorybookArgsParam(story.args);
+    let globalsParam = story.globals && buildStorybookArgsParam(story.globals);
     let url = `${previewUrl}?id=${story.id}`;
-    if (story.args) url += `&args=${buildStorybookArgsParam(story.args)}`;
-    if (story.globals) url += `&globals=${buildStorybookArgsParam(story.globals)}`;
+    if (argsParam) url += `&args=${argsParam}`;
+    if (globalsParam) url += `&globals=${globalsParam}`;
     for (let [k, v] of Object.entries(story.queryParams ?? {})) url += `&${k}=${v}`;
     if (!story.queryParams?.viewMode) {
       url += `&viewMode=${viewModeFor(story)}`;
     }
-    return Object.assign(story, { url });
+    // Carry the story identity with the snapshot (see the `storybook` property of the
+    // snapshot schema in @percy/core). Persisted by the API so the review UI can
+    // deep-link the hosted bundle to the exact variant this snapshot captured.
+    let storybook = { id: story.id };
+    if (argsParam) storybook.args = argsParam;
+    if (globalsParam) storybook.globals = globalsParam;
+    return Object.assign(story, { url, storybook });
   });
 }
 
