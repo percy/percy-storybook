@@ -234,6 +234,13 @@ export const configSchema = {
             type: 'string',
             default: 'enriched-stats.json'
           },
+          // Storybook's config directory (`storybook build -c <dir>`). A change
+          // anywhere inside it can affect every story, so IntelliStory bails on
+          // one. Relative to the directory `percy storybook` is run from.
+          configDir: {
+            type: 'string',
+            default: '.storybook'
+          },
           failBuildOnFailure: {
             type: 'boolean',
             default: false
