@@ -866,6 +866,36 @@ describe('evalSetCurrentStory event handling', () => {
     setTimeout(() => channel.emit('docsRendered'), 0);
     await expectAsync(promise).toBeResolved();
   });
+
+  // Storybook can drop the render event entirely — most often when the preview
+  // page reloads itself during the transition. This promise is awaited over CDP
+  // with `awaitPromise: true`, which never times out, so without a deadline the
+  // whole CLI hangs and the build is never finalized (PER-10287).
+  it('rejects when no render event ever arrives', async () => {
+    patchNoLoaders();
+    const promise = utils.evalSetCurrentStory({ waitFor }, {
+      id: 'never-renders', renderTimeout: 50
+    });
+    await expectAsync(promise).toBeRejectedWithError(/Timed out after 50ms.*never-renders/s);
+  });
+
+  it('does not time out a story that did render', async () => {
+    patchNoLoaders();
+    const promise = utils.evalSetCurrentStory({ waitFor }, {
+      id: 'renders-late', renderTimeout: 300
+    });
+    setTimeout(() => channel.emit('storyRendered'), 150);
+    await expectAsync(promise).toBeResolved();
+  });
+
+  it('reports a story error rather than waiting out the deadline', async () => {
+    patchNoLoaders();
+    const promise = utils.evalSetCurrentStory({ waitFor }, {
+      id: 'errors', renderTimeout: 10000
+    });
+    setTimeout(() => channel.emit('storyErrored'), 0);
+    await expectAsync(promise).toBeRejectedWithError('Story Errored');
+  });
 });
 
 // ============ Doc Rule Matching Helpers ============
