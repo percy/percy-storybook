@@ -352,7 +352,8 @@ export function evalSetCurrentStory({ waitFor }, story) {
     'Storybook object not found on the window. ' +
       'Open Storybook and check the console for errors.'
   ))).then(channel => {
-    let { id, queryParams, globals, args } = story;
+    let { id, queryParams, globals, args, renderTimeout } = story;
+    renderTimeout = renderTimeout || 30000;
 
     // emit a series of events to render the desired story
     channel.emit('setCurrentStory', { storyId: id });
@@ -367,7 +368,28 @@ export function evalSetCurrentStory({ waitFor }, story) {
       // We still resolve and snapshot the story — the failure is surfaced, not blocking.
       let playError = null;
 
+      // Deadline on the render event. Storybook can drop `storyRendered`
+      // entirely — most commonly when the preview page reloads itself during
+      // the transition (a story chunk that boots its own router does this) —
+      // and the events below are the only things that ever settle this
+      // promise. It is awaited over CDP with `awaitPromise: true`, which has
+      // NO protocol-level timeout, so an unbounded wait here hangs the whole
+      // CLI process silently: the build is never finalized and is force-closed
+      // by the server hours later. Reject instead, so `withPage` retries the
+      // story on a fresh page. See PER-10287.
+      let deadline = setTimeout(() => {
+        reject(new Error(
+          `Timed out after ${renderTimeout}ms waiting for Storybook to render "${id}". ` +
+          'The preview page may have reloaded during the transition, or the story never ' +
+          'finished rendering. Raise PERCY_STORY_RENDER_TIMEOUT if the story is genuinely slow.'
+        ));
+      }, renderTimeout);
+
       const handleRendered = () => {
+        // The render arrived — from here on every remaining wait is bounded by
+        // waitForLoadersToDisappear's own 15s cap, so drop the deadline rather
+        // than let it fire on a story that did render.
+        clearTimeout(deadline);
         // After the story/docs is rendered, add a small delay before checking loaders
         // This helps ensure that any post-render loader state changes have time to occur
         setTimeout(() => {
@@ -376,12 +398,17 @@ export function evalSetCurrentStory({ waitFor }, story) {
         }, 100);
       };
 
+      const handleFailed = (err, fallback) => {
+        clearTimeout(deadline);
+        reject(err || new Error(fallback));
+      };
+
       channel.on('storyRendered', handleRendered);
       channel.on('docsRendered', handleRendered);
 
-      channel.on('storyMissing', (err) => reject(err || new Error('Story Missing')));
-      channel.on('storyErrored', (err) => reject(err || new Error('Story Errored')));
-      channel.on('storyThrewException', (err) => reject(err || new Error('Story Threw Exception')));
+      channel.on('storyMissing', (err) => handleFailed(err, 'Story Missing'));
+      channel.on('storyErrored', (err) => handleFailed(err, 'Story Errored'));
+      channel.on('storyThrewException', (err) => handleFailed(err, 'Story Threw Exception'));
 
       // A failing `play` function (e.g. a thrown assertion or an interaction that
       // never lands) is reported by Storybook on these channels rather than as a

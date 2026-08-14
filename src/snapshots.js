@@ -255,6 +255,17 @@ function needsFreshPage(previousStory) {
   return previousStory && (previousStory.type === 'docs' || hasContaminatingState(previousStory));
 }
 
+// How long to wait for Storybook's render event before giving up on a story.
+// The wait is evaluated in the page and awaited over CDP, which has no timeout
+// of its own, so this deadline is the only thing standing between a dropped
+// render event and a CLI that hangs until CI kills it (PER-10287).
+export const DEFAULT_STORY_RENDER_TIMEOUT = 30000;
+
+function storyRenderTimeout() {
+  let configured = parseInt(process.env.PERCY_STORY_RENDER_TIMEOUT, 10);
+  return configured > 0 ? configured : DEFAULT_STORY_RENDER_TIMEOUT;
+}
+
 // Process a single story and capture its DOM
 async function* processStory(page, story, previewResource, percy, flags, log) {
   // Extract story details
@@ -268,7 +279,9 @@ async function* processStory(page, story, previewResource, percy, flags, log) {
   } else {
     log.debug(`Loading story: ${options.name}`);
     // when not dry-running and javascript is not enabled, capture the story dom
-    let renderResult = yield page.eval(evalSetCurrentStory, { id, args, globals, queryParams });
+    let renderResult = yield page.eval(evalSetCurrentStory, {
+      id, args, globals, queryParams, renderTimeout: storyRenderTimeout()
+    });
     // A play function threw but we still snapshot — warn so the user understands the
     // snapshot may not reflect the interaction (e.g. a click that never landed).
     if (renderResult?.playError) {
@@ -348,6 +361,12 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
         log.debug(`Fresh page needed for story "${currentStory.name}" - previous story had contaminating state`);
       }
 
+      // One page serves many stories, so this has to be a live reference: the
+      // story that fails is whichever one the inner loop is on, not the one the
+      // page was opened with. Reporting the batch's first story here sent a
+      // previous investigation looking at the wrong component (PER-10287).
+      let pageArgs = { snapshotName: snapshots[0].name };
+
       try {
         // Use a single page for as many stories as possible until a context error occurs
         // Only id and viewMode are needed here — args/globals are applied via evalSetCurrentStory channel events
@@ -356,6 +375,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
           while (snapshots.length) {
             try {
               let currentStory = snapshots[0];
+              pageArgs.snapshotName = currentStory.name;
 
               // If we need a fresh page for state reset, break out to create a new page
               if (needsNewPage && snapshots.length < initialSnapshotsCount) {
@@ -390,7 +410,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, flags 
               throw storyError;
             }
           }
-        }, undefined, { snapshotName: snapshots[0].name });
+        }, undefined, pageArgs);
       } catch (pageError) {
         // Check if the error is an execution context destruction
         if (pageError.isExecutionContextDestroyed) {
