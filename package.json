@@ -85,8 +85,6 @@
     }
   },
   "dependencies": {
-    "@amplitude/analytics-browser": "2.35.4",
-    "@amplitude/plugin-session-replay-browser": "1.25.16",
     "@percy/cli-command": "^1.31.10",
     "@percy/config": "^1.31.10",
     "axios": "1.17.0",
@@ -96,6 +94,8 @@
     "react-router-dom": "7.13.1"
   },
   "devDependencies": {
+    "@amplitude/analytics-browser": "2.35.4",
+    "@amplitude/plugin-session-replay-browser": "1.25.16",
     "@babel/cli": "^7.23.0",
     "@babel/core": "^7.23.2",
     "@babel/eslint-parser": "^7.19.1",
