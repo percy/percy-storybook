@@ -23,6 +23,7 @@ const PERCY_EVENTS = {
   SAVE_BS_CREDENTIALS: `${ADDON_ID}/save-bs-credentials`,
   BS_CREDENTIALS_SAVED: `${ADDON_ID}/bs-credentials-saved`,
   SET_SESSION_CREDENTIALS: `${ADDON_ID}/set-session-credentials`,
+  SESSION_CREDENTIALS_SET: `${ADDON_ID}/session-credentials-set`,
   // Project config
   SAVE_PROJECT_CONFIG: `${ADDON_ID}/save-project-config`,
   PROJECT_CONFIG_SAVED: `${ADDON_ID}/project-config-saved`,
@@ -57,7 +58,10 @@ const PERCY_EVENTS = {
   BUILD_LOGS_DOWNLOADED: `${ADDON_ID}/build-logs-downloaded`,
   // Branchline merge (build-level)
   MERGE_BUILD: `${ADDON_ID}/merge-build`,
-  BUILD_MERGED: `${ADDON_ID}/build-merged`
+  BUILD_MERGED: `${ADDON_ID}/build-merged`,
+  // Channel auth — emitted by the server when a privileged event is rejected
+  // for a missing/stale nonce, so the UI can recover instead of hanging.
+  UNAUTHORIZED: `${ADDON_ID}/unauthorized`
 };
 
 const STORAGE_KEYS = {
@@ -88,6 +92,14 @@ const BUILD_STATES = {
 
 const DEFAULT_WIDTHS = [375, 1280];
 
+// Channel authentication (CSRF gate for state-mutating server-channel events).
+const CHANNEL_AUTH = {
+  // Field carrying the per-session nonce on state-mutating channel payloads.
+  NONCE_FIELD: '__percyNonce',
+  // <meta> name the server injects into the (same-origin) manager document.
+  META_NAME: 'percy-addon-nonce'
+};
+
 module.exports = {
   ADDON_ID,
   PANEL_ID,
@@ -97,5 +109,6 @@ module.exports = {
   SNAPSHOT_TYPES,
   SNAPSHOT_STATUS,
   BUILD_STATES,
-  DEFAULT_WIDTHS
+  DEFAULT_WIDTHS,
+  CHANNEL_AUTH
 };

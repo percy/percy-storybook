@@ -1,6 +1,6 @@
 {
   "name": "@percy/storybook",
-  "version": "10.0.1-beta.4",
+  "version": "10.0.1-beta.5",
   "description": "Storybook addons for visual testing with Percy",
   "keywords": [
     "storybook",
@@ -85,10 +85,8 @@
     }
   },
   "dependencies": {
-    "@amplitude/analytics-browser": "2.35.4",
-    "@amplitude/plugin-session-replay-browser": "1.25.16",
-    "@percy/cli-command": "1.32.4",
-    "@percy/config": "1.32.4",
+    "@percy/cli-command": "^1.32.7",
+    "@percy/config": "^1.32.7",
     "axios": "1.17.0",
     "cross-spawn": "^7.0.3",
     "glob-to-regexp": "^0.4.1",
@@ -96,6 +94,8 @@
     "react-router-dom": "7.13.1"
   },
   "devDependencies": {
+    "@amplitude/analytics-browser": "2.35.4",
+    "@amplitude/plugin-session-replay-browser": "1.25.16",
     "@babel/cli": "^7.23.0",
     "@babel/core": "^7.23.2",
     "@babel/eslint-parser": "^7.19.1",

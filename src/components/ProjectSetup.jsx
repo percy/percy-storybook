@@ -7,6 +7,7 @@ import {
 import { usePercyProjects, formatRelativeTime } from '../hooks/usePercyProjects.js';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll.js';
 import { PERCY_EVENTS } from '../constants.js';
+import { withNonce } from '../utils/channelNonce.js';
 import {
   Container, Title, Subtitle, SearchRow, SearchInputWrapper, SearchInput,
   ClearButton, ResultsList, ResultItem, ProjectName, ProjectMeta,
@@ -66,12 +67,12 @@ export function ProjectSetup({ username, accessKey, initialSearch, onProjectConf
     if (!selectedProject || saving) return;
     setSaving(true);
     setSaveError('');
-    emit(PERCY_EVENTS.SAVE_PROJECT_CONFIG, {
+    emit(PERCY_EVENTS.SAVE_PROJECT_CONFIG, withNonce({
       projectId: selectedProject.id,
       projectName: selectedProject.name,
       username,
       accessKey
-    });
+    }));
   };
 
   const showResults = !selectedProject && (search || projects.length > 0 || loading);

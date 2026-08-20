@@ -5,6 +5,7 @@ import {
 import { MdPlayArrow } from '@browserstack/design-stack-icons';
 import { useStorybookApi } from 'storybook/manager-api';
 import { PERCY_EVENTS, SNAPSHOT_TYPES, SNAPSHOT_STATUS } from '../constants.js';
+import { withNonce } from '../utils/channelNonce.js';
 import {
   buildCurrentStoryPattern,
   buildCurrentTreePattern,
@@ -77,12 +78,12 @@ export function TriggerBuild({
       }
     }
 
-    emit(PERCY_EVENTS.RUN_SNAPSHOT, {
+    emit(PERCY_EVENTS.RUN_SNAPSHOT, withNonce({
       baseUrl: getStorybookBaseUrl(),
       include,
       exclude: [],
       scope
-    });
+    }));
   };
 
   const needsStory = scope !== SNAPSHOT_TYPES.FULL;

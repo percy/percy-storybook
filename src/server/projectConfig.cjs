@@ -3,7 +3,7 @@
 const fs = require('fs');
 const { PERCY_EVENTS } = require('../constants.cjs');
 const { getPercyYmlPath, readEnv, readEnvRaw, setKey, writeEnvRaw } = require('./env.cjs');
-const { readBsCredentials } = require('./credentials.cjs');
+const { readBsCredentials, resolveBsCredentials } = require('./credentials.cjs');
 const { loggedFetch } = require('./apiLogger.cjs');
 const { PERCY_API_BASE, validateBuildId, basicAuth } = require('./utils.cjs');
 
@@ -245,10 +245,11 @@ function registerProjectConfigHandlers(channel) {
         }
       }
 
+      // Do NOT send the BrowserStack username/access key back to the browser.
+      // The credentials stay in the Node process; all authenticated Percy calls
+      // are made server-side via readBsCredentials().
       channel.emit(PERCY_EVENTS.PROJECT_CONFIG_LOADED, {
         credentialsValid: true,
-        username,
-        accessKey,
         project,
         projectDetails,
         hasValidToken: tokenValid,
@@ -265,10 +266,12 @@ function registerProjectConfigHandlers(channel) {
 
   // Save project config: write .percy.yml, fetch token, update .env
   channel.on(PERCY_EVENTS.SAVE_PROJECT_CONFIG, ({ projectId, projectName, username: payloadUser, accessKey: payloadKey }) => {
-    // Use credentials from payload (session-only mode) or fall back to .env
-    const envCreds = readBsCredentials();
-    const username = payloadUser || envCreds.username;
-    const accessKey = payloadKey || envCreds.accessKey;
+    // Prefer the credentials already stored server-side (.env or the validated
+    // session cache) over anything supplied in the payload. Falling back to the
+    // payload only when nothing is stored covers the first-time session-only
+    // flow, but a request can no longer override known-good credentials. Pairs
+    // are selected atomically so a stored username never mixes with a payload key.
+    const { username, accessKey } = resolveBsCredentials({ username: payloadUser, accessKey: payloadKey });
     if (!username || !accessKey) {
       channel.emit(PERCY_EVENTS.PROJECT_CONFIG_SAVED, {
         success: false,

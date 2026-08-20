@@ -9,6 +9,7 @@ import {
 import { useChannel, useStorybookApi } from 'storybook/manager-api';
 import { useTheme } from 'storybook/theming';
 import { PERCY_EVENTS, SNAPSHOT_TYPES } from '../constants.js';
+import { withNonce } from '../utils/channelNonce.js';
 import { getReviewStateDisplay, formatDiffPercent } from '../utils/reviewState.js';
 import {
   buildCurrentStoryPattern,
@@ -87,12 +88,12 @@ function RunStorySplitButton({ emit, currentStory }) {
     const storyIds = resolveStoryIdsForScope(api, scope, currentStory);
     window.__PERCY_SNAPSHOT_STATE__ = { isRunning: true, storyIds };
 
-    emit(PERCY_EVENTS.RUN_SNAPSHOT, {
+    emit(PERCY_EVENTS.RUN_SNAPSHOT, withNonce({
       baseUrl: getStorybookBaseUrl(),
       include,
       exclude: [],
       scope
-    });
+    }));
   }, [emit, currentStory, api, triggered]);
 
   return (
@@ -213,22 +214,22 @@ function KebabMenu({ buildId, webUrl, reviewState, reviewStateReason, projectDet
       case 'approve-build':
         if (!isApproved) {
           setActionLoading('approve-build');
-          channelEmit(PERCY_EVENTS.APPROVE_BUILD, { buildId });
+          channelEmit(PERCY_EVENTS.APPROVE_BUILD, withNonce({ buildId }));
         }
         break;
       case 'merge-build':
         if (!isMerged) {
           setActionLoading('merge-build');
-          channelEmit(PERCY_EVENTS.MERGE_BUILD, { buildId });
+          channelEmit(PERCY_EVENTS.MERGE_BUILD, withNonce({ buildId }));
         }
         break;
       case 'reject-build':
         setActionLoading('reject-build');
-        channelEmit(PERCY_EVENTS.REJECT_BUILD, { buildId });
+        channelEmit(PERCY_EVENTS.REJECT_BUILD, withNonce({ buildId }));
         break;
       case 'delete-build':
         setActionLoading('delete-build');
-        channelEmit(PERCY_EVENTS.DELETE_BUILD, { buildId });
+        channelEmit(PERCY_EVENTS.DELETE_BUILD, withNonce({ buildId }));
         break;
     }
   }, [buildId, settingsUrl, channelEmit, isApproved, isMerged]);
