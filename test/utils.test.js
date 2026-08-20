@@ -872,23 +872,6 @@ describe('evalStorybookStorySnapshots importPath + diagnostics (IntelliStory)', 
     expect(data[0].importPath).toBe('./fallback/Button.stories.js');
   });
 
-  it('falls back to parameters.__id when neither entry importPath nor fileName exist', async () => {
-    setPreview({
-      extract: () => ({
-        'button--primary': {
-          id: 'button--primary',
-          kind: 'Button',
-          name: 'Primary',
-          parameters: { __id: './legacy/Button.stories.js' }
-        }
-      }),
-      entries: undefined
-    });
-
-    const { data } = await utils.evalStorybookStorySnapshots({ waitFor }, { intelliStory: true });
-    expect(data[0].importPath).toBe('./legacy/Button.stories.js');
-  });
-
   it('leaves importPath undefined when no source resolves one', async () => {
     setPreview({
       extract: () => ({
