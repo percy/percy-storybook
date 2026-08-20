@@ -315,7 +315,7 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
     const resolveImportPath = (s) => {
       if (!s) return undefined;
       if (entries && s.id && entries[s.id]?.importPath) return entries[s.id].importPath;
-      return s.parameters?.fileName || s.parameters?.__id || undefined;
+      return s.parameters?.fileName || undefined;
     };
     const stampImportPath = list => {
       if (!intelliStory) return list;
