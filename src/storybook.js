@@ -41,6 +41,7 @@ export const storybook = command('storybook', {
 
   yield* takeStorybookSnapshots(percy, () => server?.close(), {
     baseUrl: args.url ?? server?.address(),
+    buildDir: args.serve,
     flags
   });
 });
