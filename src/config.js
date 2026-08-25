@@ -179,6 +179,13 @@ export const configSchema = {
       }
     ],
     properties: {
+      // Opt-in to per-build Storybook hosting (PER-8973). When true (and running in
+      // directory mode), the SDK uploads the built storybook-static bundle to Percy after
+      // the snapshot run. Default off so an SDK upgrade never changes upload behavior.
+      uploadBundle: {
+        type: 'boolean',
+        default: false
+      },
       docs: {
         type: 'object',
         default: {},

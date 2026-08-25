@@ -48,4 +48,10 @@ export const flags = [{
   name: 'partial',
   description: 'Marks the build as a partial build',
   validate: () => (process.env.PERCY_PARTIAL_BUILD ||= '1')
+}, {
+  name: 'upload-bundle',
+  description: 'Upload the built Storybook (directory mode) to Percy for per-build hosting',
+  percyrc: 'storybook.uploadBundle',
+  type: 'boolean',
+  default: false
 }];

@@ -58,7 +58,8 @@ export default {
           hsla: 'hsla(120, 80%, 30%, .5)',
           shortHex: '#c6c',
           longHex: '#a907cf',
-          alphaHex: '#a907cf9f'
+          alphaHex: '#a907cf9f',
+          bool: true
         }
       }]
     }
