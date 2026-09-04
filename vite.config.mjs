@@ -30,6 +30,31 @@ function stubMonorepoImports() {
 }
 
 /**
+ * Executable content has no legitimate place in an icon asset. These SVGs are
+ * read straight from node_modules and inlined into the manager bundle via
+ * dangerouslySetInnerHTML, so a tampered icon package could otherwise ship an
+ * `<svg onload="...">` that runs in the Storybook manager on every page load.
+ * The JSON.stringify below prevents JS-source injection but does NOT strip SVG
+ * event-handler attributes, so check the markup and fail the build instead.
+ */
+const UNSAFE_SVG = [
+  [/\son[a-z]+\s*=/i, 'inline event handler'],
+  [/<\s*script/i, '<script> element'],
+  [/javascript:/i, 'javascript: URL']
+];
+
+function assertInertSvg(svg, id) {
+  for (const [pattern, what] of UNSAFE_SVG) {
+    if (pattern.test(svg)) {
+      throw new Error(
+        `[svg-react] refusing to inline ${id}: contains ${what}. ` +
+        'An icon asset must not carry executable content.'
+      );
+    }
+  }
+}
+
+/**
  * SVG plugin: intercepts .svg imports before Vite's asset pipeline.
  *
  * - review-viewer/assets (browser icons): exported as data-URI strings
@@ -52,6 +77,7 @@ function svgPlugin() {
       }
 
       // design-stack-icons: export as inline React component
+      assertInertSvg(svg, id);
       const escaped = JSON.stringify(svg);
       return `
 import * as React from 'react';
