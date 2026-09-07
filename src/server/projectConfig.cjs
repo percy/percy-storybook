@@ -5,9 +5,57 @@ const { PERCY_EVENTS } = require('../constants.cjs');
 const { getPercyYmlPath, readEnv, readEnvRaw, setKey, writeEnvRaw } = require('./env.cjs');
 const { readBsCredentials, resolveBsCredentials } = require('./credentials.cjs');
 const { loggedFetch } = require('./apiLogger.cjs');
-const { PERCY_API_BASE, validateBuildId, basicAuth } = require('./utils.cjs');
+const { PERCY_API_BASE, validateBuildId, validateProjectId, basicAuth } = require('./utils.cjs');
 
 /* ─── .percy.yml helpers ───────────────────────────────────────────────── */
+
+/**
+ * Serialize a string as a YAML double-quoted scalar.
+ *
+ * projectName comes from the Percy API and may legitimately contain quotes,
+ * colons or '#'. Interpolating it raw produced invalid YAML for those projects
+ * (breaking @percy/config, and with it every later build) and let arbitrary
+ * keys be injected into .percy.yml. Double-quoted style with escapes keeps the
+ * value on a single line, so no new YAML structure can be introduced.
+ */
+function yamlQuote(value) {
+  const str = String(value ?? '');
+  return `"${str
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\r/g, '\\r')
+    .replace(/\n/g, '\\n')
+    .replace(/\t/g, '\\t')}"`;
+}
+
+/**
+ * Decode a YAML scalar as written by `yamlQuote`, while still reading the
+ * unescaped values older versions of this file wrote (and hand-edited plain
+ * scalars), so an existing .percy.yml keeps working.
+ */
+function yamlUnquote(raw) {
+  const str = String(raw ?? '').trim();
+  if (!str.startsWith('"')) {
+    // Legacy or hand-written plain scalar; strip a stray wrapping quote pair.
+    return str.replace(/^"|"$/g, '').trim();
+  }
+  let out = '';
+  for (let i = 1; i < str.length; i++) {
+    const ch = str[i];
+    if (ch === '\\') {
+      const next = str[++i];
+      if (next === 'n') out += '\n';
+      else if (next === 'r') out += '\r';
+      else if (next === 't') out += '\t';
+      else if (next !== undefined) out += next;
+    } else if (ch === '"') {
+      break;
+    } else {
+      out += ch;
+    }
+  }
+  return out;
+}
 
 /**
  * Read project info from .percy.yml. Returns { id, name } or null.
@@ -18,11 +66,11 @@ function readPercyYml() {
   try {
     const content = fs.readFileSync(ymlPath, 'utf8');
     const idMatch = content.match(/^\s*id:\s*(\d+)\s*$/m);
-    const nameMatch = content.match(/^\s*name:\s*"?([^"\n]+)"?\s*$/m);
+    const nameMatch = content.match(/^\s*name:\s*(.*)$/m);
     if (!idMatch) return null;
     return {
       id: parseInt(idMatch[1], 10),
-      name: nameMatch ? nameMatch[1].trim() : ''
+      name: nameMatch ? yamlUnquote(nameMatch[1]) : ''
     };
   } catch {
     return null;
@@ -34,6 +82,10 @@ function readPercyYml() {
  * Appends or updates the project section without clearing other config.
  */
 function writePercyYml(projectId, projectName) {
+  // Re-validate here as well as at the handler boundary: this is the only place
+  // the id reaches the config file, and an unvalidated value could introduce
+  // extra YAML keys via `id: 1\n  <injected>`.
+  const id = validateProjectId(projectId);
   const ymlPath = getPercyYmlPath();
   let content = '';
 
@@ -41,7 +93,7 @@ function writePercyYml(projectId, projectName) {
     content = fs.readFileSync(ymlPath, 'utf8');
   }
 
-  const projectBlock = `project:\n  id: ${projectId}\n  name: "${projectName}"`;
+  const projectBlock = `project:\n  id: ${id}\n  name: ${yamlQuote(projectName)}`;
 
   // Check if a project section already exists
   const projectSectionRegex = /^project:\s*\n(?:\s+\w[^\n]*\n?)*/m;
@@ -64,9 +116,13 @@ function writePercyYml(projectId, projectName) {
  * Fetch the master Percy token for a project.
  */
 async function fetchPercyToken(projectId, username, accessKey) {
+  // Numeric-guard then encode before interpolation: without this a crafted
+  // projectId can redirect this authenticated request off percy.io, leaking
+  // the BrowserStack access key in the Authorization header.
+  const id = encodeURIComponent(validateProjectId(projectId));
   const token = Buffer.from(`${username}:${accessKey}`).toString('base64');
   const res = await loggedFetch(
-    `https://percy.io/api/v1/projects/${projectId}/tokens`,
+    `https://percy.io/api/v1/projects/${id}/tokens`,
     { headers: { Authorization: `Basic ${token}` } },
     'fetch-percy-token'
   );
@@ -98,7 +154,7 @@ function setPercyToken(token) {
  */
 async function fetchProjectDetails(projectId, username, accessKey) {
   const res = await loggedFetch(
-    `${PERCY_API_BASE}/projects/${projectId}`,
+    `${PERCY_API_BASE}/projects/${encodeURIComponent(validateProjectId(projectId))}`,
     {
       headers: {
         Authorization: `Basic ${basicAuth(username, accessKey)}`,
@@ -280,12 +336,26 @@ function registerProjectConfigHandlers(channel) {
       return;
     }
 
+    // Validate the browser-supplied projectId once, at the boundary, before it
+    // reaches an outbound URL or the config file. The UI only ever sends a
+    // Percy JSON:API id, so this rejects nothing a real client would send.
+    let id;
+    try {
+      id = validateProjectId(projectId);
+    } catch {
+      channel.emit(PERCY_EVENTS.PROJECT_CONFIG_SAVED, {
+        success: false,
+        error: 'Invalid project selected'
+      });
+      return;
+    }
+
     // Validate the credentials/project access by fetching the Percy token FIRST.
     // Only persist .percy.yml, PERCY_TOKEN and clear the build reference AFTER
     // validation succeeds — otherwise an unvalidated (or foreign) payload could
     // redirect future snapshots and overwrite the token before the credentials
     // are proven good (PER-8545 / F-015).
-    fetchPercyToken(projectId, username, accessKey)
+    fetchPercyToken(id, username, accessKey)
       .then(percyToken => {
         // Clear stale build reference — new project means old build is irrelevant
         try {
@@ -296,7 +366,7 @@ function registerProjectConfigHandlers(channel) {
           console.warn('Failed to clear last build reference:', err.message);
         }
 
-        writePercyYml(projectId, projectName);
+        writePercyYml(id, projectName);
         setPercyToken(percyToken);
         channel.emit(PERCY_EVENTS.PROJECT_CONFIG_SAVED, { success: true });
       })
