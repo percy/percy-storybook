@@ -2180,6 +2180,17 @@ describe('Server / projectConfig.cjs', () => {
       fs.readFileSync.and.returnValue('project:\n  id: 42\n  name: Legacy Project');
       expect(readPercyYml()).toEqual({ id: 42, name: 'Legacy Project' });
     });
+    it('decodes \r and \t escapes in the name', () => {
+      fs.existsSync.and.returnValue(true);
+      fs.readFileSync.and.returnValue('project:\n  id: 42\n  name: "a\\rb\\tc"');
+      expect(readPercyYml()).toEqual({ id: 42, name: 'a\rb\tc' });
+    });
+
+    it('tolerates a truncated trailing escape in the name', () => {
+      fs.existsSync.and.returnValue(true);
+      fs.readFileSync.and.returnValue('project:\n  id: 42\n  name: "abc\\');
+      expect(readPercyYml()).toEqual({ id: 42, name: 'abc' });
+    });
   });
 
   describe('writePercyYml', () => {
@@ -2234,6 +2245,13 @@ describe('Server / projectConfig.cjs', () => {
       const content = fs.writeFileSync.calls.mostRecent().args[1];
       expect(content).toContain('name: "ok\\nadditionalSnapshots: evil"');
       expect(content).not.toMatch(/^\s*additionalSnapshots:/m);
+    });
+
+    it('writes an empty quoted name when projectName is missing', () => {
+      fs.existsSync.and.returnValue(false);
+      writePercyYml(7);
+      const content = fs.writeFileSync.calls.mostRecent().args[1];
+      expect(content).toContain('name: ""');
     });
 
     it('escapes backslashes in the project name', () => {
@@ -2702,6 +2720,25 @@ describe('Server / projectConfig.cjs', () => {
     });
 
     describe('SAVE_PROJECT_CONFIG', () => {
+      it('rejects a non-numeric projectId without touching disk or network', async () => {
+        fs.existsSync.and.returnValue(true);
+        fs.readFileSync.and.callFake((p) => {
+          if (p.endsWith('.env')) return 'BROWSERSTACK_USERNAME=u\nBROWSERSTACK_ACCESS_KEY=k';
+          return '';
+        });
+        globalThis.fetch = jasmine.createSpy('fetch');
+
+        await channel.trigger(PERCY_EVENTS.SAVE_PROJECT_CONFIG, {
+          projectId: '1/tokens?x=#@attacker.example.com/', projectName: 'P'
+        });
+
+        expect(channel.emit).toHaveBeenCalledWith(
+          PERCY_EVENTS.PROJECT_CONFIG_SAVED,
+          { success: false, error: 'Invalid project selected' }
+        );
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+        expect(fs.writeFileSync).not.toHaveBeenCalled();
+      });
       it('writes .percy.yml, fetches token, emits success', async () => {
         fs.existsSync.and.returnValue(true);
         fs.readFileSync.and.callFake((p) => {
