@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useChannel } from 'storybook/manager-api';
 import { PERCY_EVENTS } from '../constants.js';
+import { withNonce } from '../utils/channelNonce.js';
 
 /* ─── Grouping helpers ───────────────────────────────────────────────── */
 
@@ -95,7 +96,7 @@ export function useBuildItems(buildId, buildMeta) {
     fetchedForRef.current = buildId;
     setLoading(true);
     setError(null);
-    emit(PERCY_EVENTS.FETCH_BUILD_ITEMS, { buildId, meta: buildMeta?.meta || buildMeta });
+    emit(PERCY_EVENTS.FETCH_BUILD_ITEMS, withNonce({ buildId, meta: buildMeta?.meta || buildMeta }));
   }, [buildId]);
 
   // Group items by display name → Percy snapshot name ("Title: Name")
@@ -111,7 +112,7 @@ export function useBuildItems(buildId, buildMeta) {
     setError(null);
     setLoading(true);
     fetchedForRef.current = null;
-    emit(PERCY_EVENTS.FETCH_BUILD_ITEMS, { buildId, meta: buildMeta?.meta || buildMeta });
+    emit(PERCY_EVENTS.FETCH_BUILD_ITEMS, withNonce({ buildId, meta: buildMeta?.meta || buildMeta }));
   };
 
   const reset = () => {

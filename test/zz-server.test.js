@@ -3,7 +3,7 @@ import path from 'path';
 import { PERCY_EVENTS, CHANNEL_AUTH } from '../src/constants.cjs';
 import { CHANNEL_AUTH as CHANNEL_AUTH_ESM } from '../src/constants.js';
 import * as preset from '../preset.cjs';
-import { PERCY_API_BASE, validateBuildId, basicAuth } from '../src/server/utils.cjs';
+import { PERCY_API_BASE, validateBuildId, validateProjectId, basicAuth } from '../src/server/utils.cjs';
 import { withNonce, getPercyNonce } from '../src/utils/channelNonce.js';
 import {
   getEnvPath, getPercyYmlPath, parseEnv, setKey,
@@ -93,6 +93,31 @@ describe('Server / utils.cjs', () => {
 
     it('throws on strings exceeding 20 digits', () => {
       expect(() => validateBuildId('123456789012345678901')).toThrowError('Invalid buildId: must be numeric');
+    });
+  });
+
+  describe('validateProjectId', () => {
+    it('returns the id for a numeric string', () => {
+      expect(validateProjectId('42')).toBe('42');
+    });
+
+    it('accepts a number', () => {
+      expect(validateProjectId(42)).toBe('42');
+    });
+
+    it('rejects a path-traversal / SSRF payload', () => {
+      expect(() => validateProjectId('1/tokens?x=#@attacker.example.com/'))
+        .toThrowError(/Invalid projectId/);
+    });
+
+    it('rejects a newline payload', () => {
+      expect(() => validateProjectId('1\n  evil: x')).toThrowError(/Invalid projectId/);
+    });
+
+    it('rejects empty and nullish input', () => {
+      expect(() => validateProjectId('')).toThrowError(/Invalid projectId/);
+      expect(() => validateProjectId(undefined)).toThrowError(/Invalid projectId/);
+      expect(() => validateProjectId(null)).toThrowError(/Invalid projectId/);
     });
   });
 
@@ -2143,6 +2168,29 @@ describe('Server / projectConfig.cjs', () => {
       fs.readFileSync.and.throwError('read error');
       expect(readPercyYml()).toBe(null);
     });
+
+    it('decodes an escaped name written by writePercyYml', () => {
+      fs.existsSync.and.returnValue(true);
+      fs.readFileSync.and.returnValue('project:\n  id: 42\n  name: "My \\"DS\\""');
+      expect(readPercyYml()).toEqual({ id: 42, name: 'My "DS"' });
+    });
+
+    it('still reads a legacy unquoted name', () => {
+      fs.existsSync.and.returnValue(true);
+      fs.readFileSync.and.returnValue('project:\n  id: 42\n  name: Legacy Project');
+      expect(readPercyYml()).toEqual({ id: 42, name: 'Legacy Project' });
+    });
+    it('decodes \r and \t escapes in the name', () => {
+      fs.existsSync.and.returnValue(true);
+      fs.readFileSync.and.returnValue('project:\n  id: 42\n  name: "a\\rb\\tc"');
+      expect(readPercyYml()).toEqual({ id: 42, name: 'a\rb\tc' });
+    });
+
+    it('tolerates a truncated trailing escape in the name', () => {
+      fs.existsSync.and.returnValue(true);
+      fs.readFileSync.and.returnValue('project:\n  id: 42\n  name: "abc\\');
+      expect(readPercyYml()).toEqual({ id: 42, name: 'abc' });
+    });
   });
 
   describe('writePercyYml', () => {
@@ -2182,6 +2230,41 @@ describe('Server / projectConfig.cjs', () => {
       const content = fs.writeFileSync.calls.mostRecent().args[1];
       expect(content).toContain('version: 2');
       expect(content).toContain('project:');
+    });
+
+    it('escapes a project name containing double quotes', () => {
+      fs.existsSync.and.returnValue(false);
+      writePercyYml(7, 'My "Design System"');
+      const content = fs.writeFileSync.calls.mostRecent().args[1];
+      expect(content).toContain('name: "My \\"Design System\\""');
+    });
+
+    it('keeps an injected newline on one line so no YAML keys can be added', () => {
+      fs.existsSync.and.returnValue(false);
+      writePercyYml(7, 'ok\nadditionalSnapshots: evil');
+      const content = fs.writeFileSync.calls.mostRecent().args[1];
+      expect(content).toContain('name: "ok\\nadditionalSnapshots: evil"');
+      expect(content).not.toMatch(/^\s*additionalSnapshots:/m);
+    });
+
+    it('writes an empty quoted name when projectName is missing', () => {
+      fs.existsSync.and.returnValue(false);
+      writePercyYml(7);
+      const content = fs.writeFileSync.calls.mostRecent().args[1];
+      expect(content).toContain('name: ""');
+    });
+
+    it('escapes backslashes in the project name', () => {
+      fs.existsSync.and.returnValue(false);
+      writePercyYml(7, 'back\\slash');
+      const content = fs.writeFileSync.calls.mostRecent().args[1];
+      expect(content).toContain('name: "back\\\\slash"');
+    });
+
+    it('rejects a non-numeric projectId instead of writing it', () => {
+      fs.existsSync.and.returnValue(false);
+      expect(() => writePercyYml('1\n  evil: x', 'N')).toThrowError(/Invalid projectId/);
+      expect(fs.writeFileSync).not.toHaveBeenCalled();
     });
   });
 
@@ -2637,6 +2720,25 @@ describe('Server / projectConfig.cjs', () => {
     });
 
     describe('SAVE_PROJECT_CONFIG', () => {
+      it('rejects a non-numeric projectId without touching disk or network', async () => {
+        fs.existsSync.and.returnValue(true);
+        fs.readFileSync.and.callFake((p) => {
+          if (p.endsWith('.env')) return 'BROWSERSTACK_USERNAME=u\nBROWSERSTACK_ACCESS_KEY=k';
+          return '';
+        });
+        globalThis.fetch = jasmine.createSpy('fetch');
+
+        await channel.trigger(PERCY_EVENTS.SAVE_PROJECT_CONFIG, {
+          projectId: '1/tokens?x=#@attacker.example.com/', projectName: 'P'
+        });
+
+        expect(channel.emit).toHaveBeenCalledWith(
+          PERCY_EVENTS.PROJECT_CONFIG_SAVED,
+          { success: false, error: 'Invalid project selected' }
+        );
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+        expect(fs.writeFileSync).not.toHaveBeenCalled();
+      });
       it('writes .percy.yml, fetches token, emits success', async () => {
         fs.existsSync.and.returnValue(true);
         fs.readFileSync.and.callFake((p) => {
@@ -3129,7 +3231,10 @@ describe('Server / channelAuth.cjs', () => {
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.REJECT_BUILD)).toBe(true);
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.DELETE_BUILD)).toBe(true);
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.MERGE_BUILD)).toBe(true);
-      // read-only fetch/load events stay open
+      // FETCH_BUILD_ITEMS is a read, but its reply carries the project-scoped
+      // Percy token, so it is gated too.
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.FETCH_BUILD_ITEMS)).toBe(true);
+      // read-only events that expose no secret stay open
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.LOAD_BS_CREDENTIALS)).toBe(false);
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.FETCH_BUILD_STATUS)).toBe(false);
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.FETCH_PROJECTS)).toBe(false);
