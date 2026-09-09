@@ -5,6 +5,7 @@ import DSIBStack from '@browserstack/design-stack-icons/dist/DSIBStack';
 import { useChannel } from 'storybook/manager-api';
 import { useTheme } from 'storybook/theming';
 import { PERCY_EVENTS } from '../constants.js';
+import { withNonce } from '../utils/channelNonce.js';
 import { usePercyPanelState } from '../hooks/usePercyPanelState.js';
 import { useSnapshotChannel } from '../hooks/useSnapshotChannel.js';
 import { useBuildItems } from '../hooks/useBuildItems.js';
@@ -72,7 +73,7 @@ export function PercyPanel({ active }) {
     const id = buildMeta?.buildId;
     if (!id) return;
     // Re-fetch build status to update reviewState in buildMeta
-    emitChannel(PERCY_EVENTS.FETCH_BUILD_STATUS, { buildId: id });
+    emitChannel(PERCY_EVENTS.FETCH_BUILD_STATUS, withNonce({ buildId: id }));
     // Re-fetch build items to update snapshot-level review states
     retryItems();
   }, [buildMeta?.buildId, emitChannel, retryItems]);

@@ -14,19 +14,33 @@ const { PERCY_EVENTS, CHANNEL_AUTH } = require('../constants.cjs');
  * The gate: every STATE-MUTATING event must carry a per-process nonce that the
  * server injects only into the legitimate, same-origin manager document (see
  * preset.cjs `managerHead`). A cross-origin page cannot read that document, so
- * it cannot learn the nonce, so its forged events are dropped. Read-only
- * fetch/load events are left open where their response exposes neither a write
- * nor a secret; a read whose reply carries a credential is gated too (see
+ * it cannot learn the nonce, so its forged events are dropped. Only the
+ * startup/load events whose response exposes neither a write nor anything read
+ * with the developer's stored credentials are left open (see
  * PRIVILEGED_EVENTS below).
  */
 
-// Events that require a valid nonce: everything state-mutating, plus the few
-// read events whose RESPONSE carries a secret. FETCH_BUILD_ITEMS is the latter
-// — its BUILD_ITEMS_FETCHED reply includes the project-scoped Percy token as a
-// basic-auth value (review-viewer needs it in the browser), so leaving it open
-// hands that token to any page that can reach the dev-server channel.
+// Events that require a valid nonce: everything state-mutating, plus every read
+// that is served with the developer's STORED BrowserStack credentials.
+//
+//  - FETCH_BUILD_ITEMS: its BUILD_ITEMS_FETCHED reply includes the
+//    project-scoped Percy token as a basic-auth value (review-viewer needs it in
+//    the browser), so leaving it open hands that token to any page that can
+//    reach the dev-server channel.
+//  - FETCH_PROJECTS: enumerates every Percy project the stored account can see.
+//  - FETCH_BUILD_STATUS / FETCH_BUILD_LOGS / FETCH_SNAPSHOT_DETAIL: take a
+//    caller-chosen numeric id and read it with the stored credentials, i.e. an
+//    IDOR read against any build/snapshot the account can reach (CWE-639).
+//
+// Left open on purpose: LOAD_BS_CREDENTIALS and LOAD_PROJECT_CONFIG (startup
+// state for the panel; neither returns a secret) and VALIDATE_CREDENTIALS (only
+// ever checks the pair the caller itself supplied).
 const PRIVILEGED_EVENTS = new Set([
   PERCY_EVENTS.FETCH_BUILD_ITEMS,
+  PERCY_EVENTS.FETCH_PROJECTS,
+  PERCY_EVENTS.FETCH_BUILD_STATUS,
+  PERCY_EVENTS.FETCH_BUILD_LOGS,
+  PERCY_EVENTS.FETCH_SNAPSHOT_DETAIL,
   PERCY_EVENTS.SAVE_BS_CREDENTIALS,
   PERCY_EVENTS.SET_SESSION_CREDENTIALS,
   PERCY_EVENTS.SAVE_PROJECT_CONFIG,

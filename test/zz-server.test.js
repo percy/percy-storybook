@@ -3234,10 +3234,57 @@ describe('Server / channelAuth.cjs', () => {
       // FETCH_BUILD_ITEMS is a read, but its reply carries the project-scoped
       // Percy token, so it is gated too.
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.FETCH_BUILD_ITEMS)).toBe(true);
-      // read-only events that expose no secret stay open
+      // startup/load events that expose no secret and read nothing by
+      // caller-chosen id stay open
       expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.LOAD_BS_CREDENTIALS)).toBe(false);
-      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.FETCH_BUILD_STATUS)).toBe(false);
-      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.FETCH_PROJECTS)).toBe(false);
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.LOAD_PROJECT_CONFIG)).toBe(false);
+      expect(PRIVILEGED_EVENTS.has(PERCY_EVENTS.VALIDATE_CREDENTIALS)).toBe(false);
+    });
+
+    // Reads served with the developer's STORED credentials. Ungated, any page
+    // that can reach the dev-server WebSocket could enumerate the account's
+    // projects or read arbitrary builds/snapshots/logs by numeric id.
+    const STORED_CREDENTIAL_READS = [
+      PERCY_EVENTS.FETCH_PROJECTS,
+      PERCY_EVENTS.FETCH_BUILD_STATUS,
+      PERCY_EVENTS.FETCH_BUILD_LOGS,
+      PERCY_EVENTS.FETCH_SNAPSHOT_DETAIL
+    ];
+
+    it('gates every read that is served with the stored credentials', () => {
+      for (const event of STORED_CREDENTIAL_READS) {
+        expect(PRIVILEGED_EVENTS.has(event)).withContext(event).toBe(true);
+      }
+    });
+
+    it('every privileged event emitted from manager code is wrapped in withNonce', () => {
+      // Static parity check between the server gate and the manager bundle: a
+      // privileged emit without withNonce() would be silently dropped by the
+      // server, so the UI would hang on a response that never arrives.
+      const roots = ['src/hooks', 'src/components'];
+      const eventName = Object.fromEntries(
+        Object.entries(PERCY_EVENTS).map(([k, v]) => [v, k])
+      );
+      const privilegedKeys = new Set([...PRIVILEGED_EVENTS].map(v => eventName[v]));
+      const emitRe = /\b(?:emit|emitChannel|channelEmit)\(\s*PERCY_EVENTS\.(\w+)\s*,\s*([^\s(]*)/g;
+      const violations = [];
+      const files = [];
+      for (const root of roots) {
+        for (const f of fs.readdirSync(root)) {
+          if (/\.(js|jsx)$/.test(f)) files.push(path.join(root, f));
+        }
+      }
+      expect(files.length).toBeGreaterThan(0);
+      for (const file of files) {
+        const src = fs.readFileSync(file, 'utf8');
+        for (const m of src.matchAll(emitRe)) {
+          const [, key, nextToken] = m;
+          if (privilegedKeys.has(key) && nextToken !== 'withNonce') {
+            violations.push(`${file}: ${key}`);
+          }
+        }
+      }
+      expect(violations).toEqual([]);
     });
   });
 
@@ -3251,6 +3298,21 @@ describe('Server / channelAuth.cjs', () => {
       guarded.on(PERCY_EVENTS.LOAD_BS_CREDENTIALS, handler);
       channel.trigger(PERCY_EVENTS.LOAD_BS_CREDENTIALS, { foo: 'bar' });
       expect(handler).toHaveBeenCalledWith({ foo: 'bar' });
+    });
+
+    it('gates a stored-credential read exactly like a write', () => {
+      const channel = createMockChannel();
+      const guarded = guardChannel(channel, NONCE);
+      const handler = jasmine.createSpy('status');
+      spyOn(console, 'warn');
+      guarded.on(PERCY_EVENTS.FETCH_BUILD_STATUS, handler);
+      channel.trigger(PERCY_EVENTS.FETCH_BUILD_STATUS, { buildId: '10' }); // no nonce
+      expect(handler).not.toHaveBeenCalled();
+      expect(channel.emit).toHaveBeenCalledWith(
+        PERCY_EVENTS.UNAUTHORIZED, { event: PERCY_EVENTS.FETCH_BUILD_STATUS }
+      );
+      channel.trigger(PERCY_EVENTS.FETCH_BUILD_STATUS, { buildId: '10', [NONCE_FIELD]: NONCE });
+      expect(handler).toHaveBeenCalledWith({ buildId: '10' });
     });
 
     it('runs a privileged handler when the nonce matches, stripped from payload', () => {
@@ -3425,6 +3487,42 @@ describe('preset.cjs (integration wiring)', () => {
       projectName: 'P', username: 'u', accessKey: 'k', [NONCE_FIELD]: nonce
     });
     expect(globalThis.fetch).toHaveBeenCalled();
+  });
+
+  // Reads that run with the developer's stored credentials must not be reachable
+  // by a cross-origin page: no nonce -> no upstream request, UNAUTHORIZED emitted.
+  const GATED_READS = [
+    [PERCY_EVENTS.FETCH_PROJECTS, { search: '', page: 0 }, PERCY_EVENTS.PROJECTS_FETCHED],
+    [PERCY_EVENTS.FETCH_BUILD_STATUS, { buildId: '10' }, PERCY_EVENTS.BUILD_STATUS_FETCHED],
+    [PERCY_EVENTS.FETCH_BUILD_LOGS, { buildId: '10' }, PERCY_EVENTS.BUILD_LOGS_FETCHED],
+    [PERCY_EVENTS.FETCH_SNAPSHOT_DETAIL, { snapshotId: '100' }, PERCY_EVENTS.SNAPSHOT_DETAIL_FETCHED]
+  ];
+
+  for (const [event, payload, reply] of GATED_READS) {
+    it(`drops ${event} without the nonce: no upstream fetch, no reply, UNAUTHORIZED`, async () => {
+      spyOn(console, 'warn');
+      await preset.experimental_serverChannel(channel);
+      await channel.trigger(event, { ...payload });
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+      expect(channel.emit).not.toHaveBeenCalledWith(reply, jasmine.anything());
+      expect(channel.emit).toHaveBeenCalledWith(PERCY_EVENTS.UNAUTHORIZED, { event });
+    });
+
+    it(`serves ${event} when the payload carries the nonce`, async () => {
+      await preset.experimental_serverChannel(channel);
+      await channel.trigger(event, { ...payload, [NONCE_FIELD]: nonce });
+      expect(globalThis.fetch).toHaveBeenCalled();
+      expect(channel.emit).not.toHaveBeenCalledWith(PERCY_EVENTS.UNAUTHORIZED, jasmine.anything());
+    });
+  }
+
+  it('leaves the startup load events open (no nonce required)', async () => {
+    await preset.experimental_serverChannel(channel);
+    await channel.trigger(PERCY_EVENTS.LOAD_BS_CREDENTIALS);
+    expect(channel.emit).toHaveBeenCalledWith(
+      PERCY_EVENTS.BS_CREDENTIALS_LOADED, jasmine.anything()
+    );
+    expect(channel.emit).not.toHaveBeenCalledWith(PERCY_EVENTS.UNAUTHORIZED, jasmine.anything());
   });
 
   it('managerHead injects a <meta> whose content is getOrCreateNonce()', () => {

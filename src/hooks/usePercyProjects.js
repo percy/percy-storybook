@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useChannel } from 'storybook/manager-api';
 import { PERCY_EVENTS } from '../constants.js';
+import { withNonce } from '../utils/channelNonce.js';
 
 const DEBOUNCE_MS = 350;
 
@@ -82,12 +83,12 @@ export function usePercyProjects(username, accessKey, initialSearch = '') {
     setLoading(true);
     setError('');
 
-    emit(PERCY_EVENTS.FETCH_PROJECTS, {
+    emit(PERCY_EVENTS.FETCH_PROJECTS, withNonce({
       username,
       accessKey,
       search: debouncedSearch,
       page: 0
-    });
+    }));
   }, [debouncedSearch]); // eslint-disable-line
 
   const loadMore = useCallback(() => {
@@ -95,12 +96,12 @@ export function usePercyProjects(username, accessKey, initialSearch = '') {
     pageRef.current += 1;
 
     setLoading(true);
-    emit(PERCY_EVENTS.FETCH_PROJECTS, {
+    emit(PERCY_EVENTS.FETCH_PROJECTS, withNonce({
       username,
       accessKey,
       search: debouncedSearch,
       page: pageRef.current
-    });
+    }));
   }, [debouncedSearch, username, accessKey]); // eslint-disable-line
 
   const cancel = useCallback(() => {

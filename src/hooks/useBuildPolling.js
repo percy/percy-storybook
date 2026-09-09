@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useChannel, useStorybookApi } from 'storybook/manager-api';
 import { PERCY_EVENTS, BUILD_STATES, PANEL_ID } from '../constants.js';
+import { withNonce } from '../utils/channelNonce.js';
 
 const POLL_INTERVAL_MS = 10000;
 const TIME_UPDATE_INTERVAL_MS = 60000;
@@ -92,12 +93,12 @@ export function useBuildPolling(buildId) {
         timeoutId = setTimeout(poll, POLL_INTERVAL_MS);
         return;
       }
-      emit(PERCY_EVENTS.FETCH_BUILD_STATUS, { buildId: buildIdRef.current });
+      emit(PERCY_EVENTS.FETCH_BUILD_STATUS, withNonce({ buildId: buildIdRef.current }));
       timeoutId = setTimeout(poll, POLL_INTERVAL_MS);
     };
 
     // Immediate first fetch
-    emit(PERCY_EVENTS.FETCH_BUILD_STATUS, { buildId });
+    emit(PERCY_EVENTS.FETCH_BUILD_STATUS, withNonce({ buildId }));
     timeoutId = setTimeout(poll, POLL_INTERVAL_MS);
 
     return () => { canceled = true; clearTimeout(timeoutId); };
@@ -131,7 +132,7 @@ export function useBuildPolling(buildId) {
   const downloadLogs = () => {
     if (logDownload.loading) return;
     setLogDownload({ loading: true, error: null });
-    emit(PERCY_EVENTS.FETCH_BUILD_LOGS, { buildId });
+    emit(PERCY_EVENTS.FETCH_BUILD_LOGS, withNonce({ buildId }));
   };
 
   return {
