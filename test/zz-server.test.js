@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { PERCY_EVENTS, CHANNEL_AUTH } from '../src/constants.cjs';
-import { CHANNEL_AUTH as CHANNEL_AUTH_ESM } from '../src/constants.js';
+import { CHANNEL_AUTH as CHANNEL_AUTH_ESM, PERCY_EVENTS as PERCY_EVENTS_ESM } from '../src/constants.js';
 import * as preset from '../preset.cjs';
 import { PERCY_API_BASE, validateBuildId, validateProjectId, basicAuth } from '../src/server/utils.cjs';
 import { withNonce, getPercyNonce } from '../src/utils/channelNonce.js';
@@ -3267,8 +3267,10 @@ describe('Server / channelAuth.cjs', () => {
       );
       const privilegedKeys = new Set([...PRIVILEGED_EVENTS].map(v => eventName[v]));
       const emitRe = /\b(?:emit|emitChannel|channelEmit)\(\s*PERCY_EVENTS\.(\w+)\s*,\s*([^\s(]*)/g;
+      const refRe = /\bPERCY_EVENTS\.(\w+)\b/g;
       const violations = [];
       const files = [];
+      let wrappedEmits = 0;
       for (const root of roots) {
         for (const f of fs.readdirSync(root)) {
           if (/\.(js|jsx)$/.test(f)) files.push(path.join(root, f));
@@ -3277,14 +3279,30 @@ describe('Server / channelAuth.cjs', () => {
       expect(files.length).toBeGreaterThan(0);
       for (const file of files) {
         const src = fs.readFileSync(file, 'utf8');
+        // Every literal emit of a privileged event must be wrapped.
+        const literalEmits = [];
         for (const m of src.matchAll(emitRe)) {
           const [, key, nextToken] = m;
-          if (privilegedKeys.has(key) && nextToken !== 'withNonce') {
-            violations.push(`${file}: ${key}`);
-          }
+          if (!privilegedKeys.has(key)) continue;
+          literalEmits.push(key);
+          if (nextToken !== 'withNonce') violations.push(`${file}: ${key} emitted without withNonce`);
+          else wrappedEmits++;
+        }
+        // Every OTHER reference to a privileged constant (assigned to a variable,
+        // passed through a helper, emitted via a different function name) is
+        // something this scan cannot prove is wrapped, so it fails too.
+        const refs = [...src.matchAll(refRe)].map(m => m[1]).filter(k => privilegedKeys.has(k));
+        if (refs.length !== literalEmits.length) {
+          violations.push(
+            `${file}: ${refs.length} privileged PERCY_EVENTS references but only ` +
+            `${literalEmits.length} recognised literal emit(...) calls`
+          );
         }
       }
       expect(violations).toEqual([]);
+      // Sanity: the scan actually saw the manager's privileged emits (guards
+      // against a refactor that moves files out of the scanned roots).
+      expect(wrappedEmits).toBeGreaterThanOrEqual(privilegedKeys.size);
     });
   });
 
@@ -3378,6 +3396,13 @@ describe('constants — CJS/ESM parity', () => {
     // Both server (cjs) and manager (esm) sides must agree on the nonce field
     // and meta name, or the gate would silently reject every legitimate event.
     expect(CHANNEL_AUTH).toEqual(CHANNEL_AUTH_ESM);
+  });
+
+  it('PERCY_EVENTS is identical across the CJS and ESM constants', () => {
+    // The manager emits the ESM names and the server gates the CJS names. If
+    // a privileged event's string diverged, the gate would drop every
+    // legitimate emit of it and the UI would hang on a reply that never comes.
+    expect(PERCY_EVENTS).toEqual(PERCY_EVENTS_ESM);
   });
 });
 
@@ -3491,14 +3516,36 @@ describe('preset.cjs (integration wiring)', () => {
 
   // Reads that run with the developer's stored credentials must not be reachable
   // by a cross-origin page: no nonce -> no upstream request, UNAUTHORIZED emitted.
+  // [event, payload, reply event, upstream response, url fragment proving the
+  //  payload id reached the handler intact, expected reply shape]
   const GATED_READS = [
-    [PERCY_EVENTS.FETCH_PROJECTS, { search: '', page: 0 }, PERCY_EVENTS.PROJECTS_FETCHED],
-    [PERCY_EVENTS.FETCH_BUILD_STATUS, { buildId: '10' }, PERCY_EVENTS.BUILD_STATUS_FETCHED],
-    [PERCY_EVENTS.FETCH_BUILD_LOGS, { buildId: '10' }, PERCY_EVENTS.BUILD_LOGS_FETCHED],
-    [PERCY_EVENTS.FETCH_SNAPSHOT_DETAIL, { snapshotId: '100' }, PERCY_EVENTS.SNAPSHOT_DETAIL_FETCHED]
+    [
+      PERCY_EVENTS.FETCH_PROJECTS, { search: 'Proj', page: 2 }, PERCY_EVENTS.PROJECTS_FETCHED,
+      { data: [{ id: '1', attributes: { name: 'Proj A', 'updated-at': '2024-01-01' } }] },
+      'filter%5Bsearch%5D=Proj',
+      { projects: [{ id: '1', name: 'Proj A', updatedAt: '2024-01-01' }], hasMore: false, search: 'Proj', page: 2 }
+    ],
+    [
+      PERCY_EVENTS.FETCH_BUILD_STATUS, { buildId: '10' }, PERCY_EVENTS.BUILD_STATUS_FETCHED,
+      { data: { attributes: { state: 'finished', 'build-number': 3, branch: 'main' } } },
+      '/builds/10?',
+      jasmine.objectContaining({ buildId: '10', state: 'finished', buildNumber: 3, headBranch: 'main' })
+    ],
+    [
+      PERCY_EVENTS.FETCH_BUILD_LOGS, { buildId: '10' }, PERCY_EVENTS.BUILD_LOGS_FETCHED,
+      'line 1\nline 2',
+      'build_id=10',
+      { content: 'line 1\nline 2', filename: 'percy-build-10.log' }
+    ],
+    [
+      PERCY_EVENTS.FETCH_SNAPSHOT_DETAIL, { snapshotId: '100' }, PERCY_EVENTS.SNAPSHOT_DETAIL_FETCHED,
+      { data: { id: '100', type: 'snapshots', attributes: { name: 'Snap' } } },
+      '/snapshots/100?',
+      jasmine.objectContaining({ snapshotId: '100', data: jasmine.objectContaining({ id: '100', name: 'Snap' }) })
+    ]
   ];
 
-  for (const [event, payload, reply] of GATED_READS) {
+  for (const [event, payload, reply, upstream, urlFragment, expectedReply] of GATED_READS) {
     it(`drops ${event} without the nonce: no upstream fetch, no reply, UNAUTHORIZED`, async () => {
       spyOn(console, 'warn');
       await preset.experimental_serverChannel(channel);
@@ -3508,13 +3555,45 @@ describe('preset.cjs (integration wiring)', () => {
       expect(channel.emit).toHaveBeenCalledWith(PERCY_EVENTS.UNAUTHORIZED, { event });
     });
 
-    it(`serves ${event} when the payload carries the nonce`, async () => {
+    it(`drops ${event} with a forged nonce`, async () => {
+      spyOn(console, 'warn');
+      await preset.experimental_serverChannel(channel);
+      await channel.trigger(event, { ...payload, [NONCE_FIELD]: 'forged-' + nonce });
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+      expect(channel.emit).toHaveBeenCalledWith(PERCY_EVENTS.UNAUTHORIZED, { event });
+    });
+
+    it(`serves ${event} end-to-end when the payload carries the nonce`, async () => {
+      globalThis.fetch.and.resolveTo(mockResponse(upstream));
       await preset.experimental_serverChannel(channel);
       await channel.trigger(event, { ...payload, [NONCE_FIELD]: nonce });
-      expect(globalThis.fetch).toHaveBeenCalled();
+
+      // The gate stripped the nonce and forwarded the rest of the payload
+      // intact: the upstream request carries the caller's id / search.
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+      expect(globalThis.fetch.calls.mostRecent().args[0]).toContain(urlFragment);
+      // ...and the handler produced its normal, correct reply.
+      expect(channel.emit).toHaveBeenCalledWith(reply, expectedReply);
       expect(channel.emit).not.toHaveBeenCalledWith(PERCY_EVENTS.UNAUTHORIZED, jasmine.anything());
     });
   }
+
+  it('a stale nonce from a previous process is rejected on a polled read', async () => {
+    // Dev-server restart without a manager reload: the manager keeps emitting
+    // the OLD nonce on every FETCH_BUILD_STATUS poll. Each poll must be
+    // rejected (so nothing runs on the stored credentials) and each must
+    // emit UNAUTHORIZED so PercyPanel can show the recovery screen.
+    spyOn(console, 'warn');
+    const stale = generateNonce();
+    expect(stale).not.toBe(nonce);
+    await preset.experimental_serverChannel(channel);
+    for (let i = 0; i < 3; i++) {
+      await channel.trigger(PERCY_EVENTS.FETCH_BUILD_STATUS, { buildId: '10', [NONCE_FIELD]: stale });
+    }
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    const unauthorized = channel.emit.calls.allArgs().filter(a => a[0] === PERCY_EVENTS.UNAUTHORIZED);
+    expect(unauthorized.length).toBe(3);
+  });
 
   it('leaves the startup load events open (no nonce required)', async () => {
     await preset.experimental_serverChannel(channel);
