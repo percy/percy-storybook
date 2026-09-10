@@ -71,18 +71,26 @@ function ReviewContent({ snapshotId, buildId, onReviewComplete }) {
     setParamsState(prev => ({ ...prev, ...updates }));
   }, []);
 
-  if (isLoading || !snapshotData) {
+  // Error must be checked BEFORE the loading fallback: on a failed request
+  // RTK Query leaves `data` undefined, so `!snapshotData` alone would render
+  // the loader forever and swallow the failure.
+  if (error) {
+    const status = error?.status ?? error?.originalStatus;
+    const detail = error?.data?.errors?.[0]?.detail || error?.data?.message || error?.error || '';
     return (
-      <div className="flex items-center justify-center h-full">
-        <LoaderV2 size="medium" showLabel label="Loading snapshot..." />
+      <div className="flex flex-col items-center justify-center h-full gap-1 p-4 text-center">
+        <div className="text-sm text-danger-default">
+          Failed to load snapshot{status ? ` (${status})` : ''}
+        </div>
+        {detail && <div className="text-xs text-neutral-500 break-all">{String(detail)}</div>}
       </div>
     );
   }
 
-  if (error) {
+  if (isLoading || !snapshotData) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-sm text-danger-default">Failed to load snapshot</div>
+        <LoaderV2 size="medium" showLabel label="Loading snapshot..." />
       </div>
     );
   }
@@ -287,7 +295,7 @@ export default function ReviewPage({
                   key={buildId}
                   apiBaseUrl="https://percy.io/api"
                   authToken={authToken}
-                  authType="basic"
+                  authType="token"
                   buildId={buildId}
                   snapshotId={selectedSnapshotId}
                   panels={{ ai: true, comments: true, history: true, regions: true, snapshotRules: true }}

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useChannel } from 'storybook/manager-api';
 import { PERCY_EVENTS } from '../constants.js';
+import { withNonce } from '../utils/channelNonce.js';
+import { canFetchProjects } from '../utils/credentials.js';
 
 const DEBOUNCE_MS = 350;
 
@@ -11,8 +13,10 @@ const DEBOUNCE_MS = 350;
  * @param {string} username - BrowserStack username
  * @param {string} accessKey - BrowserStack access key
  * @param {string} [initialSearch] - Initial search term
+ * @param {boolean} [storedOnServer] - server holds a validated credential pair,
+ *   so the fetch must fire even though the browser has no access key
  */
-export function usePercyProjects(username, accessKey, initialSearch = '') {
+export function usePercyProjects(username, accessKey, initialSearch = '', storedOnServer = false) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -69,10 +73,12 @@ export function usePercyProjects(username, accessKey, initialSearch = '') {
   // window; it is ignored once the cache is populated.
   //
   // Guard against firing a credential-less request: with no username/access key
-  // on either side the server would attempt basicAuth('', '') and 401. Skip the
-  // fetch entirely until we actually have a client-held pair to send.
+  // on EITHER side the server would attempt basicAuth('', '') and 401. The
+  // server never sends the access key to the browser, so after a startup
+  // restore the client pair is empty while the server pair is valid —
+  // `storedOnServer` covers that case (see canFetchProjects).
   useEffect(() => {
-    if (!username || !accessKey) {
+    if (!canFetchProjects(username, accessKey, storedOnServer)) {
       setLoading(false);
       setInitialLoading(false);
       return;
@@ -82,25 +88,25 @@ export function usePercyProjects(username, accessKey, initialSearch = '') {
     setLoading(true);
     setError('');
 
-    emit(PERCY_EVENTS.FETCH_PROJECTS, {
+    emit(PERCY_EVENTS.FETCH_PROJECTS, withNonce({
       username,
       accessKey,
       search: debouncedSearch,
       page: 0
-    });
-  }, [debouncedSearch]); // eslint-disable-line
+    }));
+  }, [debouncedSearch, storedOnServer]); // eslint-disable-line
 
   const loadMore = useCallback(() => {
     if (loadingRef.current || !hasMoreRef.current) return;
     pageRef.current += 1;
 
     setLoading(true);
-    emit(PERCY_EVENTS.FETCH_PROJECTS, {
+    emit(PERCY_EVENTS.FETCH_PROJECTS, withNonce({
       username,
       accessKey,
       search: debouncedSearch,
       page: pageRef.current
-    });
+    }));
   }, [debouncedSearch, username, accessKey]); // eslint-disable-line
 
   const cancel = useCallback(() => {

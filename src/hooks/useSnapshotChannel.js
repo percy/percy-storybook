@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useChannel, useStorybookApi } from 'storybook/manager-api';
 import { PERCY_EVENTS, SNAPSHOT_STATUS } from '../constants.js';
+import { credentialsFromConfigLoaded } from '../utils/credentials.js';
 import { getCurrentStory } from '../utils/storybookApi.js';
 
 /**
@@ -22,7 +23,11 @@ export function useSnapshotChannel(transition, view, VIEWS) {
   const emit = useChannel({
     [PERCY_EVENTS.PROJECT_CONFIG_LOADED]: ({ credentialsValid, username, accessKey, project, projectDetails, hasValidToken, lastBuild }) => {
       configLoaded.current = true;
-      const creds = { username: username || '', accessKey: accessKey || '' };
+      // The server validated its stored pair but (deliberately) does not send
+      // the access key to the browser; credentialsFromConfigLoaded flags it so
+      // credential-dependent views (project picker) know a fetch will succeed
+      // server-side.
+      const creds = credentialsFromConfigLoaded({ credentialsValid, username, accessKey });
 
       if (!credentialsValid) {
         transition('RESTORE_NONE');

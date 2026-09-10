@@ -14,10 +14,12 @@ import {
   Divider, CreateLink, LoadingRow
 } from './ProjectSetup.styles.js';
 
-export function ProjectSetup({ username, accessKey, initialSearch, onProjectConfirmed, onCreateProject }) {
+export function ProjectSetup({
+  username, accessKey, storedOnServer = false, initialSearch, onProjectConfirmed, onCreateProject
+}) {
   const {
     projects, loading, initialLoading, hasMore, error, search, setSearch, loadMore, cancel
-  } = usePercyProjects(username, accessKey, initialSearch);
+  } = usePercyProjects(username, accessKey, initialSearch, storedOnServer);
 
   const [selectedProject, setSelectedProject] = useState(null);
   const [saving, setSaving] = useState(false);

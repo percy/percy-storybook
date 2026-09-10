@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useChannel } from 'storybook/manager-api';
 import { PERCY_EVENTS } from '../constants.js';
+import { withNonce } from '../utils/channelNonce.js';
 
 /**
  * Fetches snapshot detail (denormalized JSON:API) via server channel.
@@ -40,7 +41,7 @@ export function useSnapshotDetail(snapshotId) {
     activeIdRef.current = String(snapshotId);
     setIsLoading(true);
     setError(null);
-    emit(PERCY_EVENTS.FETCH_SNAPSHOT_DETAIL, { snapshotId });
+    emit(PERCY_EVENTS.FETCH_SNAPSHOT_DETAIL, withNonce({ snapshotId }));
   }, [snapshotId]);
 
   const refetch = useCallback(() => {
@@ -48,7 +49,7 @@ export function useSnapshotDetail(snapshotId) {
     activeIdRef.current = String(snapshotId);
     setIsLoading(true);
     setError(null);
-    emit(PERCY_EVENTS.FETCH_SNAPSHOT_DETAIL, { snapshotId });
+    emit(PERCY_EVENTS.FETCH_SNAPSHOT_DETAIL, withNonce({ snapshotId }));
   }, [snapshotId, emit]);
 
   return { snapshot, entities, isLoading, error, refetch };

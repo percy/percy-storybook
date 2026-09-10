@@ -20,7 +20,7 @@ const VIEWS = {
  */
 export function usePercyPanelState() {
   const [view, setView] = useState(VIEWS.INITIALIZING);
-  const [credentials, setCredentials] = useState({ username: '', accessKey: '' });
+  const [credentials, setCredentials] = useState({ username: '', accessKey: '', storedOnServer: false });
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectDetails, setProjectDetails] = useState(null);
   const [buildMeta, setBuildMeta] = useState(null);
@@ -44,7 +44,7 @@ export function usePercyPanelState() {
 
       // User actions
       case 'AUTHENTICATED':
-        setCredentials({ username: payload.username, accessKey: payload.accessKey });
+        setCredentials({ username: payload.username, accessKey: payload.accessKey, storedOnServer: false });
         setView(VIEWS.PROJECT_SETUP);
         break;
       case 'PROJECT_CONFIRMED':
