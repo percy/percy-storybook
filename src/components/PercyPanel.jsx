@@ -205,6 +205,7 @@ export function PercyPanel({ active }) {
             <ProjectSetup
               username={credentials.username}
               accessKey={credentials.accessKey}
+              storedOnServer={credentials.storedOnServer}
               initialSearch=""
               onProjectConfirmed={(project) => transition('PROJECT_CONFIRMED', project)}
               onCreateProject={() => transition('CREATE_NEW_PROJECT')}

@@ -22,7 +22,14 @@ export function useSnapshotChannel(transition, view, VIEWS) {
   const emit = useChannel({
     [PERCY_EVENTS.PROJECT_CONFIG_LOADED]: ({ credentialsValid, username, accessKey, project, projectDetails, hasValidToken, lastBuild }) => {
       configLoaded.current = true;
-      const creds = { username: username || '', accessKey: accessKey || '' };
+      // The server validated its stored pair but (deliberately) does not send
+      // the access key to the browser. Flag it so credential-dependent views
+      // (project picker) know a fetch will succeed server-side.
+      const creds = {
+        username: username || '',
+        accessKey: accessKey || '',
+        storedOnServer: !!credentialsValid
+      };
 
       if (!credentialsValid) {
         transition('RESTORE_NONE');

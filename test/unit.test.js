@@ -1,6 +1,30 @@
 import { validateStoryArgs, encodeStoryArgs, decodeStoryArgs } from '../src/utils.js';
+import { canFetchProjects } from '../src/utils/credentials.js';
 
 describe('Unit /', () => {
+  describe('canFetchProjects', () => {
+    // Regression: after the server stopped sending the access key to the
+    // browser (F-017), a startup restore or "Change project" left the picker
+    // with an empty client pair and it silently never fetched — every search
+    // showed "No result found" while creating a project still worked.
+    it('fires when the server holds a validated stored pair, even with no client key', () => {
+      expect(canFetchProjects('', '', true)).toBe(true);
+      expect(canFetchProjects('user', '', true)).toBe(true);
+    });
+
+    it('fires when the browser holds a complete pair (first-time / session-only flow)', () => {
+      expect(canFetchProjects('user', 'key', false)).toBe(true);
+      expect(canFetchProjects('user', 'key', undefined)).toBe(true);
+    });
+
+    it('does not fire a credential-less request when neither side has a pair', () => {
+      expect(canFetchProjects('', '', false)).toBe(false);
+      expect(canFetchProjects('user', '', false)).toBe(false);
+      expect(canFetchProjects('', 'key', false)).toBe(false);
+      expect(canFetchProjects(undefined, undefined, undefined)).toBe(false);
+    });
+  });
+
   describe('validateStoryArgs', () => {
     it('returns false when the key is empty or invalid', () => {
       expect(validateStoryArgs(null, 'value')).toBe(false);
