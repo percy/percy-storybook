@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Button, LoaderV2 } from '@browserstack/design-stack';
 import { MdOutlineOpenInNew } from '@browserstack/design-stack-icons';
 import { BUILD_STATES } from '../constants.js';
+import { safeHttpsUrl } from '../utils/safeUrl.js';
 import { useBuildPolling } from '../hooks/useBuildPolling.js';
 import { InProgressBuild } from './InProgressBuild';
 import { FailedBuild } from './FailedBuild';
@@ -13,7 +14,8 @@ export function BuildProgress({ buildId, buildUrl, buildNumber, snapshotScope, o
     progressPercent, pollError, downloadLogs, logDownload
   } = useBuildPolling(buildId);
 
-  const webUrl = buildData?.webUrl || buildUrl;
+  // Scheme-checked before it reaches href (F-023).
+  const webUrl = safeHttpsUrl(buildData?.webUrl || buildUrl);
   const displayNumber = buildData?.buildNumber || buildNumber;
   const isFailed = state === BUILD_STATES.FAILED;
   const isFinished = state === BUILD_STATES.FINISHED;
@@ -27,7 +29,7 @@ export function BuildProgress({ buildId, buildUrl, buildNumber, snapshotScope, o
       onReviewReady({
         buildId: buildData.buildId || buildId,
         buildNumber: buildData.buildNumber || buildNumber,
-        webUrl: buildData.webUrl || buildUrl,
+        webUrl: safeHttpsUrl(buildData.webUrl || buildUrl),
         reviewState: buildData.reviewState,
         reviewStateReason: buildData.reviewStateReason,
         headBranch: buildData.headBranch,

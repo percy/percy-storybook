@@ -10,6 +10,7 @@ import { useChannel, useStorybookApi } from 'storybook/manager-api';
 import { useTheme } from 'storybook/theming';
 import { PERCY_EVENTS, SNAPSHOT_TYPES } from '../constants.js';
 import { withNonce } from '../utils/channelNonce.js';
+import { safeHttpsUrl } from '../utils/safeUrl.js';
 import { getReviewStateDisplay, formatDiffPercent } from '../utils/reviewState.js';
 import {
   buildCurrentStoryPattern,
@@ -190,8 +191,10 @@ function KebabMenu({ buildId, webUrl, reviewState, reviewStateReason, projectDet
     }
   });
 
-  const settingsUrl = webUrl
-    ? webUrl.replace(/\/builds\/\d+$/, '/settings')
+  // Scheme-checked before it reaches window.open (F-023).
+  const safeWebUrl = safeHttpsUrl(webUrl);
+  const settingsUrl = safeWebUrl
+    ? safeWebUrl.replace(/\/builds\/\d+$/, '/settings')
     : null;
 
   const isMerged = reviewState === 'merged';
@@ -294,8 +297,8 @@ export default function ReviewHeader({
 
       {/* Right: action buttons */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        {webUrl && (
-          <a href={webUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+        {safeHttpsUrl(webUrl) && (
+          <a href={safeHttpsUrl(webUrl)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
             <Button variant="secondary" size="small" icon={<MdOutlineOpenInNew />} iconPlacement="end">
               Review in Percy
             </Button>

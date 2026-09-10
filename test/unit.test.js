@@ -1,7 +1,20 @@
 import { validateStoryArgs, encodeStoryArgs, decodeStoryArgs } from '../src/utils.js';
 import { canFetchProjects, credentialsFromConfigLoaded } from '../src/utils/credentials.js';
+import { safeHttpsUrl } from '../src/utils/safeUrl.js';
 
 describe('Unit /', () => {
+  describe('safeHttpsUrl (F-023)', () => {
+    it('passes absolute https: URLs through', () => {
+      expect(safeHttpsUrl('https://percy.io/org/proj/builds/1')).toBe('https://percy.io/org/proj/builds/1');
+    });
+
+    it('rejects javascript:, data:, http:, relative and malformed values', () => {
+      for (const bad of ['javascript:alert(1)', 'data:text/html,x', 'http://percy.io/x', '//percy.io/x', '/builds/1', 'nope', '', null, undefined]) {
+        expect(safeHttpsUrl(bad)).withContext(String(bad)).toBeNull();
+      }
+    });
+  });
+
   describe('canFetchProjects', () => {
     // Regression: after the server stopped sending the access key to the
     // browser (F-017), a startup restore or "Change project" left the picker

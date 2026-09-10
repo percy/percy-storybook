@@ -184,6 +184,24 @@ function processAdditionalSnapshots(additionalSnapshots, baseOptions, storyName,
 }
 
 // Map and reduce collected Storybook stories into an array of snapshot options
+/**
+ * Build the preview URL for a story. `queryParams` is story-author input, so
+ * both key and value are percent-encoded: an unencoded `&`, `=` or `#` in
+ * either would inject extra parameters into the URL (F-021).
+ */
+export function buildStoryUrl(previewUrl, story) {
+  let url = `${previewUrl}?id=${story.id}`;
+  if (story.args) url += `&args=${buildStorybookArgsParam(story.args)}`;
+  if (story.globals) url += `&globals=${buildStorybookArgsParam(story.globals)}`;
+  for (let [k, v] of Object.entries(story.queryParams ?? {})) {
+    url += `&${encodeURIComponent(k)}=${encodeURIComponent(v ?? '')}`;
+  }
+  if (!story.queryParams?.viewMode) {
+    url += `&viewMode=${viewModeFor(story)}`;
+  }
+  return url;
+}
+
 function mapStorybookSnapshots(stories, { previewUrl, flags, config, globalDocSettings }) {
   let log = logger('storybook:config');
   let invalid = new Map(stories.invalid);
@@ -231,14 +249,7 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config, globalDocSe
 
   // remove filter options and generate story snapshot URLs
   return snapshots.map(({ skip, include, exclude, ...story }) => {
-    let url = `${previewUrl}?id=${story.id}`;
-    if (story.args) url += `&args=${buildStorybookArgsParam(story.args)}`;
-    if (story.globals) url += `&globals=${buildStorybookArgsParam(story.globals)}`;
-    for (let [k, v] of Object.entries(story.queryParams ?? {})) url += `&${k}=${v}`;
-    if (!story.queryParams?.viewMode) {
-      url += `&viewMode=${viewModeFor(story)}`;
-    }
-    return Object.assign(story, { url });
+    return Object.assign(story, { url: buildStoryUrl(previewUrl, story) });
   });
 }
 

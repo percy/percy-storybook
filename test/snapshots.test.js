@@ -1,7 +1,42 @@
 import * as utils from '../src/utils.js';
 import { IntelliStoryBailError, PercyConfig } from '@percy/cli-command';
 import * as CoreConfig from '@percy/core/config';
-import { applyIntelliStoryFilter, processStory } from '../src/snapshots.js';
+import { applyIntelliStoryFilter, processStory, buildStoryUrl } from '../src/snapshots.js';
+
+describe('buildStoryUrl (F-021, PER-8549)', () => {
+  const previewUrl = 'http://localhost:6006/iframe.html';
+
+  it('builds the plain story URL and appends viewMode when none is given', () => {
+    const url = buildStoryUrl(previewUrl, { id: 'button--primary' });
+    expect(url.startsWith('http://localhost:6006/iframe.html?id=button--primary')).toBe(true);
+    expect(url).toMatch(/&viewMode=\w+$/);
+  });
+
+  it('keeps a caller-supplied viewMode instead of appending one', () => {
+    const url = buildStoryUrl(previewUrl, { id: 's', queryParams: { viewMode: 'story' } });
+    expect(url).toBe('http://localhost:6006/iframe.html?id=s&viewMode=story');
+  });
+
+  it('percent-encodes queryParams keys AND values so they cannot inject extra parameters', () => {
+    const url = buildStoryUrl(previewUrl, {
+      id: 's',
+      queryParams: { viewMode: 'story', 'legitKey=injected&anotherKey': 'v&evil=1#frag', theme: 'dark mode' }
+    });
+    expect(url).toBe(
+      'http://localhost:6006/iframe.html?id=s' +
+      '&viewMode=story' +
+      '&legitKey%3Dinjected%26anotherKey=v%26evil%3D1%23frag' +
+      '&theme=dark%20mode'
+    );
+    // exactly the four intended parameters, nothing injected
+    expect(url.split('&').length).toBe(4);
+  });
+
+  it('stringifies non-string values and treats null/undefined as empty', () => {
+    const url = buildStoryUrl(previewUrl, { id: 's', queryParams: { viewMode: 'story', n: 5, t: true, e: null } });
+    expect(url).toBe('http://localhost:6006/iframe.html?id=s&viewMode=story&n=5&t=true&e=');
+  });
+});
 
 describe('captureDOM behavior', () => {
   let page, percy, log, previewResource, captureDOM;

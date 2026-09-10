@@ -31,12 +31,36 @@ function parseEnv(content) {
 }
 
 /**
+ * Reject values that would corrupt .env for this parser or for downstream
+ * dotenv-style parsers (F-018, CWE-93):
+ *  - '\n' / '\r'   → line break: the remainder becomes a new KEY=VALUE line
+ *  - '#'           → comment marker: dotenv drops the remainder of the value
+ *  - '='           → split-on-first-'=' ambiguity in naive parsers
+ *  - '\0'          → null byte
+ *  - leading/trailing whitespace → silently trimmed by some parsers, not others
+ * Every value written here is a BrowserStack username, an access key, a Percy
+ * token or a numeric build id, none of which legitimately contain these.
+ */
+function assertSafeEnvValue(key, value) {
+  const str = String(value);
+  const reason =
+    str.includes('\n') ? 'contains newline'
+      : str.includes('\r') ? 'contains carriage return'
+        : str.includes('\0') ? 'contains null byte'
+          : str.includes('#') ? "contains '#'"
+            : str.includes('=') ? "contains '='"
+              : str !== str.trim() ? 'has leading or trailing whitespace'
+                : null;
+  if (reason) throw new Error(`Invalid value for ${key}: ${reason}`);
+  return str;
+}
+
+/**
  * Set or update a key=value in .env content string.
- * Escapes key for regex safety and rejects newlines in value.
+ * Rejects values that would break the file (see assertSafeEnvValue).
  */
 function setKey(src, key, value) {
-  if (String(value).includes('\n')) throw new Error(`Invalid value for ${key}: contains newline`);
-  const line = `${key}=${value}`;
+  const line = `${key}=${assertSafeEnvValue(key, value)}`;
   const lines = src.split('\n');
   const prefix = `${key}=`;
   const idx = lines.findIndex(l => l.trimStart().startsWith(prefix));
@@ -78,5 +102,4 @@ module.exports = {
   setKey,
   readEnv,
   readEnvRaw,
-  writeEnvRaw
-};
+  writeEnvRaw, assertSafeEnvValue };

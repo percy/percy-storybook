@@ -3,7 +3,7 @@ import path from 'path';
 import { PERCY_EVENTS, CHANNEL_AUTH } from '../src/constants.cjs';
 import { CHANNEL_AUTH as CHANNEL_AUTH_ESM, PERCY_EVENTS as PERCY_EVENTS_ESM } from '../src/constants.js';
 import * as preset from '../preset.cjs';
-import { PERCY_API_BASE, validateBuildId, validateProjectId, basicAuth } from '../src/server/utils.cjs';
+import { PERCY_API_BASE, validateBuildId, validateProjectId, basicAuth, safeWebUrl } from '../src/server/utils.cjs';
 import { withNonce, getPercyNonce } from '../src/utils/channelNonce.js';
 import { canFetchProjects, credentialsFromConfigLoaded } from '../src/utils/credentials.js';
 import {
@@ -19,7 +19,7 @@ import {
 import { registerPercyApiHandlers } from '../src/server/percyApi.cjs';
 import { registerBuildItemsHandlers } from '../src/server/buildItems.cjs';
 import { registerSnapshotDetailHandlers } from '../src/server/snapshotDetail.cjs';
-import { registerBuildApiHandlers } from '../src/server/buildApi.cjs';
+import { registerBuildApiHandlers, guardInFlight } from '../src/server/buildApi.cjs';
 import {
   readPercyYml, writePercyYml, fetchPercyToken, setPercyToken,
   registerProjectConfigHandlers
@@ -134,6 +134,23 @@ describe('Server / utils.cjs', () => {
 /*  2. env.cjs                                                           */
 /* ═══════════════════════════════════════════════════════════════════════ */
 
+describe('Server / utils.cjs — safeWebUrl (F-023)', () => {
+  it('passes an absolute https: URL through unchanged', () => {
+    expect(safeWebUrl('https://percy.io/org/proj/builds/123')).toBe('https://percy.io/org/proj/builds/123');
+    expect(safeWebUrl('https://example.com/x?y=1#z')).toBe('https://example.com/x?y=1#z');
+  });
+
+  it('rejects every non-https scheme and every non-URL', () => {
+    for (const bad of [
+      'javascript:alert(document.cookie)', 'JavaScript:alert(1)', 'data:text/html,<script>1</script>',
+      'http://percy.io/insecure', 'ftp://percy.io/x', '//percy.io/protocol-relative', 'percy.io/no-scheme',
+      '/builds/1', 'not a url', '', null, undefined, 42, {}
+    ]) {
+      expect(safeWebUrl(bad)).withContext(String(bad)).toBeNull();
+    }
+  });
+});
+
 describe('Server / env.cjs', () => {
   describe('getEnvPath', () => {
     it('returns .env in cwd', () => {
@@ -174,6 +191,26 @@ describe('Server / env.cjs', () => {
   });
 
   describe('setKey', () => {
+    // F-018 (PER-8549): values that would corrupt .env for this parser or a
+    // downstream dotenv-style parser are rejected, not written.
+    it('rejects values that would break .env parsing', () => {
+      expect(() => setKey('', 'K', 'a\rb')).toThrowError(/contains carriage return/);
+      expect(() => setKey('', 'K', 'a\0b')).toThrowError(/contains null byte/);
+      expect(() => setKey('', 'K', 'key#comment')).toThrowError(/contains '#'/);
+      expect(() => setKey('', 'K', 'a=b')).toThrowError(/contains '='/);
+      expect(() => setKey('', 'K', ' padded')).toThrowError(/leading or trailing whitespace/);
+      expect(() => setKey('', 'K', 'padded ')).toThrowError(/leading or trailing whitespace/);
+    });
+
+    it('still accepts every value shape the addon actually writes', () => {
+      // username, access key, Percy token, numeric build id, cleared build id
+      expect(setKey('', 'BROWSERSTACK_USERNAME', 'ninad_abc123')).toBe('BROWSERSTACK_USERNAME=ninad_abc123\n');
+      expect(setKey('', 'BROWSERSTACK_ACCESS_KEY', 'AbCdEf1234567890xyz')).toBe('BROWSERSTACK_ACCESS_KEY=AbCdEf1234567890xyz\n');
+      expect(setKey('', 'PERCY_TOKEN', 'web_0123456789abcdef0123456789abcdef')).toBe('PERCY_TOKEN=web_0123456789abcdef0123456789abcdef\n');
+      expect(setKey('', 'PERCY_LAST_TRIGGER_BUILD', '123456')).toBe('PERCY_LAST_TRIGGER_BUILD=123456\n');
+      expect(setKey('', 'PERCY_LAST_TRIGGER_BUILD', '')).toBe('PERCY_LAST_TRIGGER_BUILD=\n');
+    });
+
     it('appends a new key to empty source', () => {
       expect(setKey('', 'FOO', 'bar')).toBe('FOO=bar\n');
     });
@@ -1778,6 +1815,17 @@ describe('Server / buildApi.cjs', () => {
       meta: { total: 1 }
     };
 
+    it('neutralises a non-https web-url before it reaches the browser (F-023)', async () => {
+      const tampered = JSON.parse(JSON.stringify(buildJson));
+      tampered.data.attributes['web-url'] = 'javascript:alert(document.cookie)';
+      globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(mockResponse(tampered));
+
+      await channel.trigger(PERCY_EVENTS.FETCH_BUILD_STATUS, { buildId: '10' });
+      const payload = channel.emit.calls.mostRecent().args[1];
+      expect(payload.webUrl).toBeNull();
+      expect(payload.state).toBe('finished'); // the rest of the status still flows
+    });
+
     it('emits full build status on success', async () => {
       globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(mockResponse(buildJson));
 
@@ -1967,7 +2015,60 @@ describe('Server / buildApi.cjs', () => {
     });
   });
 
+  describe('guardInFlight (F-012, PER-8548)', () => {
+    beforeEach(() => spyOn(console, 'warn'));
+
+    it('drops a duplicate for the same build while the first is in flight, allows other builds', async () => {
+      let calls = 0; const releases = [];
+      const handler = guardInFlight('ev', async () => { calls++; await new Promise(r => releases.push(r)); });
+      const p1 = handler({ buildId: '1' });
+      const p2 = handler({ buildId: '1' }); // duplicate — dropped
+      const p3 = handler({ buildId: '2' }); // different build — allowed
+      expect(calls).toBe(2);
+      expect(console.warn).toHaveBeenCalledTimes(1);
+      releases.forEach(r => r());
+      await Promise.all([p1, p2, p3]);
+    });
+
+    it('allows the same build again once the first round-trip has settled', async () => {
+      let calls = 0;
+      const handler = guardInFlight('ev', async () => { calls++; });
+      await handler({ buildId: '1' });
+      await handler({ buildId: '1' });
+      expect(calls).toBe(2);
+    });
+
+    it('releases the key when the handler throws', async () => {
+      let calls = 0;
+      const handler = guardInFlight('ev', async () => { calls++; throw new Error('boom'); });
+      await expectAsync(handler({ buildId: '1' })).toBeRejected();
+      await expectAsync(handler({ buildId: '1' })).toBeRejected();
+      expect(calls).toBe(2);
+    });
+  });
+
   describe('APPROVE_BUILD', () => {
+    it('sends ONE review when the same approve is emitted twice concurrently (F-012)', async () => {
+      spyOn(console, 'warn');
+      let resolveFetch;
+      globalThis.fetch = jasmine.createSpy('fetch').and.returnValue(new Promise(r => { resolveFetch = r; }));
+
+      const p1 = channel.trigger(PERCY_EVENTS.APPROVE_BUILD, { buildId: '10' });
+      const p2 = channel.trigger(PERCY_EVENTS.APPROVE_BUILD, { buildId: '10' });
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+
+      resolveFetch(mockResponse({}));
+      await Promise.all([p1, p2]);
+      const approved = channel.emit.calls.allArgs().filter(a => a[0] === PERCY_EVENTS.BUILD_APPROVED);
+      expect(approved.length).toBe(1);
+      expect(approved[0][1]).toEqual({ buildId: '10', success: true });
+
+      // and a later, separate approve is not blocked
+      globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(mockResponse({}));
+      await channel.trigger(PERCY_EVENTS.APPROVE_BUILD, { buildId: '10' });
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    });
+
     it('emits success on ok response', async () => {
       globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(mockResponse({}));
 
@@ -2115,6 +2216,17 @@ describe('Server / buildApi.cjs', () => {
   });
 
   describe('MERGE_BUILD', () => {
+    it('sends ONE merge when the same merge is emitted twice concurrently (F-012)', async () => {
+      spyOn(console, 'warn');
+      let resolveFetch;
+      globalThis.fetch = jasmine.createSpy('fetch').and.returnValue(new Promise(r => { resolveFetch = r; }));
+      const p1 = channel.trigger(PERCY_EVENTS.MERGE_BUILD, { buildId: '10' });
+      const p2 = channel.trigger(PERCY_EVENTS.MERGE_BUILD, { buildId: '10' });
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+      resolveFetch(mockResponse({}));
+      await Promise.all([p1, p2]);
+    });
+
     it('emits success on ok response', async () => {
       globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(mockResponse({}));
 
@@ -3465,6 +3577,26 @@ describe('Manager / wiring contracts', () => {
     expect(read('src/components/PercyPanel.jsx')).toContain('storedOnServer={credentials.storedOnServer}');
     expect(read('src/components/ProjectSetup.jsx')).toMatch(/usePercyProjects\(username,\s*accessKey,\s*initialSearch,\s*storedOnServer\)/);
     expect(read('src/hooks/usePercyProjects.js')).toContain('canFetchProjects(username, accessKey, storedOnServer)');
+  });
+
+  it('every build/project URL sink is scheme-checked (F-023)', () => {
+    // Server: both emitters of a percy.io web-url pass it through safeWebUrl.
+    expect(read('src/server/buildApi.cjs')).toContain("webUrl: safeWebUrl(attrs['web-url'])");
+    expect(read('src/server/projectConfig.cjs')).toContain("webUrl: safeWebUrl(attrs['web-url'])");
+    // Manager: both consumers import the guard and run every URL through it.
+    const rh = read('src/components/ReviewHeader.jsx');
+    expect(rh).toContain("import { safeHttpsUrl } from '../utils/safeUrl.js'");
+    expect(rh).toContain('const safeWebUrl = safeHttpsUrl(webUrl)');   // -> window.open(settingsUrl)
+    expect(rh).toContain('href={safeHttpsUrl(webUrl)}');
+    expect(rh).not.toMatch(/href=\{webUrl\}/);
+    expect(rh).not.toMatch(/window\.open\(\s*webUrl/);
+    const bp = read('src/components/BuildProgress.jsx');
+    expect(bp).toContain("import { safeHttpsUrl } from '../utils/safeUrl.js'");
+    // BuildProgress keeps the `webUrl` name but derives it from the guard, so
+    // every later `href={webUrl}` in that file is already sanitised.
+    expect(bp).toContain('const webUrl = safeHttpsUrl(buildData?.webUrl || buildUrl)');
+    expect(bp).toContain('webUrl: safeHttpsUrl(buildData.webUrl || buildUrl)');
+    expect(bp).not.toMatch(/const webUrl = buildData\?\.webUrl \|\| buildUrl;/);
   });
 
   it('snapshot load errors are checked before the loading fallback', () => {
