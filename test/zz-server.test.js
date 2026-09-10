@@ -1289,9 +1289,12 @@ describe('Server / buildItems.cjs', () => {
         buildId: '123',
         items: json.data,
         filters: json.meta.filters,
-        // Only the project-scoped Percy token is handed to the browser,
-        // encoded as a basic-auth value (token as username, empty password).
-        authToken: basicAuth('web_percytoken', '')
+        // Only the project-scoped Percy token is handed to the browser, RAW,
+        // for review-viewer's `Authorization: Token token=<value>` header.
+        // (percy.io only accepts a project token via the Token scheme; a
+        // basic-auth encoding of it 401s with "No user found for BrowserStack
+        // credentials".)
+        authToken: 'web_percytoken'
       })
     );
     // The account-level BrowserStack credentials must never be sent to the browser.
@@ -1299,6 +1302,7 @@ describe('Server / buildItems.cjs', () => {
     expect(payload.username).toBeUndefined();
     expect(payload.accessKey).toBeUndefined();
     expect(payload.authToken).not.toBe(basicAuth('u', 'k'));
+    expect(payload.authToken).not.toBe(basicAuth('web_percytoken', ''));
   });
 
   it('omits authToken when no PERCY_TOKEN is present', async () => {

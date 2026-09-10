@@ -295,7 +295,7 @@ export default function ReviewPage({
                   key={buildId}
                   apiBaseUrl="https://percy.io/api"
                   authToken={authToken}
-                  authType="basic"
+                  authType="token"
                   buildId={buildId}
                   snapshotId={selectedSnapshotId}
                   panels={{ ai: true, comments: true, history: true, regions: true, snapshotRules: true }}

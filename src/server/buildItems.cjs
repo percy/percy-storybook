@@ -70,8 +70,11 @@ function registerBuildItemsHandlers(channel) {
 
       // Only the project-scoped Percy token (written to .env during project
       // setup) may be handed to the browser for review-viewer's direct percy.io
-      // calls. It is sent as a basic-auth value (token as username, empty
-      // password). Never send the BrowserStack username/access key.
+      // calls. It is sent RAW: review-viewer presents it as
+      // `Authorization: Token token=<value>` (authType="token"), which is the
+      // only scheme percy.io accepts for a project token — HTTP Basic is
+      // reserved for BrowserStack username/access-key pairs and 401s otherwise.
+      // Never send the BrowserStack username/access key.
       const percyToken = readEnv().PERCY_TOKEN;
 
       const payload = {
@@ -79,7 +82,7 @@ function registerBuildItemsHandlers(channel) {
         items: json.data || [],
         filters: json.meta?.filters || null
       };
-      if (percyToken) payload.authToken = basicAuth(percyToken, '');
+      if (percyToken) payload.authToken = percyToken;
 
       channel.emit(PERCY_EVENTS.BUILD_ITEMS_FETCHED, payload);
     } catch (err) {
