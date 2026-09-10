@@ -17,24 +17,36 @@ describe('buildStoryUrl (F-021, PER-8549)', () => {
     expect(url).toBe('http://localhost:6006/iframe.html?id=s&viewMode=story');
   });
 
-  it('percent-encodes queryParams keys AND values so they cannot inject extra parameters', () => {
+  it('percent-encodes queryParams KEYS so a crafted key cannot inject extra parameters', () => {
+    // The ticket's payload: a key carrying `=` and `&`.
     const url = buildStoryUrl(previewUrl, {
       id: 's',
-      queryParams: { viewMode: 'story', 'legitKey=injected&anotherKey': 'v&evil=1#frag', theme: 'dark mode' }
+      queryParams: { viewMode: 'story', 'legitKey=injected&anotherKey': 'value', 'a#b': 'c' }
     });
     expect(url).toBe(
       'http://localhost:6006/iframe.html?id=s' +
       '&viewMode=story' +
-      '&legitKey%3Dinjected%26anotherKey=v%26evil%3D1%23frag' +
-      '&theme=dark%20mode'
+      '&legitKey%3Dinjected%26anotherKey=value' +
+      '&a%23b=c'
     );
-    // exactly the four intended parameters, nothing injected
+    // exactly the three intended parameters, nothing injected
     expect(url.split('&').length).toBe(4);
   });
 
-  it('stringifies non-string values and treats null/undefined as empty', () => {
-    const url = buildStoryUrl(previewUrl, { id: 's', queryParams: { viewMode: 'story', n: 5, t: true, e: null } });
-    expect(url).toBe('http://localhost:6006/iframe.html?id=s&viewMode=story&n=5&t=true&e=');
+  it('appends VALUES as-is because the collector already percent-encoded them (no double-encoding)', () => {
+    // evalStorybookStorySnapshots serialises queryParams values with
+    // encodeURIComponent before they reach the CLI, so ' with query params'
+    // arrives as '%20with%20query%20params' and must come out unchanged.
+    const url = buildStoryUrl(previewUrl, {
+      id: 's', queryParams: { viewMode: 'story', text: '%20with%20query%20params', pct: '100%25' }
+    });
+    expect(url).toBe('http://localhost:6006/iframe.html?id=s&viewMode=story&text=%20with%20query%20params&pct=100%25');
+    expect(url).not.toContain('%2520');
+  });
+
+  it('treats null/undefined values as empty', () => {
+    const url = buildStoryUrl(previewUrl, { id: 's', queryParams: { viewMode: 'story', e: null, u: undefined } });
+    expect(url).toBe('http://localhost:6006/iframe.html?id=s&viewMode=story&e=&u=');
   });
 });
 

@@ -185,16 +185,21 @@ function processAdditionalSnapshots(additionalSnapshots, baseOptions, storyName,
 
 // Map and reduce collected Storybook stories into an array of snapshot options
 /**
- * Build the preview URL for a story. `queryParams` is story-author input, so
- * both key and value are percent-encoded: an unencoded `&`, `=` or `#` in
- * either would inject extra parameters into the URL (F-021).
+ * Build the preview URL for a story.
+ *
+ * `queryParams` is story-author input. Its VALUES are already percent-encoded
+ * when they are collected from the story in the browser
+ * (evalStorybookStorySnapshots → serialize('queryParams') in utils.js), so they
+ * are appended as-is here — encoding again would double-encode (`%20` → `%2520`).
+ * Its KEYS were never encoded, which let `&`, `=` or `#` in a key inject extra
+ * parameters into the URL (F-021); they are encoded here.
  */
 export function buildStoryUrl(previewUrl, story) {
   let url = `${previewUrl}?id=${story.id}`;
   if (story.args) url += `&args=${buildStorybookArgsParam(story.args)}`;
   if (story.globals) url += `&globals=${buildStorybookArgsParam(story.globals)}`;
   for (let [k, v] of Object.entries(story.queryParams ?? {})) {
-    url += `&${encodeURIComponent(k)}=${encodeURIComponent(v ?? '')}`;
+    url += `&${encodeURIComponent(k)}=${v ?? ''}`;
   }
   if (!story.queryParams?.viewMode) {
     url += `&viewMode=${viewModeFor(story)}`;
