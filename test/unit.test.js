@@ -1,5 +1,5 @@
 import { validateStoryArgs, encodeStoryArgs, decodeStoryArgs } from '../src/utils.js';
-import { canFetchProjects } from '../src/utils/credentials.js';
+import { canFetchProjects, credentialsFromConfigLoaded } from '../src/utils/credentials.js';
 
 describe('Unit /', () => {
   describe('canFetchProjects', () => {
@@ -22,6 +22,33 @@ describe('Unit /', () => {
       expect(canFetchProjects('user', '', false)).toBe(false);
       expect(canFetchProjects('', 'key', false)).toBe(false);
       expect(canFetchProjects(undefined, undefined, undefined)).toBe(false);
+    });
+  });
+
+  describe('credentialsFromConfigLoaded', () => {
+    it('flags server-held credentials on a valid restore even though no key is sent', () => {
+      // This is exactly what the server emits after F-017: valid, no secret.
+      expect(credentialsFromConfigLoaded({ credentialsValid: true, project: null, hasValidToken: false }))
+        .toEqual({ username: '', accessKey: '', storedOnServer: true });
+    });
+
+    it('does not flag server-held credentials when the server says they are invalid', () => {
+      expect(credentialsFromConfigLoaded({ credentialsValid: false }))
+        .toEqual({ username: '', accessKey: '', storedOnServer: false });
+      expect(credentialsFromConfigLoaded({}))
+        .toEqual({ username: '', accessKey: '', storedOnServer: false });
+      expect(credentialsFromConfigLoaded())
+        .toEqual({ username: '', accessKey: '', storedOnServer: false });
+    });
+
+    it('preserves a username the server chooses to send, normalising nullish to empty string', () => {
+      expect(credentialsFromConfigLoaded({ credentialsValid: true, username: 'u', accessKey: null }))
+        .toEqual({ username: 'u', accessKey: '', storedOnServer: true });
+    });
+
+    it('restored credentials always allow the project picker to fetch', () => {
+      const c = credentialsFromConfigLoaded({ credentialsValid: true });
+      expect(canFetchProjects(c.username, c.accessKey, c.storedOnServer)).toBe(true);
     });
   });
 

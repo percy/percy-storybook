@@ -5,6 +5,7 @@ import { CHANNEL_AUTH as CHANNEL_AUTH_ESM, PERCY_EVENTS as PERCY_EVENTS_ESM } fr
 import * as preset from '../preset.cjs';
 import { PERCY_API_BASE, validateBuildId, validateProjectId, basicAuth } from '../src/server/utils.cjs';
 import { withNonce, getPercyNonce } from '../src/utils/channelNonce.js';
+import { canFetchProjects, credentialsFromConfigLoaded } from '../src/utils/credentials.js';
 import {
   getEnvPath, getPercyYmlPath, parseEnv, setKey,
   readEnv, readEnvRaw, writeEnvRaw
@@ -977,6 +978,33 @@ describe('Server / percyApi.cjs', () => {
   });
 
   describe('FETCH_PROJECTS', () => {
+    it('serves a payload with NO credentials from the stored .env pair (post-restore picker)', async () => {
+      // After a startup restore the browser holds no access key (F-017), so the
+      // picker emits FETCH_PROJECTS with empty client credentials and relies on
+      // the server's stored pair. This is the request shape the fix in
+      // usePercyProjects/canFetchProjects now lets through.
+      fs.readFileSync.and.callFake((p) => (
+        p.endsWith('.env') ? 'BROWSERSTACK_USERNAME=stored-u\nBROWSERSTACK_ACCESS_KEY=stored-k' : ''
+      ));
+      globalThis.fetch = jasmine.createSpy('fetch').and.resolveTo(mockResponse({
+        data: [{ id: '9', attributes: { name: 'Restored' } }]
+      }));
+
+      await channel.trigger(PERCY_EVENTS.FETCH_PROJECTS, {
+        username: '', accessKey: '', search: '', page: 0
+      });
+
+      const [url, opts] = globalThis.fetch.calls.mostRecent().args;
+      expect(url).toContain('/projects?');
+      expect(opts.headers.Authorization).toBe(`Basic ${basicAuth('stored-u', 'stored-k')}`);
+      expect(channel.emit).toHaveBeenCalledWith(
+        PERCY_EVENTS.PROJECTS_FETCHED,
+        jasmine.objectContaining({
+          projects: [{ id: '9', name: 'Restored', updatedAt: '' }], search: '', page: 0
+        })
+      );
+    });
+
     it('emits projects on success', async () => {
       const json = {
         data: [
@@ -2393,6 +2421,23 @@ describe('Server / projectConfig.cjs', () => {
         const loaded = channel.emit.calls.mostRecent().args[1];
         expect(loaded.username).toBeUndefined();
         expect(loaded.accessKey).toBeUndefined();
+
+        // Cross-wire contract: this exact payload, run through the manager's
+        // restore helper, must still let the project picker fetch. This is the
+        // regression where F-017 removed the key but the picker's guard kept
+        // requiring it, so "Change project" silently listed nothing.
+        const creds = credentialsFromConfigLoaded(loaded);
+        expect(creds).toEqual({ username: '', accessKey: '', storedOnServer: true });
+        expect(canFetchProjects(creds.username, creds.accessKey, creds.storedOnServer)).toBe(true);
+      });
+
+      it('an invalid-credentials payload does not let the picker fetch server-side', async () => {
+        fs.existsSync.and.returnValue(false);
+        await channel.trigger(PERCY_EVENTS.LOAD_PROJECT_CONFIG);
+        const loaded = channel.emit.calls.mostRecent().args[1];
+        const creds = credentialsFromConfigLoaded(loaded);
+        expect(creds.storedOnServer).toBe(false);
+        expect(canFetchProjects(creds.username, creds.accessKey, creds.storedOnServer)).toBe(false);
       });
 
       it('auto-fetches token when project exists but PERCY_TOKEN is missing', async () => {
@@ -3388,6 +3433,49 @@ describe('Server / channelAuth.cjs', () => {
         PERCY_EVENTS.UNAUTHORIZED, { event: PERCY_EVENTS.CREATE_PROJECT }
       );
     });
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════════════ */
+/*  Manager wiring contracts (source-level guards)                          */
+/* ═══════════════════════════════════════════════════════════════════════ */
+
+// The manager is React and there is no DOM/component test infrastructure in
+// this repo, so these guard the two wiring contracts that the manual e2e run
+// found broken, at the source level — the same approach as the withNonce scan.
+describe('Manager / wiring contracts', () => {
+  const read = (p) => fs.readFileSync(p, 'utf8');
+
+  it('review-viewer is given the project token with the Token scheme, never Basic', () => {
+    // percy.io accepts a project token ONLY as `Authorization: Token token=…`;
+    // HTTP Basic is reserved for BrowserStack username/access-key pairs and
+    // 401s with "No user found for BrowserStack credentials." otherwise.
+    const reviewPage = read('src/components/ReviewPage.jsx');
+    expect(reviewPage).toContain('authType="token"');
+    expect(reviewPage).not.toContain('authType="basic"');
+    // …and the server must hand over the raw token, not a Basic encoding of it.
+    const buildItems = read('src/server/buildItems.cjs');
+    expect(buildItems).toContain('payload.authToken = percyToken');
+    expect(buildItems).not.toMatch(/basicAuth\(\s*percyToken/);
+  });
+
+  it('server-held credentials are threaded from the restore path into the project picker', () => {
+    // useSnapshotChannel -> (credentialsFromConfigLoaded) -> PercyPanel -> ProjectSetup -> usePercyProjects
+    expect(read('src/hooks/useSnapshotChannel.js')).toContain('credentialsFromConfigLoaded({ credentialsValid, username, accessKey })');
+    expect(read('src/components/PercyPanel.jsx')).toContain('storedOnServer={credentials.storedOnServer}');
+    expect(read('src/components/ProjectSetup.jsx')).toMatch(/usePercyProjects\(username,\s*accessKey,\s*initialSearch,\s*storedOnServer\)/);
+    expect(read('src/hooks/usePercyProjects.js')).toContain('canFetchProjects(username, accessKey, storedOnServer)');
+  });
+
+  it('snapshot load errors are checked before the loading fallback', () => {
+    // On a failed request RTK Query leaves `data` undefined; if the loader
+    // branch ran first the failure would render as an endless spinner.
+    const src = read('src/components/ReviewPage.jsx');
+    const errorIdx = src.indexOf('if (error) {');
+    const loadingIdx = src.indexOf('if (isLoading || !snapshotData) {');
+    expect(errorIdx).toBeGreaterThan(-1);
+    expect(loadingIdx).toBeGreaterThan(-1);
+    expect(errorIdx).toBeLessThan(loadingIdx);
   });
 });
 

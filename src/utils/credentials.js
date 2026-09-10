@@ -21,3 +21,22 @@ export function canFetchProjects(username, accessKey, storedOnServer) {
   if (storedOnServer) return true;
   return !!(username && accessKey);
 }
+
+/**
+ * Build the panel's credentials object from a PROJECT_CONFIG_LOADED payload.
+ *
+ * The server validates its stored pair on startup and reports only
+ * `credentialsValid` — it deliberately does not send the access key back to
+ * the browser (F-017). `storedOnServer` carries that fact forward so
+ * credential-dependent views (project picker) know a fetch will succeed
+ * server-side even though the client pair is empty.
+ *
+ * @param {{ credentialsValid?: boolean, username?: string, accessKey?: string }} payload
+ */
+export function credentialsFromConfigLoaded({ credentialsValid, username, accessKey } = {}) {
+  return {
+    username: username || '',
+    accessKey: accessKey || '',
+    storedOnServer: !!credentialsValid
+  };
+}
