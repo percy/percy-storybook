@@ -87,7 +87,7 @@
   "dependencies": {
     "@percy/cli-command": "^1.32.7",
     "@percy/config": "^1.32.7",
-    "axios": "1.17.0",
+    "axios": "1.20.0",
     "cross-spawn": "^7.0.3",
     "glob-to-regexp": "^0.4.1",
     "qs": "^6.11.0",
