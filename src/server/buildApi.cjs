@@ -3,13 +3,41 @@
 const { PERCY_EVENTS } = require('../constants.cjs');
 const { loggedFetch } = require('./apiLogger.cjs');
 const { readBsCredentials } = require('./credentials.cjs');
-const { PERCY_API_BASE, validateBuildId, basicAuth } = require('./utils.cjs');
+const { PERCY_API_BASE, validateBuildId, basicAuth, safeWebUrl } = require('./utils.cjs');
 
 const MAX_LOG_SIZE = 5 * 1024 * 1024; // 5MB
+
+/* ─── Duplicate-submission guard (F-012, CWE-362) ─────────────────────────
+ * APPROVE/REJECT/DELETE/MERGE each POST to Percy. A double-click on a slow
+ * connection, or two identical channel emits, would otherwise send two
+ * review/merge records. Track in-flight `<action>:<buildId>` keys and drop a
+ * duplicate while the first round-trip is pending; the first request's reply
+ * event resolves the UI, so the dropped duplicate needs no reply of its own.
+ */
+const inFlightReviewActions = new Set();
+
+function guardInFlight(event, handler) {
+  return async (payload, ...rest) => {
+    const key = `${event}:${String(payload?.buildId ?? '')}`;
+    if (inFlightReviewActions.has(key)) {
+      console.warn(`[percy] Ignoring duplicate "${event}" for build ${payload?.buildId} while one is already in flight.`);
+      return undefined;
+    }
+    inFlightReviewActions.add(key);
+    try {
+      return await handler(payload, ...rest);
+    } finally {
+      inFlightReviewActions.delete(key);
+    }
+  };
+}
 
 /* ─── Channel handlers ────────────────────────────────────────────────── */
 
 function registerBuildApiHandlers(channel) {
+  // Review actions register through this so duplicates are dropped in flight.
+  const onReviewAction = (event, handler) => channel.on(event, guardInFlight(event, handler));
+
   /**
    * FETCH_BUILD_STATUS
    * Polls Percy Build API for current build state.
@@ -60,7 +88,7 @@ function registerBuildApiHandlers(channel) {
         buildId: id,
         buildNumber: attrs['build-number'],
         state: attrs.state,
-        webUrl: attrs['web-url'],
+        webUrl: safeWebUrl(attrs['web-url']),
         failureReason: attrs['failure-reason'],
         totalSnapshots: attrs['total-snapshots'],
         totalComparisons: attrs['total-comparisons'],
@@ -134,7 +162,7 @@ function registerBuildApiHandlers(channel) {
    * Payload: { buildId }
    * Response: { buildId, success } or { error, buildId }
    */
-  channel.on(PERCY_EVENTS.APPROVE_BUILD, async ({ buildId }) => {
+  onReviewAction(PERCY_EVENTS.APPROVE_BUILD, async ({ buildId }) => {
     try {
       const id = validateBuildId(buildId);
       const { username, accessKey } = readBsCredentials();
@@ -183,7 +211,7 @@ function registerBuildApiHandlers(channel) {
    * Payload: { buildId }
    * Response: { buildId, success } or { error, buildId }
    */
-  channel.on(PERCY_EVENTS.REJECT_BUILD, async ({ buildId }) => {
+  onReviewAction(PERCY_EVENTS.REJECT_BUILD, async ({ buildId }) => {
     try {
       const id = validateBuildId(buildId);
       const { username, accessKey } = readBsCredentials();
@@ -232,7 +260,7 @@ function registerBuildApiHandlers(channel) {
    * Payload: { buildId }
    * Response: { buildId, success } or { error, buildId }
    */
-  channel.on(PERCY_EVENTS.DELETE_BUILD, async ({ buildId }) => {
+  onReviewAction(PERCY_EVENTS.DELETE_BUILD, async ({ buildId }) => {
     try {
       const id = validateBuildId(buildId);
       const { username, accessKey } = readBsCredentials();
@@ -314,7 +342,7 @@ function registerBuildApiHandlers(channel) {
    * Payload: { buildId }
    * Response: { buildId, success } or { error, buildId }
    */
-  channel.on(PERCY_EVENTS.MERGE_BUILD, async ({ buildId }) => {
+  onReviewAction(PERCY_EVENTS.MERGE_BUILD, async ({ buildId }) => {
     try {
       const id = validateBuildId(buildId);
       const { username, accessKey } = readBsCredentials();
@@ -355,4 +383,4 @@ function registerBuildApiHandlers(channel) {
   });
 }
 
-module.exports = { registerBuildApiHandlers };
+module.exports = { registerBuildApiHandlers, guardInFlight };

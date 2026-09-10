@@ -33,4 +33,23 @@ function basicAuth(username, accessKey) {
   return Buffer.from(`${username}:${accessKey}`).toString('base64');
 }
 
-module.exports = { PERCY_API_BASE, validateBuildId, validateProjectId, basicAuth };
+/**
+ * Return `value` only if it is an absolute https: URL, else null.
+ *
+ * Build/project web URLs come from percy.io API responses and end up in
+ * `href` and `window.open` in the manager. A tampered response — or a forged
+ * client-side BUILD_STATUS_FETCHED emit, which the nonce gate does not cover —
+ * could otherwise deliver `javascript:` into the manager context (F-023,
+ * CWE-79). Scheme-pinning is deliberate; the hostname is not pinned so a Percy
+ * web domain change does not silently break every link.
+ */
+function safeWebUrl(value) {
+  if (typeof value !== 'string' || !value) return null;
+  try {
+    return new URL(value).protocol === 'https:' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+module.exports = { PERCY_API_BASE, validateBuildId, validateProjectId, basicAuth, safeWebUrl };

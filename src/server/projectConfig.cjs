@@ -5,7 +5,7 @@ const { PERCY_EVENTS } = require('../constants.cjs');
 const { getPercyYmlPath, readEnv, readEnvRaw, setKey, writeEnvRaw } = require('./env.cjs');
 const { readBsCredentials, resolveBsCredentials } = require('./credentials.cjs');
 const { loggedFetch } = require('./apiLogger.cjs');
-const { PERCY_API_BASE, validateBuildId, validateProjectId, basicAuth } = require('./utils.cjs');
+const { PERCY_API_BASE, validateBuildId, validateProjectId, basicAuth, safeWebUrl } = require('./utils.cjs');
 
 /* ─── .percy.yml helpers ───────────────────────────────────────────────── */
 
@@ -214,7 +214,7 @@ async function fetchLastBuild(buildIdRaw, username, accessKey) {
     buildId: id,
     state: attrs.state,
     buildNumber: attrs['build-number'],
-    webUrl: attrs['web-url'],
+    webUrl: safeWebUrl(attrs['web-url']),
     reviewState: attrs['review-state'] || null,
     reviewStateReason: attrs['review-state-reason'] || null,
     headBranch,

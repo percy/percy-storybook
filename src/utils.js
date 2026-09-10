@@ -705,6 +705,29 @@ export async function captureSerializedDOM(page, options, log) {
 }
 
 // Capture responsive DOM snapshots across different widths
+// Upper bound for RESPONSIVE_CAPTURE_SLEEP_TIME. The sleep runs once per width
+// per story, so an unbounded value (a typo, or a hostile CI env) hangs the run
+// for stories × widths × sleep while holding the build, browser and dev server
+// open (F-022, CWE-400). 60s per capture is already far beyond any real need.
+export const MAX_RESPONSIVE_CAPTURE_SLEEP_SECONDS = 60;
+
+/**
+ * Parse RESPONSIVE_CAPTURE_SLEEP_TIME into a bounded number of seconds.
+ * Invalid / negative → 0 (warn). Above the cap → cap (warn).
+ */
+export function resolveResponsiveCaptureSleepSeconds(raw, log) {
+  let sleepTime = parseInt(raw, 10);
+  if (isNaN(sleepTime) || sleepTime < 0) {
+    log.warn(`Invalid value for RESPONSIVE_CAPTURE_SLEEP_TIME: "${raw}". Using fallback value of 0 seconds.`);
+    return 0;
+  }
+  if (sleepTime > MAX_RESPONSIVE_CAPTURE_SLEEP_SECONDS) {
+    log.warn(`RESPONSIVE_CAPTURE_SLEEP_TIME=${raw} exceeds the maximum of ${MAX_RESPONSIVE_CAPTURE_SLEEP_SECONDS} seconds. Clamping to ${MAX_RESPONSIVE_CAPTURE_SLEEP_SECONDS}.`);
+    return MAX_RESPONSIVE_CAPTURE_SLEEP_SECONDS;
+  }
+  return sleepTime;
+}
+
 export async function captureResponsiveDOM(page, options, percy, log, story) {
   const domSnapshots = [];
 
@@ -782,11 +805,7 @@ export async function captureResponsiveDOM(page, options, percy, log, story) {
 
     // RESPONSIVE_CAPTURE_SLEEP_TIME: (number, seconds) If set, waits this many seconds before capturing each snapshot.
     if (process.env.RESPONSIVE_CAPTURE_SLEEP_TIME) {
-      let sleepTime = parseInt(process.env.RESPONSIVE_CAPTURE_SLEEP_TIME, 10);
-      if (isNaN(sleepTime) || sleepTime < 0) {
-        log.warn(`Invalid value for RESPONSIVE_CAPTURE_SLEEP_TIME: "${process.env.RESPONSIVE_CAPTURE_SLEEP_TIME}". Using fallback value of 0 seconds.`);
-        sleepTime = 0;
-      }
+      const sleepTime = resolveResponsiveCaptureSleepSeconds(process.env.RESPONSIVE_CAPTURE_SLEEP_TIME, log);
       log.debug(`Sleeping for ${sleepTime} seconds before capturing snapshot`);
       await new Promise(resolve => setTimeout(resolve, sleepTime * 1000));
     }

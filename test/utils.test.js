@@ -1411,3 +1411,34 @@ describe('generateDocRuleOptions', () => {
     });
   });
 });
+
+describe('resolveResponsiveCaptureSleepSeconds (F-022, PER-8551)', () => {
+  let log;
+  beforeEach(() => { log = { warn: jasmine.createSpy('warn'), debug: jasmine.createSpy('debug') }; });
+
+  it('returns the parsed value when it is within bounds', () => {
+    expect(utils.resolveResponsiveCaptureSleepSeconds('2', log)).toBe(2);
+    expect(utils.resolveResponsiveCaptureSleepSeconds('0', log)).toBe(0);
+    expect(utils.resolveResponsiveCaptureSleepSeconds(String(utils.MAX_RESPONSIVE_CAPTURE_SLEEP_SECONDS), log))
+      .toBe(utils.MAX_RESPONSIVE_CAPTURE_SLEEP_SECONDS);
+    expect(log.warn).not.toHaveBeenCalled();
+  });
+
+  it('falls back to 0 with a warning for NaN or negative values', () => {
+    expect(utils.resolveResponsiveCaptureSleepSeconds('abc', log)).toBe(0);
+    expect(utils.resolveResponsiveCaptureSleepSeconds('-5', log)).toBe(0);
+    expect(log.warn).toHaveBeenCalledTimes(2);
+    expect(log.warn.calls.argsFor(0)[0]).toContain('Invalid value for RESPONSIVE_CAPTURE_SLEEP_TIME');
+  });
+
+  it('clamps values above the maximum with a warning (no unbounded per-width hang)', () => {
+    expect(utils.resolveResponsiveCaptureSleepSeconds('3600', log)).toBe(utils.MAX_RESPONSIVE_CAPTURE_SLEEP_SECONDS);
+    expect(utils.resolveResponsiveCaptureSleepSeconds('999999999', log)).toBe(utils.MAX_RESPONSIVE_CAPTURE_SLEEP_SECONDS);
+    expect(log.warn).toHaveBeenCalledTimes(2);
+    expect(log.warn.calls.argsFor(0)[0]).toContain('exceeds the maximum');
+  });
+
+  it('the maximum is 60 seconds', () => {
+    expect(utils.MAX_RESPONSIVE_CAPTURE_SLEEP_SECONDS).toBe(60);
+  });
+});
