@@ -3586,7 +3586,7 @@ describe('Manager / wiring contracts', () => {
     // Manager: both consumers import the guard and run every URL through it.
     const rh = read('src/components/ReviewHeader.jsx');
     expect(rh).toContain("import { safeHttpsUrl } from '../utils/safeUrl.js'");
-    expect(rh).toContain('const safeWebUrl = safeHttpsUrl(webUrl)');   // -> window.open(settingsUrl)
+    expect(rh).toContain('const safeWebUrl = safeHttpsUrl(webUrl)'); // -> window.open(settingsUrl)
     expect(rh).toContain('href={safeHttpsUrl(webUrl)}');
     expect(rh).not.toMatch(/href=\{webUrl\}/);
     expect(rh).not.toMatch(/window\.open\(\s*webUrl/);

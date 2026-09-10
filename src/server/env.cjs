@@ -102,4 +102,6 @@ module.exports = {
   setKey,
   readEnv,
   readEnvRaw,
-  writeEnvRaw, assertSafeEnvValue };
+  writeEnvRaw,
+  assertSafeEnvValue
+};
