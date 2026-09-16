@@ -1442,3 +1442,15 @@ describe('resolveResponsiveCaptureSleepSeconds (F-022, PER-8551)', () => {
     expect(utils.MAX_RESPONSIVE_CAPTURE_SLEEP_SECONDS).toBe(60);
   });
 });
+
+describe('versionFromInstalledPackage', () => {
+  // Storybook 11 alpha builds print nothing on `storybook --version` (the
+  // root command's --version/--help flags no-op) while still exiting 0, so
+  // checkStorybookVersion() falls back to this helper instead of rejecting.
+  it('reads the major version off the installed storybook package.json', async () => {
+    let { createRequire } = await import('module');
+    let { version } = createRequire(import.meta.url)('storybook/package.json');
+    let expected = parseInt(version.match(/\d+/)[0], 10);
+    expect(utils.versionFromInstalledPackage()).toBe(expected);
+  });
+});
