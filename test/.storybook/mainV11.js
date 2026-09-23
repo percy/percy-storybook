@@ -2,10 +2,8 @@ const path = require('path');
 
 module.exports = {
   stories: ['*.stories.js'],
-  addons: [
-    '@storybook/addon-webpack5-compiler-babel',
-    { name: path.resolve(__dirname, '../../preset.cjs') }
-  ],
+  // No compiler addon: babel-loader is wired up directly in webpackFinal below.
+  addons: [{ name: path.resolve(__dirname, '../../preset.cjs') }],
   features: {
     postcss: false
   },

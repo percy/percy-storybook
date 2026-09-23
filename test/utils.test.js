@@ -1444,13 +1444,46 @@ describe('resolveResponsiveCaptureSleepSeconds (F-022, PER-8551)', () => {
 });
 
 describe('versionFromInstalledPackage', () => {
-  // Storybook 11 alpha builds print nothing on `storybook --version` (the
-  // root command's --version/--help flags no-op) while still exiting 0, so
-  // checkStorybookVersion() falls back to this helper instead of rejecting.
-  it('reads the major version off the installed storybook package.json', async () => {
+  // Storybook 11's CLI dispatcher delegates `--version` to a remote
+  // `@storybook/cli` via the detected package manager, and its yarn classic
+  // proxy drops `stdio: 'inherit'` on that path, so `storybook --version`
+  // prints nothing while still exiting 0. checkStorybookVersion() falls back
+  // to this helper in that case instead of rejecting.
+  let expected;
+
+  beforeAll(async () => {
     let { createRequire } = await import('module');
     let { version } = createRequire(import.meta.url)('storybook/package.json');
-    let expected = parseInt(version.match(/\d+/)[0], 10);
+    expected = parseInt(version.match(/\d+/)[0], 10);
+  });
+
+  it('reads the major version off the installed storybook package.json', () => {
     expect(utils.versionFromInstalledPackage()).toBe(expected);
+  });
+
+  describe('when `storybook --version` exits 0 with empty stdout', () => {
+    let fs, os, path, binDir, originalPath;
+
+    beforeEach(async () => {
+      fs = await import('fs');
+      os = await import('os');
+      path = await import('path');
+      // shadow the real CLI with one that prints nothing and exits 0
+      binDir = fs.mkdtempSync(path.join(os.tmpdir(), 'percy-sb-bin-'));
+      let fakeCli = path.join(binDir, 'storybook');
+      fs.writeFileSync(fakeCli, '#!/bin/sh\nexit 0\n');
+      fs.chmodSync(fakeCli, 0o755);
+      originalPath = process.env.PATH;
+      process.env.PATH = `${binDir}${path.delimiter}${originalPath}`;
+    });
+
+    afterEach(() => {
+      process.env.PATH = originalPath;
+      fs.rmSync(binDir, { recursive: true, force: true });
+    });
+
+    it('checkStorybookVersion() resolves the installed package major version', async () => {
+      await expectAsync(utils.checkStorybookVersion()).toBeResolvedTo(expected);
+    });
   });
 });

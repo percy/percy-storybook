@@ -11,9 +11,11 @@ export function viewModeFor(story) {
 }
 
 // Fallback used when `storybook --version` doesn't produce a parseable
-// version on stdout (observed starting with Storybook 11 alpha builds,
-// where the bare `--version`/`--help` flags on the root command no-op).
-// Resolves the installed `storybook` package's own package.json instead.
+// version on stdout. Storybook 11's CLI dispatcher delegates `--version` to a
+// remote `@storybook/cli` through the detected package manager, and its yarn
+// classic proxy drops `stdio: 'inherit'` on that path, so nothing is printed
+// even though the command exits 0. Resolves the installed `storybook`
+// package's own package.json instead.
 export function versionFromInstalledPackage() {
   try {
     const { version } = require('storybook/package.json');
