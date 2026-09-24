@@ -1,0 +1,160 @@
+{
+  "name": "@percy/storybook",
+  "version": "10.0.2",
+  "description": "Storybook addons for visual testing with Percy",
+  "keywords": [
+    "storybook",
+    "addon",
+    "visual",
+    "visual-testing",
+    "layout-testing",
+    "percy",
+    "image-testing",
+    "test"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/percy/percy-storybook.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "latest"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "!dist/components",
+    "!dist/hooks",
+    "preset.cjs",
+    "src",
+    "!src/components",
+    "!src/hooks",
+    "!src/styles"
+  ],
+  "bin": {
+    "percy-storybook": "./bin/percy-storybook.cjs"
+  },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./preset": "./preset.cjs",
+    "./manager": "./dist/manager.js",
+    "./package.json": "./package.json"
+  },
+  "type": "module",
+  "scripts": {
+    "postinstall": "node ./bin/postinstall.cjs",
+    "build:css": "sass src/styles/manager.scss src/styles/_compiled.css --load-path=node_modules --load-path=node_modules/@browserstack/tailwind-config --no-source-map && tailwindcss -i src/styles/_compiled.css -o dist/manager.css -c tailwind.config.cjs --minify",
+    "build": "yarn --ignore-engines run build:css && babel src --out-dir dist && rm -rf dist/chunks && vite build && node scripts/assert-prod-bundle.mjs",
+    "clean": "git clean -Xdf -e !node_modules -e !node_modules/**",
+    "lint": "eslint --ignore-path .gitignore .",
+    "readme": "percy-cli-readme",
+    "pretest": "storybook build --config-dir=./test/.storybook --output-dir=./test/.storybook-build --loglevel error",
+    "test": "yarn test:env jasmine --config=./test/jasmine.json",
+    "test:env": "cross-env NODE_ENV=test NODE_OPTIONS='--loader=./test/loader.js'",
+    "test:coverage": "nyc yarn test"
+  },
+  "storybook": {
+    "displayName": "Percy",
+    "icon": "https://avatars.githubusercontent.com/u/12260884",
+    "preset": "./preset.cjs"
+  },
+  "@percy/cli": {
+    "commands": [
+      "./dist/storybook.js"
+    ]
+  },
+  "peerDependencies": {
+    "react": "^17.x || ^18.x || ^19.x",
+    "react-dom": "^17.x || ^18.x || ^19.x",
+    "storybook": ">=8.x"
+  },
+  "peerDependenciesMeta": {
+    "storybook": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@percy/cli-command": "^1.32.7",
+    "@percy/config": "^1.32.7",
+    "axios": "1.20.0",
+    "cross-spawn": "^7.0.3",
+    "glob-to-regexp": "^0.4.1",
+    "qs": "^6.11.0",
+    "react-router-dom": "7.13.1"
+  },
+  "devDependencies": {
+    "@amplitude/analytics-browser": "2.35.4",
+    "@amplitude/plugin-session-replay-browser": "1.25.16",
+    "@babel/cli": "^7.23.0",
+    "@babel/core": "^7.23.2",
+    "@babel/eslint-parser": "^7.19.1",
+    "@babel/eslint-plugin": "^7.19.1",
+    "@babel/preset-env": "^7.22.9",
+    "@babel/preset-react": "^7.23.3",
+    "@browserstack/design-stack": "8.17.0",
+    "@browserstack/design-stack-icons": "2.8.0",
+    "@browserstack/hooks": "2.5.1",
+    "@browserstack/review-viewer": "^0.1.1",
+    "@browserstack/tailwind-config": "1.2.0",
+    "@browserstack/utils": "5.10.0",
+    "@reduxjs/toolkit": "1.9.1",
+    "@rollup/plugin-babel": "^6",
+    "@rollup/plugin-commonjs": "^25",
+    "@rollup/plugin-node-resolve": "^15",
+    "@rollup/plugin-terser": "^0.4",
+    "@storybook/react": "11.0.0-alpha.0",
+    "@storybook/react-webpack5": "11.0.0-alpha.0",
+    "@tailwindcss/aspect-ratio": "0.4.2",
+    "@tailwindcss/container-queries": "0.1.1",
+    "@tailwindcss/forms": "0.5.7",
+    "@vitejs/plugin-react": "4",
+    "autoprefixer": "10.4.27",
+    "babel-eslint": "^10.0.3",
+    "babel-loader": "^10.0.0",
+    "babel-plugin-istanbul": "^6.1.1",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.51.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.28.1",
+    "eslint-plugin-n": "^15.4.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-react": "^7.37.5",
+    "immer": "9.0.21",
+    "jasmine": "^4.5.0",
+    "jasmine-spec-reporter": "^7.0.0",
+    "lodash": "4.18.1",
+    "mock-require": "^3.0.3",
+    "nock": "^13.2.9",
+    "nyc": "^17.1.0",
+    "postcss": "8.5.8",
+    "prop-types": "15.8.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-mentions": "4.4.10",
+    "react-redux": "8.0.5",
+    "rollup": "^3",
+    "rollup-plugin-postcss": "4.0.2",
+    "sass": "1.98.0",
+    "storybook": "11.0.0-alpha.0",
+    "tailwind-scrollbar-hide": "1.1.7",
+    "tailwindcss": "3.4.3",
+    "terser": "5.46.1",
+    "vite": "6"
+  },
+  "resolutions": {
+    "jackspeak": "2.1.1",
+    "lodash": "4.18.1"
+  }
+}

@@ -1,10 +1,30 @@
+import { createRequire } from 'module';
 import { request, createRootResource, yieldTo } from '@percy/cli-command/utils';
 import { logger } from '@percy/cli-command';
 import spawn from 'cross-spawn';
 import globToRegExp from 'glob-to-regexp';
 
+const require = createRequire(import.meta.url);
+
 export function viewModeFor(story) {
   return story.type === 'docs' ? 'docs' : 'story';
+}
+
+// Fallback used when `storybook --version` doesn't produce a parseable
+// version on stdout. Storybook 11's CLI dispatcher delegates `--version` to a
+// remote `@storybook/cli` through the detected package manager, and its yarn
+// classic proxy drops `stdio: 'inherit'` on that path, so nothing is printed
+// even though the command exits 0. Resolves the installed `storybook`
+// package's own package.json instead.
+export function versionFromInstalledPackage() {
+  try {
+    const { version } = require('storybook/package.json');
+    const versionMatch = version && version.match(/\d+/);
+    if (versionMatch) return parseInt(versionMatch[0], 10);
+  } catch {
+    // fall through - storybook package isn't resolvable either
+  }
+  return undefined;
 }
 
 // check storybook version
@@ -30,7 +50,15 @@ export function checkStorybookVersion() {
         if (versionMatch) {
           resolve(parseInt(versionMatch[0], 10)); // Parse as integer
         } else {
-          reject(new Error('Unable to parse Storybook version'));
+          // `storybook --version` exited 0 but printed nothing parseable.
+          // Fall back to reading the installed storybook package's own
+          // version instead of failing the whole snapshot run.
+          const fallback = versionFromInstalledPackage();
+          if (fallback !== undefined) {
+            resolve(fallback);
+          } else {
+            reject(new Error('Unable to parse Storybook version'));
+          }
         }
       } else {
         // Non-zero exit code

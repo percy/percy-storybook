@@ -9,7 +9,7 @@ if [ -z "$storybook_version" ]; then
 fi
 
 # Versions supported
-versions=(7 8 9)
+versions=(7 8 9 11)
 
 # Performing common steps
 

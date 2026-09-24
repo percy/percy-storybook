@@ -118,8 +118,10 @@ describe('percy storybook', () => {
       '[percy] Suggestion: Try using percy snapshot command to take snapshots',
       '[percy] Refer to the below Doc Links for the same',
       '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/',
-      '[percy] Error: preview url: \n' +
-    'Storybook object not found on the window. Open Storybook and check the console for errors.'
+      // @percy/cli >= 1.32.10 logs the error's stack instead of `Error: <message>`
+      jasmine.stringMatching(
+        /^\[percy\] (Error: )?preview url: \n(Error: )?Storybook object not found on the window\. Open Storybook and check the console for errors\./s
+      )
     ]));
   });
 
@@ -195,9 +197,10 @@ describe('percy storybook', () => {
       '[percy] Suggestion: Try using percy snapshot command to take snapshots',
       '[percy] Refer to the below Doc Links for the same',
       '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/',
-      // message contains the client stack trace
+      // message contains the client stack trace; @percy/cli >= 1.32.10 drops
+      // the `Error: ` prefix when logging it
       jasmine.stringMatching(
-        /^\[percy\] Error: Snapshot Name:/s
+        /^\[percy\] (Error: )?Snapshot Name:/s
       )
 
     ]));
@@ -277,7 +280,7 @@ describe('percy storybook', () => {
         '[percy] Failed to capture story: foo: bar',
         // error logs contain the client stack trace
         jasmine.stringMatching(
-          /^\[percy\] Error: Snapshot Name:/s
+          /^\[percy\] (Error: )?Snapshot Name:/s
         ),
         // does not create a build if all stories failed [ 1 in this case ]
         '[percy] Build not created'
@@ -334,7 +337,7 @@ describe('percy storybook', () => {
         '[percy] * https://www.browserstack.com/docs/percy/take-percy-snapshots/',
         // error logs contain the client stack trace
         jasmine.stringMatching(
-          /^\[percy\] Error: Snapshot Name:/s
+          /^\[percy\] (Error: )?Snapshot Name:/s
         ),
 
         // does not create a build if all stories failed [ 1 in this case ]
