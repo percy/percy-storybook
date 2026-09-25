@@ -2342,12 +2342,22 @@
     pac-proxy-agent "^7.0.2"
     pako "^2.1.0"
 
-"@percy/config@1.32.7", "@percy/config@^1.32.7":
+"@percy/config@1.32.7":
   version "1.32.7"
   resolved "https://registry.yarnpkg.com/@percy/config/-/config-1.32.7.tgz#e009cb5f3e4967fbd8006dbccb2812c5ef2506b7"
   integrity sha512-zgNF+du0aTdR6J0e+JgjwvQmBuHMuzoOC3+iiLjbBjwPWX49MXQ+FoDP1SX8HN0EGe8uUxqvkrh6wqLTgLEsEA==
   dependencies:
     "@percy/logger" "1.32.7"
+    ajv "^8.6.2"
+    cosmiconfig "^8.0.0"
+    yaml "^2.0.0"
+
+"@percy/config@^1.32.7":
+  version "1.32.9"
+  resolved "https://registry.yarnpkg.com/@percy/config/-/config-1.32.9.tgz#615307300b997bd262b8c335ba2ec8a20c0e1fbd"
+  integrity sha512-oOZL79LwLef+njpz9eVUSn6JLZX+YZZ3Gy81HuDXS/jSdjz1sGqonHex9e6ErKTK1viIUKZOO8UPmje5gIZp+g==
+  dependencies:
+    "@percy/logger" "1.32.9"
     ajv "^8.6.2"
     cosmiconfig "^8.0.0"
     yaml "^2.0.0"
@@ -2397,6 +2407,11 @@
   version "1.32.7"
   resolved "https://registry.yarnpkg.com/@percy/logger/-/logger-1.32.7.tgz#1d0d9cb7c9cfa261031d71c13a1d052daa28ec90"
   integrity sha512-bvfuCAs8WO0MMEJq6hwlbl+i5QDV/+U3OK8GjyXv2sCtJnZ4UaZbLxKRkGSBzNJwYrWV4K7cMi3q+vCsIuuvWg==
+
+"@percy/logger@1.32.9":
+  version "1.32.9"
+  resolved "https://registry.yarnpkg.com/@percy/logger/-/logger-1.32.9.tgz#e0b18456afc2e3c269effaa3d3bccdc91262beee"
+  integrity sha512-DaGDetsMk0oGenaV3uZA2V3/D8Egg4HLVDd7oKwP3WRbwSfHH0xvF8ARjVd01vauSzeVLUFwVAQmuJLByEizWA==
 
 "@percy/monitoring@1.32.7":
   version "1.32.7"
