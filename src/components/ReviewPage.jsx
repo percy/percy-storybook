@@ -138,13 +138,13 @@ export default function ReviewPage({
 
       let status = 'success';
       if (state === 'failed' || state === 'error') status = 'error';
-      else if (state === 'changes_requested' || state === 'unreviewed') status = 'warn';
+      else if (state === 'changes_requested' || state === 'unreviewed') status = 'warning';
 
       let description = display?.label || state?.replace('_', ' ') || '';
       if (maxDiff > 0) description = `${formatDiffPercent(maxDiff)} · ${description}`;
 
       storyIds.push(group.storyId);
-      statuses.push({ storyId: group.storyId, typeId: ADDON_ID, status, title: 'Percy', description });
+      statuses.push({ storyId: group.storyId, typeId: ADDON_ID, value: `status-value:${status}`, title: 'Percy', description });
 
       // Store per-story review data for SidebarLabel rendering
       reviewData[group.storyId] = {
