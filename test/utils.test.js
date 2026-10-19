@@ -1028,6 +1028,92 @@ describe('evalSetCurrentStory event handling', () => {
     setTimeout(() => channel.emit('storyErrored'), 0);
     await expectAsync(promise).toBeRejectedWithError('Story Errored');
   });
+
+  // An empty updateGlobals re-renders the outgoing story mid-teardown; on Storybook 10 with
+  // addon-docs that reloads the preview page ("Inspected target navigated or closed").
+  it('does not emit updateGlobals when the story has no globals', async () => {
+    patchNoLoaders();
+    const emitted = [];
+    const emit = channel.emit;
+    channel.emit = (event, payload) => { emitted.push([event, payload]); emit(event, payload); };
+
+    const promise = utils.evalSetCurrentStory({ waitFor }, { id: 'no-globals', queryParams: { a: '1' } });
+    setTimeout(() => channel.emit('storyRendered'), 0);
+    await expectAsync(promise).toBeResolved();
+
+    expect(emitted.map(([event]) => event)).toEqual(['setCurrentStory', 'updateQueryParams', 'storyRendered']);
+    expect(emitted[1][1]).toEqual({ a: '1' });
+  });
+
+  it('emits updateGlobals only with the story globals', async () => {
+    patchNoLoaders();
+    const emitted = [];
+    const emit = channel.emit;
+    channel.emit = (event, payload) => { emitted.push([event, payload]); emit(event, payload); };
+
+    const promise = utils.evalSetCurrentStory({ waitFor }, { id: 'with-globals', globals: { theme: 'dark' } });
+    setTimeout(() => channel.emit('storyRendered'), 0);
+    await expectAsync(promise).toBeResolved();
+
+    const globalsUpdates = emitted.filter(([event]) => event === 'updateGlobals');
+    expect(globalsUpdates).toEqual([['updateGlobals', { globals: { theme: 'dark' } }]]);
+  });
+
+  it('forces a re-render when the story is already current', async () => {
+    patchNoLoaders();
+    const emitted = [];
+    const emit = channel.emit;
+    channel.emit = (event, payload) => {
+      emitted.push([event, payload]);
+      emit(event, payload);
+      if (event === 'updateGlobals') setTimeout(() => channel.emit('storyRendered'), 0);
+    };
+
+    const promise = utils.evalSetCurrentStory({ waitFor }, { id: 'already-current' });
+    setTimeout(() => channel.emit('storyUnchanged', 'already-current'), 0);
+    await expectAsync(promise).toBeResolved();
+
+    expect(emitted.map(([event]) => event)).toEqual([
+      'setCurrentStory', 'updateQueryParams', 'storyUnchanged', 'updateGlobals', 'storyRendered'
+    ]);
+    expect(emitted[3][1]).toEqual({ globals: {} });
+  });
+});
+
+describe('storybookConnectionError', () => {
+  const url = 'http://storybook.example.test:6006/iframe.html';
+
+  it('explains a 403 Invalid host response', () => {
+    const original = Object.assign(new Error('403 Forbidden\nInvalid host'), {
+      response: { statusCode: 403, body: 'Invalid host' }
+    });
+    const error = utils.storybookConnectionError(original, url);
+
+    expect(error.message).toContain('Storybook at http://storybook.example.test:6006 rejected the request with "403 Invalid host"');
+    expect(error.message).toContain('`--host storybook.example.test`');
+    expect(error.message).toContain('add "storybook.example.test" to `core.allowedHosts`');
+    expect(error.cause).toBe(original);
+  });
+
+  it('explains a refused connection', () => {
+    const original = Object.assign(new Error('connect ECONNREFUSED 10.0.0.5:6006'), { code: 'ECONNREFUSED' });
+    const error = utils.storybookConnectionError(original, 'http://10.0.0.5:6006/iframe.html');
+
+    expect(error.message).toContain('Could not connect to Storybook at http://10.0.0.5:6006 (ECONNREFUSED)');
+    expect(error.message).toContain('listens on localhost only by default');
+    expect(error.message).toContain('`--host <hostname-or-ip>`');
+    expect(error.cause).toBe(original);
+  });
+
+  it('returns other errors unchanged', () => {
+    const forbidden = Object.assign(new Error('403 Forbidden\nInvalid auth'), {
+      response: { statusCode: 403, body: 'Invalid auth' }
+    });
+    const reset = Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' });
+
+    expect(utils.storybookConnectionError(forbidden, url)).toBe(forbidden);
+    expect(utils.storybookConnectionError(reset, url)).toBe(reset);
+  });
 });
 
 // ============ Doc Rule Matching Helpers ============

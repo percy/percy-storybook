@@ -90,14 +90,41 @@ function getAuthHeaders(config) {
   return headers;
 }
 
+// Recent Storybook dev servers (10.x, and 8.6.18 via a backport) reject unknown Host headers
+// with `403 Invalid host`, and Storybook 10 binds to localhost only unless `--host` is given.
+// Both otherwise surface as bare network errors, so name the configuration that fixes them.
+export function storybookConnectionError(error, url) {
+  let { hostname, origin } = new URL(url);
+  let body = error.response?.body;
+  let message;
+
+  if (error.response?.statusCode === 403 && typeof body === 'string' && /invalid host/i.test(body)) {
+    message = `Storybook at ${origin} rejected the request with "403 Invalid host". Storybook only accepts ` +
+      'requests for localhost, its own network interfaces, the `--host` value and `core.allowedHosts`. ' +
+      `Start Storybook with \`--host ${hostname}\` (\`percy storybook:start --host ${hostname}\` passes it ` +
+      `through), or add "${hostname}" to \`core.allowedHosts\` in .storybook/main.js.`;
+  } else if (error.code === 'ECONNREFUSED') {
+    message = `Could not connect to Storybook at ${origin} (ECONNREFUSED). Check that Storybook is running. ` +
+      'Storybook 10 listens on localhost only by default, so to reach it through another hostname or IP ' +
+      'start it with `--host <hostname-or-ip>` (or `--host 0.0.0.0`) and, for hostnames, add the hostname ' +
+      'to `core.allowedHosts` in .storybook/main.js.';
+  }
+
+  return message ? new Error(message, { cause: error }) : error;
+}
+
 // Fetch the raw Storybook preview resource to use when JS is enabled
 export async function fetchStorybookPreviewResource(percy, previewUrl) {
-  return createRootResource(previewUrl, await request(previewUrl, {
+  let body = await request(previewUrl, {
     headers: getAuthHeaders(percy.config.discovery),
     retryNotFound: true,
     interval: 1000,
     retries: 30
-  }));
+  }).catch(error => {
+    throw storybookConnectionError(error, previewUrl);
+  });
+
+  return createRootResource(previewUrl, body);
 }
 
 // Glob chars in pattern: * = any characters, ? = single character. Otherwise exact match.
@@ -437,7 +464,11 @@ export function evalSetCurrentStory({ waitFor }, story) {
 
     // emit a series of events to render the desired story
     channel.emit('setCurrentStory', { storyId: id });
-    channel.emit('updateGlobals', { globals: {} });
+    // No unconditional empty `updateGlobals` here: Storybook merges globals, so `{}` resets
+    // nothing, but it re-renders every story render including the outgoing one. On
+    // Storybook 10 with addon-docs that pending re-render makes the outgoing story's
+    // teardown call `location.reload()`, failing the snapshot with "Inspected target
+    // navigated or closed". It is only sent on `storyUnchanged` below.
     channel.emit('updateQueryParams', { ...queryParams });
     if (globals) channel.emit('updateGlobals', { globals: decodeStoryArgs(globals) });
     if (args) channel.emit('updateStoryArgs', { storyId: id, updatedArgs: decodeStoryArgs(args) });
@@ -485,6 +516,10 @@ export function evalSetCurrentStory({ waitFor }, story) {
 
       channel.on('storyRendered', handleRendered);
       channel.on('docsRendered', handleRendered);
+      // Re-selecting the story that is already current (e.g. an additional snapshot of the
+      // previous story) emits `storyUnchanged` and never renders, so force a re-render.
+      // Nothing is being torn down at this point, so this cannot trigger the reload above.
+      channel.on('storyUnchanged', () => channel.emit('updateGlobals', { globals: {} }));
 
       channel.on('storyMissing', (err) => handleFailed(err, 'Story Missing'));
       channel.on('storyErrored', (err) => handleFailed(err, 'Story Errored'));

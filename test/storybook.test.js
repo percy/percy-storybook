@@ -161,6 +161,17 @@ describe('percy storybook', () => {
     ]);
   });
 
+  it('explains a Storybook host check rejection', async () => {
+    server.reply('/iframe.html', () => [403, 'text/plain', 'Invalid host']);
+
+    await expectAsync(storybook(['http://localhost:8000']))
+      .toBeRejectedWithError(/rejected the request with "403 Invalid host".*core\.allowedHosts/s);
+
+    expect(logger.stderr).toEqual(jasmine.arrayContaining([
+      jasmine.stringMatching(/\[percy\] (Error: )?Storybook at http:\/\/localhost:8000 rejected the request with "403 Invalid host"\..*`--host localhost`/s)
+    ]));
+  });
+
   it('errors when the storybook page errors', async () => {
     process.env.PERCY_RETRY_STORY_ON_ERROR = false;
     server.reply('/iframe.html', () => [200, 'text/html', [
