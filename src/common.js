@@ -13,6 +13,20 @@ export const flags = [{
   multiple: true,
   short: 'e'
 }, {
+  name: 'include-tags',
+  description: 'Storybook tags to include in snapshots (comma-separated)',
+  percyrc: 'storybook.tags.include',
+  type: 'tag',
+  multiple: true,
+  parse: v => v.split(',').map(t => t.trim()).filter(Boolean)
+}, {
+  name: 'exclude-tags',
+  description: 'Storybook tags to exclude from snapshots (comma-separated)',
+  percyrc: 'storybook.tags.exclude',
+  type: 'tag',
+  multiple: true,
+  parse: v => v.split(',').map(t => t.trim()).filter(Boolean)
+}, {
   name: 'responsive-snapshot-capture',
   description: 'Enable responsive DOM capture for multiple viewport widths',
   percyrc: 'snapshot.responsiveSnapshotCapture',

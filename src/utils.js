@@ -27,6 +27,29 @@ export function versionFromInstalledPackage() {
   return undefined;
 }
 
+export function fullVersionFromInstalledPackage() {
+  try {
+    return require('storybook/package.json').version || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+// `project.json` carries the exact version in static builds and on the dev server (6.5+);
+// it is absent when `core.disableProjectJson` is set, which resolves to undefined here.
+export async function fetchStorybookProjectVersion(percy, baseUrl) {
+  try {
+    let body = await request(new URL('project.json', baseUrl).href, {
+      headers: getAuthHeaders(percy.config.discovery),
+      retries: 0
+    });
+    let version = body?.storybookVersion;
+    return typeof version === 'string' && /^\d+\.\d+/.test(version) ? version : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 // check storybook version
 export function checkStorybookVersion() {
   return new Promise((resolve, reject) => {
@@ -322,7 +345,9 @@ export function evalStorybookEnvironmentInfo({ waitForXPath }) {
 
 // Evaluate and return serialized Storybook stories to snapshot
 /* istanbul ignore next: no instrumenting injected code */
-export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, autodocCapture = false, intelliStory = false } = {}) {
+export function evalStorybookStorySnapshots({ waitFor }, {
+  docCapture = false, autodocCapture = false, intelliStory = false, viewportKeys = []
+} = {}) {
   let serialize = (what, value, invalid) => {
     if (what === 'include' || what === 'exclude') {
       return [].concat(value).filter(Boolean).map(v => v.toString());
@@ -336,8 +361,8 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       return Object.entries(value).reduce((acc, [k, v]) => (
         Object.assign(acc, { [k]: encodeURIComponent(v) })
       ), {});
-    } else if (what === 'additionalSnapshots') {
-      return value.map(s => serialize('snapshot', s, invalid));
+    } else if (what === 'additionalSnapshots' || what === 'modes') {
+      return [].concat(value).map(s => serialize('snapshot', s, invalid));
     } else if (what === 'snapshot') {
       return Object.entries(value).reduce((acc, [k, v], i, a) => (
         Object.assign(acc, { [k]: serialize(k, v, invalid) })
@@ -430,6 +455,57 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       'Open Storybook and check the console for errors.'
   ))).then(stories => {
     let invalid = new Map();
+    let preview = window.__STORYBOOK_PREVIEW__;
+    // Storybook 8+ keeps the store in `storyStoreValue`; 7.x exposes it as `storyStore`
+    let store = preview?.storyStoreValue ?? preview?.storyStore;
+    let annotations = store?.projectAnnotations ?? {};
+    let initialGlobals = annotations.initialGlobals ?? annotations.globals ?? {};
+    let projectPercy = annotations.parameters?.percy ?? {};
+    let indexEntries = store?.storyIndex?.entries ?? {};
+    let keyOf = v => (typeof v === 'string' ? v : v?.value);
+
+    // Storybook merges preview parameters into every story, so the project-level values are
+    // returned separately to tell them apart from a story's own.
+    let project = {
+      widths: projectPercy.widths,
+      include: projectPercy.include && serialize('include', projectPercy.include),
+      exclude: projectPercy.exclude && serialize('exclude', projectPercy.exclude),
+      viewport: initialGlobals.viewport
+    };
+
+    let storyMeta = story => {
+      let percy = story.parameters?.percy ?? {};
+      let params = story.parameters?.viewport ?? {};
+      let pinned = story.storyGlobals ?? {};
+      let global = 'viewport' in pinned ? pinned.viewport : (
+        // Storybook 8 builds without storyGlobals only report the effective globals
+        !story.storyGlobals && keyOf(story.globals?.viewport) !== keyOf(initialGlobals.viewport)
+          ? story.globals?.viewport : undefined
+      );
+      let available = params.options ?? params.viewports;
+      let options;
+
+      if (available) {
+        options = {};
+        let wanted = [global, params.defaultViewport, initialGlobals.viewport, ...viewportKeys]
+          .concat([].concat(percy.modes ?? [], percy.additionalSnapshots ?? []).map(s => s?.globals?.viewport));
+        for (let key of wanted.map(keyOf)) {
+          let styles = typeof key === 'string' && (available[key]?.styles ?? available[key]);
+          if (styles) options[key] = { width: styles.width, height: styles.height };
+        }
+      }
+
+      return {
+        subtype: indexEntries[story.id]?.subtype,
+        pinnedGlobals: Object.keys(pinned).length ? encodeStoryArgs(pinned) : undefined,
+        viewport: {
+          global,
+          defaultViewport: params.defaultViewport,
+          disabled: !!(params.disable || params.disabled),
+          options
+        }
+      };
+    };
 
     let data = stories.map(story => serialize('snapshot', {
       name: story.kind ? `${story.kind}: ${story.name}` : `${story.title}: ${story.name}`,
@@ -437,12 +513,14 @@ export function evalStorybookStorySnapshots({ waitFor }, { docCapture = false, a
       id: story.id,
       ...(intelliStory ? { importPath: story.importPath } : {}),
       type: story.type ? story.type : 'story',
-      tags: story.tags
+      tags: story.tags,
+      storybookMeta: storyMeta(story)
     }, invalid));
 
     return {
       invalid: Array.from(invalid),
       data,
+      project,
       ...(intelliStory ? { diagnostics: stories.__intelliStoryDiagnostics } : {})
     };
   });
@@ -637,6 +715,59 @@ export function evalSetCurrentStory({ waitFor }, story) {
 // Utility functions for responsive snapshot capture
 
 // Process widths for DOM capture with proper hierarchy
+// Storybook's built-in viewport options, used when a story has no `parameters.viewport.options`
+export const MINIMAL_VIEWPORTS = {
+  mobile1: { width: '320px', height: '568px' },
+  mobile2: { width: '414px', height: '896px' },
+  tablet: { width: '834px', height: '1112px' },
+  desktop: { width: '1280px', height: '1024px' }
+};
+
+const VIEWPORT_SIZE_REG = /^(\d{1,4})(px)?-(\d{1,4})(px)?$/;
+
+export function viewportKey(value) {
+  let key = typeof value === 'string' ? value : value?.value;
+  return typeof key === 'string' && key ? key : undefined;
+}
+
+function parsePixels(value) {
+  if (typeof value === 'number' && value > 0) return Math.round(value);
+  let match = /^\s*(\d+(?:\.\d+)?)px\s*$/.exec(typeof value === 'string' ? value : '');
+  return match ? Math.round(Number(match[1])) : undefined;
+}
+
+// Resolves a Storybook viewport global (`'mobile1'`, `{ value, isRotated }` or `'500-700'`) to
+// pixel dimensions, mirroring Storybook's own resolveViewport. Only px sizes resolve; `%`, `vw`
+// and `calc()` cannot be turned into a capture width, so they return undefined.
+export function resolveViewportSize(value, options, log) {
+  let key = viewportKey(value);
+  if (!key) return undefined;
+  let isRotated = typeof value === 'object' && !!value?.isRotated;
+  let width, height;
+  let custom = VIEWPORT_SIZE_REG.exec(key);
+
+  if (custom) {
+    [width, height] = [Number(custom[1]), Number(custom[3])];
+  } else {
+    let entry = options ? options[key] : MINIMAL_VIEWPORTS[key];
+    if (!entry && /^\d{1,4}[a-z]{0,4}-\d{1,4}[a-z]{0,4}$/.test(key)) {
+      log?.debug(`Storybook viewport "${key}" is not in pixels; using project widths`);
+      return undefined;
+    } else if (!entry) {
+      log?.debug(`Storybook viewport "${key}" not found in the story's viewport options`);
+      return undefined;
+    }
+    let styles = entry.styles ?? entry;
+    [width, height] = [parsePixels(styles.width), parsePixels(styles.height)];
+    if (!width) {
+      log?.debug(`Storybook viewport "${key}" has a non-pixel width (${styles.width}); using project widths`);
+      return undefined;
+    }
+  }
+
+  return isRotated && height ? { width: height, height: width } : { width, height };
+}
+
 // Returns: array of numbers (non-responsive mode) | array of {width, height} objects (responsive mode)
 export function getWidthsForDomCapture(userPassedWidths, eligibleWidths, defaultHeight) {
   // Responsive mode: return width-height objects

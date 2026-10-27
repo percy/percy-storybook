@@ -451,14 +451,13 @@ describe('percy storybook', () => {
   });
 
   it('excludes stories from snapshots with --exclude', async () => {
-    // Args and Mixed are excluded by default via story-level exclude, but global
-    // --exclude switches shouldSkipStory to use config filters and disregards
-    // story-level filters — so we add them to the CLI --exclude list here.
+    // Args, Mixed and Parity are excluded by the preview-level exclude, which a global
+    // --exclude replaces, so they are added to the CLI --exclude list here.
     // Mixed uses percy.name: 'From params', so we match by '/params/' regex.
     await storybook([
       'http://localhost:9000',
       '--exclude=Snapshot', '--exclude=Options',
-      '--exclude=Args', '--exclude=/params/'
+      '--exclude=Args', '--exclude=/params/', '--exclude=Parity'
     ]);
 
     expect(logger.stderr).toEqual([]);
@@ -686,6 +685,122 @@ describe('percy storybook', () => {
       '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
         `&args=text:Args&globals=text:+globals&text=${encodeURIComponent(' and params')}&viewMode=story`
     ]));
+  });
+
+  describe('Storybook parity', () => {
+    let Percy, sbVersion;
+
+    beforeAll(async () => {
+      sbVersion = await checkStorybookVersion();
+    });
+
+    beforeEach(async () => {
+      // eslint-disable-next-line import/no-extraneous-dependencies
+      ({ Percy } = await import('@percy/core'));
+      spyOn(Percy.prototype, 'snapshot').and.callThrough();
+    });
+
+    const taken = () => Object.fromEntries(Percy.prototype.snapshot.calls.allArgs()
+      .map(([options]) => [options.name, options.widths]));
+
+    it('captures stories at their Storybook viewport width', async () => {
+      await storybook(['http://localhost:9000', '--dry-run', '--include=Parity/Viewport']);
+
+      expect(taken()).toEqual(jasmine.objectContaining({
+        'Parity/Viewport: No Viewport': undefined,
+        'Parity/Viewport: Legacy Default': [320],
+        'Parity/Viewport: Custom Option': [600],
+        'Parity/Viewport: Percy Widths Win': [999],
+        'Parity/Viewport: Opted Out': undefined
+      }));
+
+      // story-level globals are Storybook 8.3+
+      if (sbVersion >= 9) {
+        expect(taken()).toEqual(jasmine.objectContaining({
+          'Parity/Viewport: Named Global': [834],
+          'Parity/Viewport: Custom Pixel': [500]
+        }));
+      }
+
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        jasmine.stringMatching(/\[percy\] \d+ stories captured at their Storybook viewport width/)
+      ]));
+    });
+
+    it('filters stories by Storybook tags', async () => {
+      await storybook(['http://localhost:9000', '--dry-run', '--include=Parity/Tags', '--include-tags=visual-smoke']);
+      expect(Object.keys(taken())).toEqual(['Parity/Tags: Gamma']);
+
+      Percy.prototype.snapshot.calls.reset();
+      await storybook(['http://localhost:9000', '--dry-run', '--include=Parity/Tags', '--exclude-tags=visual-smoke,team-b']);
+      expect(Object.keys(taken())).toEqual(['Parity/Tags: No Modes']);
+    });
+
+    it('honours a story\'s own exclude under a global --include', async () => {
+      await storybook(['http://localhost:9000', '--dry-run', '--include=Parity/Tags']);
+      expect(Object.keys(taken())).not.toContain('Parity/Tags: Own Exclude');
+      expect(Object.keys(taken())).toContain('Parity/Tags: Gamma');
+    });
+
+    it('adds a snapshot per configured mode', async () => {
+      fs.writeFileSync('.percy.yml', [
+        'version: 2',
+        'storybook:',
+        '  modes:',
+        '    - name: dark',
+        '      globals: { text: " dark" }'
+      ].join('\n'));
+
+      await storybook(['http://localhost:9000', '--dry-run', '--verbose', '--include=/params$/', '--include=Parity/Tags: [GN]']);
+
+      expect(logger.stdout).toEqual(jasmine.arrayContaining([
+        '[percy:core] Snapshot found: From params',
+        '[percy:core] Snapshot found: From params [dark]',
+        '[percy:core] Snapshot found: Parity/Tags: Gamma',
+        '[percy:core] Snapshot found: Parity/Tags: Gamma [dark]',
+        '[percy:core] Snapshot found: Parity/Tags: No Modes',
+        jasmine.stringMatching(/Found 3 stories with 2 mode snapshots and 3 additional snapshots/)
+      ]));
+      expect(logger.stdout).not.toContain('[percy:core] Snapshot found: Parity/Tags: No Modes [dark]');
+      expect(logger.stderr).toEqual(jasmine.arrayContaining([
+        '[percy:core:snapshot] - url: http://localhost:9000/iframe.html?id=mixed--params' +
+          '&globals=text:+dark&viewMode=story'
+      ]));
+    });
+
+    it('sends the storybook version for static builds', async () => {
+      fs.$bypass.push(p => p.includes?.('.storybook-build'));
+      await storybook(['./test/.storybook-build', '--include=Snapshot: First']);
+
+      let ua = api.requests['/builds/123/snapshots'].map(req => req.headers['User-Agent'])[0];
+      expect(ua).toMatch(/storybook\/\d+\.\d+\.\d+/);
+    });
+
+    it('skips Storybook test entries unless captureTestEntries is set', async () => {
+      const entries = {
+        'card--primary': { id: 'card--primary', type: 'story', subtype: 'story' },
+        'card--primary:shows-label': { id: 'card--primary:shows-label', type: 'story', subtype: 'test' }
+      };
+      const preview = '{ ' +
+        'async ready() {}, async cacheAllCSFFiles() {}, ' +
+        `async extract() { return ${JSON.stringify({
+          'card--primary': { id: 'card--primary', title: 'Card', name: 'Primary', tags: ['dev'] },
+          'card--primary:shows-label': { id: 'card--primary:shows-label', title: 'Card', name: 'Shows label', tags: ['dev', 'test-fn'] }
+        })} }, ` +
+        `storyStoreValue: { storyIndex: { entries: ${JSON.stringify(entries)} }, projectAnnotations: {} }, ` +
+        'channel: { emit() {}, on: (a, c) => a === "storyRendered" && c() }' +
+        ' }';
+      server.reply('/iframe.html', () => [200, 'text/html',
+        `<script>__STORYBOOK_PREVIEW__ = ${preview}</script>`]);
+
+      await storybook(['http://localhost:8000', '--dry-run']);
+      expect(Object.keys(taken())).toEqual(['Card: Primary']);
+
+      Percy.prototype.snapshot.calls.reset();
+      fs.writeFileSync('.percy.yml', 'version: 2\nstorybook:\n  captureTestEntries: true\n');
+      await storybook(['http://localhost:8000', '--dry-run']);
+      expect(Object.keys(taken())).toEqual(['Card: Primary', 'Card: Shows label']);
+    });
   });
 
   it('handles page crashes while taking snapshots', async () => {

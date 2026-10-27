@@ -26,7 +26,7 @@ const BASE_SCOPE_OPTIONS = [
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
 export function TriggerBuild({
-  projectName, emit, currentStory,
+  projectName, emit, currentStory, tagFilters,
   snapshotStatus, buildId, buildUrl, snapshotError, onScopeChange,
   hasPreviousBuild
 }) {
@@ -107,6 +107,14 @@ export function TriggerBuild({
       <Description>
         Run visual tests to capture snapshots of your stories and detect visual changes
       </Description>
+
+      {tagFilters && (
+        <div className="text-left text-sm text-neutral-weak mb-4" data-testid="percy-tag-filters">
+          Storybook tag filters from .percy.yml
+          {tagFilters.include?.length > 0 && <div>Include tags: {tagFilters.include.join(', ')}</div>}
+          {tagFilters.exclude?.length > 0 && <div>Exclude tags: {tagFilters.exclude.join(', ')}</div>}
+        </div>
+      )}
 
       <div className="text-left mb-6">
         <div className="text-sm font-semibold text-neutral-default mb-3">Select test scope</div>

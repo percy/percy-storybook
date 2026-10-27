@@ -46,7 +46,7 @@ export const start = command('start', {
 
   /* istanbul ignore next: this is a storybook flag we don't need to test */
   let baseUrl = `${argv.includes('--https') ? 'https' : 'http'}://${host}:${port}`;
-  yield* takeStorybookSnapshots(percy, () => proc.kill(), { baseUrl, flags });
+  yield* takeStorybookSnapshots(percy, () => proc.kill(), { baseUrl, flags, localStorybook: true });
 });
 
 export default start;

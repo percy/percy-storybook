@@ -37,7 +37,8 @@ export const storybook = command('storybook', {
   if (!percy) exit(0, 'Percy is disabled');
   let { takeStorybookSnapshots } = yield import('./snapshots.js');
   let { createServer } = yield import('@percy/cli-command/utils');
-  let server = args.serve && await createServer(args).listen();
+  // cleanUrls serves index.html for `/`, so the about page (version fallback) resolves
+  let server = args.serve && await createServer({ ...args, cleanUrls: true }).listen();
 
   yield* takeStorybookSnapshots(percy, () => server?.close(), {
     baseUrl: args.url ?? server?.address(),

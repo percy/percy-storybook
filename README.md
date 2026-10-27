@@ -93,6 +93,8 @@ Subcommands:
 Options:
   -i, --include <pattern>            Pattern matching story names to include in snapshots
   -e, --exclude <pattern>            Pattern matching story names to exclude from snapshots
+  --include-tags <tag>               Storybook tags to include in snapshots (comma-separated)
+  --exclude-tags <tag>               Storybook tags to exclude from snapshots (comma-separated)
   --shard-count <number>             Number of shards to split snapshots into
   --shard-size <number>              Size of each shard to split snapshots into
   --shard-index <index>              Index of the shard to take snapshots of
@@ -129,6 +131,8 @@ Usage:
 Options:
   -i, --include <pattern>            Pattern matching story names to include in snapshots
   -e, --exclude <pattern>            Pattern matching story names to exclude from snapshots
+  --include-tags <tag>               Storybook tags to include in snapshots (comma-separated)
+  --exclude-tags <tag>               Storybook tags to exclude from snapshots (comma-separated)
   --shard-count <number>             Number of shards to split snapshots into
   --shard-size <number>              Size of each shard to split snapshots into
   --shard-index <index>              Index of the shard to take snapshots of
@@ -191,6 +195,14 @@ options](https://www.browserstack.com/docs/percy/take-percy-snapshots/overview#p
 - **waitForSelector** - Wait for a selector to exist before taking the snapshot.
 - **include** - An array of regex patterns matching story names to only include for snapshotting.
 - **exclude** - An array of regex patterns matching story names to always exclude from snapshotting.
+  A story's own `include`/`exclude` also applies when `--include`/`--exclude` (or the config file
+  equivalents) are set: the global filter runs first, then the story's. Filters set in
+  `.storybook/preview` are project defaults and are replaced by a global filter.
+- **storyViewport** - Set to `false` to ignore the story's Storybook viewport (see
+  [Story viewports](#story-viewports)).
+- **modes** - An array of modes for this story, replacing the project's modes; `[]` turns modes off
+  (see [Modes](#modes)).
+- **modesReplaceBase** - When `true`, only the mode snapshots are taken, not the base snapshot.
 - **additionalSnapshots** - An array of additional snapshots to take of this story.
   - **prefix** - A prefix added to this additional snapshot's name.
   - **suffix** - A suffix added to this additional snapshot's name.
@@ -233,6 +245,60 @@ options](https://www.browserstack.com/docs/percy/take-percy-snapshots/overview#p
   ```
 </details>
 
+### Story viewports
+
+A story's Storybook viewport sets its snapshot width. The viewport is read from the story's
+`viewport` global (`globals: { viewport: { value: 'mobile1' } }`, `'tablet'` or a custom
+`'500-700'` value), looked up in `parameters.viewport.options` (`viewports` on Storybook 8) or
+Storybook's built-in viewports, then the legacy `parameters.viewport.defaultViewport`, then a
+project-level `initialGlobals.viewport`. The viewport height is used as `minHeight` unless one is
+set. Only pixel sizes are used; `%`, `vw` and `calc()` viewports keep the project widths.
+
+Widths are chosen in this order: the story's own `percy.widths`, then its viewport, then the project
+widths (`percy.widths` in `.storybook/preview`, `storybook.widths` or `snapshot.widths`). Additional
+snapshots and modes that set their own `viewport` global get that viewport's width. Set
+`storybook.storyViewport: false` (or `percy.storyViewport: false` on a story) to keep the project
+widths.
+
+### Modes
+
+Modes take one extra snapshot of every story per set of globals, for example a dark theme:
+
+``` yaml
+# .percy.yml
+version: 2
+storybook:
+  modes:
+    - name: dark
+      globals: { theme: dark }
+    - name: mobile
+      globals: { viewport: mobile1 }   # captured at 320px
+    # vision simulation from @storybook/addon-a11y 10.2+
+    - name: deuteranopia
+      globals: { vision: deuteranopia }
+```
+
+Each mode accepts `name` (required), `globals`, `args`, `queryParams`, and optional `prefix` or
+`suffix` to name the snapshot. Mode snapshots are named `<story> [<mode>]` and the base snapshot is
+still taken, so existing baselines keep their names; set `modesReplaceBase: true` to take only the
+mode snapshots. The most specific `modes` list wins as a whole (story, then component, then
+`.storybook/preview`, then `.percy.yml`), and `modes: []` turns modes off. Globals a story sets
+itself still win inside a mode, and a mode whose globals the story already sets is skipped. Every
+mode multiplies the snapshot count; Percy logs the totals when modes or additional snapshots are used.
+
+Additional snapshots from `.percy.yml` and from a story are now both taken. Previously the two lists
+were merged entry by entry, which fused them into a single snapshot.
+
+### Tags and test entries
+
+`storybook.tags.include` / `storybook.tags.exclude` (or `--include-tags` / `--exclude-tags`) select
+stories by their [Storybook tags](https://storybook.js.org/docs/writing-stories/tags). Stories are
+selected in this order: `skip`, test entries, tag exclude, tag include, then the name filters; tag
+and name filters must both pass.
+
+Storybook 10 test entries (`Story.test(...)`) render their parent story, so they are skipped by
+default to avoid duplicate snapshots. Set `storybook.captureTestEntries: true` to capture them.
+
 ## Percy config file options
 
 In addition to [common Percy config file options](https://www.browserstack.com/docs/percy/take-percy-snapshots/overview),
@@ -250,6 +316,13 @@ storybook:
   additionalSnapshots: []
   include: []
   exclude: []
+  modes: []
+  modesReplaceBase: false
+  storyViewport: true
+  captureTestEntries: false
+  tags:
+    include: []
+    exclude: []
 ```
 
 See the [configuration options above](#configuration) for details about each accepted config file
@@ -267,6 +340,23 @@ interaction did not complete, and still takes the snapshot:
 ```
 
 ## Upgrading
+
+### Snapshot selection and width changes in 10.1
+
+- **Story-level `include`/`exclude` are honoured with a global filter.** A story's own
+  `parameters.percy.include`/`exclude` used to be ignored whenever `--include`/`--exclude` or
+  `storybook.include`/`exclude` was set. The global filter now runs first and the story's own filter
+  after it. Filters set in `.storybook/preview` still act as project defaults that a global filter
+  replaces.
+- **Stories with a Storybook viewport are captured at that width.** Their baselines shift once to the
+  viewport width. Set `storybook.storyViewport: false` to keep the previous widths.
+- **Storybook 10 test entries are skipped.** `Story.test(...)` entries no longer produce duplicate
+  snapshots of their parent story; set `storybook.captureTestEntries: true` to keep them.
+- **Config-file and story `additionalSnapshots` are both taken** instead of being fused into one.
+- **The Storybook version is reported for static builds** (from `project.json`), instead of
+  `storybook/unknown`.
+
+### Upgrading from the legacy SDK
 
 Prior versions of the Storybook SDK were drastically different than the current version. The
 command, it's arguments, and how the SDK works internally have changed completely. Using the old

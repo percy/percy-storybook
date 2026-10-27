@@ -115,6 +115,31 @@ export const storybookSchema = {
         }
       }
     },
+    modes: {
+      item: {
+        type: 'object',
+        unevaluatedProperties: false,
+        required: ['name'],
+        properties: {
+          name: { type: 'string' },
+          globals: { type: 'object', normalize: false },
+          args: { type: 'object', normalize: false },
+          queryParams: { type: 'object', normalize: false },
+          prefix: { type: 'string' },
+          suffix: { type: 'string' }
+        }
+      },
+      property: {
+        properties: {
+          modes: {
+            type: 'array',
+            items: { $ref: '/storybook#/$defs/modes/item' }
+          },
+          modesReplaceBase: { type: 'boolean' },
+          storyViewport: { type: 'boolean' }
+        }
+      }
+    },
     docsRule: {
       type: 'object',
       unevaluatedProperties: false,
@@ -148,6 +173,7 @@ export const storybookSchema = {
         { $ref: '/snapshot#/$defs/common' },
         { $ref: '/storybook#/$defs/common' },
         { $ref: '/storybook#/$defs/additionalSnapshots/property' },
+        { $ref: '/storybook#/$defs/modes/property' },
         {
           if: { $ref: '/storybook#/$defs/enableJavaScript/isTrue' },
           then: { $ref: '/storybook#/$defs/additionalSnapshots/enabledJavaScript' }
@@ -173,12 +199,22 @@ export const configSchema = {
     allOf: [
       { $ref: '/storybook#/$defs/common' },
       { $ref: '/storybook#/$defs/additionalSnapshots/property' },
+      { $ref: '/storybook#/$defs/modes/property' },
       {
         if: { $ref: '/storybook#/$defs/enableJavaScript/isTrue' },
         then: { $ref: '/storybook#/$defs/additionalSnapshots/enabledJavaScript' }
       }
     ],
     properties: {
+      tags: {
+        type: 'object',
+        unevaluatedProperties: false,
+        properties: {
+          include: { type: 'array', items: { type: 'string' } },
+          exclude: { type: 'array', items: { type: 'string' } }
+        }
+      },
+      captureTestEntries: { type: 'boolean' },
       docs: {
         type: 'object',
         default: {},

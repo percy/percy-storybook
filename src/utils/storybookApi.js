@@ -13,6 +13,11 @@ export function getCurrentStory(api) {
     const state = api.getUrlState();
     if (!state?.storyId) return null;
     const story = api.getData(state.storyId);
+    // A Storybook 10 test entry (`Story.test()`) is captured as its parent story, so scope the
+    // run to the parent; the test entry itself is skipped by the CLI.
+    if (story?.subtype === 'test' && story.parent) {
+      return api.getData(story.parent) || story;
+    }
     return story || null;
   } catch {
     return null;
