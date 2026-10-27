@@ -20,7 +20,7 @@ import { Wrapper, Header, LogoArea, HeaderActions, ScrollBody, Card } from './Pe
 
 export function PercyPanel({ active }) {
   const { view, credentials, selectedProject, projectDetails, buildMeta, transition, VIEWS } = usePercyPanelState();
-  const { emit, snapshotStatus, buildId, buildUrl, buildNumber, snapshotError, snapshotScope, setScope, currentStory } =
+  const { emit, snapshotStatus, buildId, buildUrl, buildNumber, snapshotError, snapshotScope, setScope, currentStory, tagFilters } =
     useSnapshotChannel(transition, view, VIEWS);
 
   // Sync .dark class on <html> so design-stack Tailwind tokens switch to dark values
@@ -224,6 +224,7 @@ export function PercyPanel({ active }) {
               projectName={selectedProject?.name || ''}
               emit={emit}
               currentStory={currentStory}
+              tagFilters={tagFilters}
               snapshotStatus={snapshotStatus}
               buildId={buildId}
               buildUrl={buildUrl}

@@ -17,12 +17,14 @@ export function useSnapshotChannel(transition, view, VIEWS) {
   const [snapshotError, setSnapshotError] = useState('');
   const [snapshotScope, setSnapshotScope] = useState('');
   const [currentStory, setCurrentStory] = useState(null);
+  const [tagFilters, setTagFilters] = useState(null);
   const restoreAttempted = useRef(false);
   const configLoaded = useRef(false);
 
   const emit = useChannel({
-    [PERCY_EVENTS.PROJECT_CONFIG_LOADED]: ({ credentialsValid, username, accessKey, project, projectDetails, hasValidToken, lastBuild }) => {
+    [PERCY_EVENTS.PROJECT_CONFIG_LOADED]: ({ credentialsValid, username, accessKey, project, projectDetails, hasValidToken, lastBuild, tagFilters: filters }) => {
       configLoaded.current = true;
+      setTagFilters(filters || null);
       // The server validated its stored pair but (deliberately) does not send
       // the access key to the browser; credentialsFromConfigLoaded flags it so
       // credential-dependent views (project picker) know a fetch will succeed
@@ -112,5 +114,5 @@ export function useSnapshotChannel(transition, view, VIEWS) {
    */
   const setScope = (label) => setSnapshotScope(label);
 
-  return { emit, snapshotStatus, buildId, buildUrl, buildNumber, snapshotError, snapshotScope, setScope, currentStory };
+  return { emit, snapshotStatus, buildId, buildUrl, buildNumber, snapshotError, snapshotScope, setScope, currentStory, tagFilters };
 }

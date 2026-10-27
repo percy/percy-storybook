@@ -17,7 +17,11 @@ import {
   getDocCaptureFlagsWithRules,
   generateDocRuleOptions,
   isDocAutodoc,
-  viewModeFor
+  viewModeFor,
+  resolveViewportSize,
+  viewportKey,
+  fetchStorybookProjectVersion,
+  fullVersionFromInstalledPackage
 } from './utils.js';
 
 // Main capture function
@@ -39,12 +43,30 @@ export async function captureDOM(page, options, percy, log, story) {
   return await captureSerializedDOM(page, { ...options, widths }, log);
 }
 
-// Returns true or false if the provided story should be skipped by matching against include and
-// exclude filter options. If any global filters are provided, they will override story filters.
-function shouldSkipStory(name, options, config) {
+function sameList(a, b) {
+  return JSON.stringify([].concat(a ?? [])) === JSON.stringify([].concat(b ?? []));
+}
+
+export function isTestEntry(story, meta) {
+  return meta?.subtype ? meta.subtype === 'test' : [].concat(story.tags ?? []).includes('test-fn');
+}
+
+// Returns true or false if the provided story should be skipped. Order: `skip`, Storybook test
+// entries, tag exclude, tag include, then name filters. A global name filter applies first and a
+// story's own include/exclude still applies after it; filters inherited from the preview are
+// project defaults, so a global filter replaces them.
+export function shouldSkipStory(name, options, config, { meta, project } = {}) {
   // parameters.percy.skip is an opt-out switch, not a filter — honor it unconditionally,
   // even when --include/--exclude is present. See issue #1286.
   if (options.skip) return true;
+
+  if (meta && !config?.captureTestEntries && isTestEntry(options, meta)) return true;
+
+  let tags = [].concat(options.tags ?? []);
+  let tagExclude = [].concat(config?.tags?.exclude ?? []);
+  let tagInclude = [].concat(config?.tags?.include ?? []);
+  if (tagExclude.some(t => tags.includes(t))) return true;
+  if (tagInclude.length && !tagInclude.some(t => tags.includes(t))) return true;
 
   let matches = regexp => {
     /* istanbul ignore else: sanity check */
@@ -56,15 +78,21 @@ function shouldSkipStory(name, options, config) {
     return regexp?.test?.(name);
   };
 
-  // if a global filter is present, disregard story filters
-  let filter = (config?.include || config?.exclude) ? config : options;
-  let include = [].concat(filter?.include).filter(Boolean);
-  let exclude = [].concat(filter?.exclude).filter(Boolean);
+  let filtered = filter => {
+    let include = [].concat(filter?.include).filter(Boolean);
+    let exclude = [].concat(filter?.exclude).filter(Boolean);
+    // if included, don't skip; if excluded always exclude
+    return (include.length ? !include.some(matches) : false) || exclude.some(matches);
+  };
 
-  // if included, don't skip; if excluded always exclude
-  let skip = include?.length ? !include.some(matches) : false;
-  if (!skip && !exclude?.some(matches)) return false;
-  return true;
+  if (!(config?.include || config?.exclude)) return filtered(options);
+  if (filtered(config)) return true;
+
+  let own = {
+    include: sameList(options.include, project?.include) ? undefined : options.include,
+    exclude: sameList(options.exclude, project?.exclude) ? undefined : options.exclude
+  };
+  return filtered(own);
 }
 
 // Returns snapshot config options for a Storybook story merged with global Storybook
@@ -80,6 +108,11 @@ function getSnapshotConfig(story, config, invalid) {
     if (path.length === 1 && ['include', 'exclude'].includes(path[0])) {
       return [path, [].concat(next).filter(Boolean)];
     }
+    // config and story additional snapshots are separate snapshots; merging them by index
+    // fused the two definitions into one
+    if (path.length === 1 && path[0] === 'additionalSnapshots') {
+      return [path, [].concat(prev ?? [], next ?? [])];
+    }
   });
 }
 
@@ -92,7 +125,7 @@ function encodeStorybookConfig(config = {}, invalid) {
         invalid.set(`${key}.${k}`, `omitted potentially unsafe ${key.slice(0, -1)}`);
         return acc;
       }, {}))
-    )) || (key === 'additionalSnapshots' && (
+    )) || ((key === 'additionalSnapshots' || key === 'modes') && (
       value.map(s => encodeStorybookConfig(s, invalid))
     )) || value
   }), {});
@@ -173,13 +206,59 @@ function mapDocSnapshots(docs, config = {}, conf, invalid, log, globalDocSetting
   }, []);
 }
 
-function processAdditionalSnapshots(additionalSnapshots, baseOptions, storyName, skipCallback = null) {
+function processAdditionalSnapshots(additionalSnapshots, baseOptions, storyName, skipCallback = null, transform = null) {
   return (additionalSnapshots || []).reduce((add, { prefix = '', suffix = '', ...snap }) => {
     const snapshot = PercyConfig.merge([baseOptions, {
       name: `${prefix}${storyName}${suffix}`
     }, snap]);
 
-    return skipCallback?.(snap) ? add : add.concat(snapshot);
+    if (skipCallback?.(snap)) return add;
+    transform?.(snapshot, snap);
+    return add.concat(snapshot);
+  }, []);
+}
+
+// Storybook-level options that select or expand stories; never forwarded as snapshot options
+const SELECTION_OPTIONS = ['modes', 'modesReplaceBase', 'storyViewport', 'tags', 'captureTestEntries'];
+
+function omit(object, keys) {
+  return Object.fromEntries(Object.entries(object).filter(([k]) => !keys.includes(k)));
+}
+
+// Sets the snapshot width (and minHeight, unless set) from a Storybook viewport global
+function applyViewportWidth(snapshot, value, meta, log) {
+  let size = resolveViewportSize(value, meta?.viewport?.options, log);
+  if (!size) return false;
+  snapshot.widths = [size.width];
+  if (size.height && snapshot.minHeight == null) snapshot.minHeight = size.height;
+  return true;
+}
+
+function hasPinnedViewport(meta) {
+  return meta?.pinnedGlobals ? 'viewport' in meta.pinnedGlobals : false;
+}
+
+// A mode whose globals the story already pins renders the same as the base snapshot
+function duplicatesPinnedGlobals(mode, meta) {
+  let keys = Object.keys(mode.globals ?? {});
+  return !!meta?.pinnedGlobals && keys.length > 0 && !mode.args && !mode.queryParams &&
+    keys.every(k => JSON.stringify(mode.globals[k]) === JSON.stringify(meta.pinnedGlobals[k]));
+}
+
+function processModes(modes, baseOptions, storyName, meta, keepBase, onViewport, log) {
+  return [].concat(modes ?? []).reduce((all, { name, prefix, suffix, ...mode }) => {
+    if (keepBase && duplicatesPinnedGlobals(mode, meta)) {
+      log.debug(`Skipping mode "${name}" for ${storyName}: the story already pins its globals`);
+      return all;
+    }
+
+    let snapshot = PercyConfig.merge([baseOptions, {
+      name: (prefix || suffix) ? `${prefix ?? ''}${storyName}${suffix ?? ''}` : `${storyName} [${name}]`
+    }, mode]);
+
+    if (viewportKey(mode.globals?.viewport) && !hasPinnedViewport(meta) &&
+        applyViewportWidth(snapshot, mode.globals.viewport, meta, log)) onViewport();
+    return all.concat(snapshot);
   }, []);
 }
 
@@ -207,32 +286,85 @@ export function buildStoryUrl(previewUrl, story) {
   return url;
 }
 
-function mapStorybookSnapshots(stories, { previewUrl, flags, config, globalDocSettings }) {
+export function mapStorybookSnapshots(stories, { previewUrl, flags, config, globalDocSettings }) {
   let log = logger('storybook:config');
   let invalid = new Map(stories.invalid);
   let conf = encodeStorybookConfig(config, invalid);
+  let project = stories.project ?? {};
+  let metaFor = new WeakMap();
+  let data = stories.data.map(({ storybookMeta, ...story }) => {
+    metaFor.set(story, storybookMeta);
+    return story;
+  });
 
   // Extract snapshot options only, exclude doc config metadata
-  const { captureDocs, captureAutodocs, docs, ...confOptions } = conf;
+  const { captureDocs, captureAutodocs, docs, ...confSnapshot } = conf;
+  const confOptions = omit(confSnapshot, SELECTION_OPTIONS);
 
   // Separate stories from docs: extract() may return docs without type='docs', so check id suffix
-  const storyEntries = stories.data.filter(s => s.type !== 'docs' && !String(s.id || '').endsWith('--docs'));
-  const docEntries = stories.data.filter(s => s.type === 'docs' || String(s.id || '').endsWith('--docs'));
+  const storyEntries = data.filter(s => s.type !== 'docs' && !String(s.id || '').endsWith('--docs'));
+  const docEntries = data.filter(s => s.type === 'docs' || String(s.id || '').endsWith('--docs'));
+
+  let counts = { stories: 0, modes: 0, additional: 0 };
+  let viewportStories = new Set();
 
   let snapshots = storyEntries.reduce((all, story) => {
-    if (shouldSkipStory(story.name, story, config)) {
+    let meta = metaFor.get(story);
+
+    if (shouldSkipStory(story.name, story, config, { meta, project })) {
       log.debug(`Skipping story: ${story.name}`);
       return all;
     }
 
+    // read from the raw story: merging drops an empty `modes: []`, which disables modes
+    let { modes, modesReplaceBase, storyViewport } = story;
     let { additionalSnapshots = [], ...options } =
-      getSnapshotConfig(story, confOptions, invalid);
+      omit(getSnapshotConfig(story, confOptions, invalid), SELECTION_OPTIONS.filter(k => k !== 'tags'));
 
-    return all.concat(
-      options,
-      processAdditionalSnapshots(additionalSnapshots, options, story.name, (snap) => shouldSkipStory(story.name, snap))
+    // precedence: the story's own percy.widths > its Storybook viewport > project widths
+    let useViewport = (storyViewport ?? config?.storyViewport) !== false && !meta?.viewport?.disabled;
+    let ownWidths = !!story.widths?.length && !sameList(story.widths, project.widths);
+    let onViewport = () => viewportStories.add(story.id);
+
+    if (useViewport && !ownWidths) {
+      let vp = meta?.viewport;
+      let value = [vp?.global, vp?.defaultViewport, project.viewport].find(v => viewportKey(v));
+      if (value && value === vp?.defaultViewport && !vp?.global) {
+        log.debug(`${story.name}: using the legacy viewport.defaultViewport parameter`);
+      }
+      if (value && applyViewportWidth(options, value, meta, log)) onViewport();
+    }
+
+    let keepBase = !(modesReplaceBase ?? conf.modesReplaceBase);
+    let modeSnapshots = processModes(
+      modes !== undefined ? modes : conf.modes,
+      options, story.name, meta, keepBase, useViewport ? onViewport : () => {}, log
     );
+    let additional = processAdditionalSnapshots(
+      additionalSnapshots, options, story.name,
+      (snap) => shouldSkipStory(story.name, snap),
+      (snapshot, snap) => {
+        if (useViewport && !snap.widths && viewportKey(snap.globals?.viewport) && !hasPinnedViewport(meta) &&
+            applyViewportWidth(snapshot, snap.globals.viewport, meta, log)) onViewport();
+      }
+    );
+
+    let base = (keepBase || !modeSnapshots.length) ? [options] : [];
+    counts.stories += 1;
+    counts.modes += modeSnapshots.length;
+    counts.additional += additional.length;
+    return all.concat(base, modeSnapshots, additional);
   }, []);
+
+  if (counts.modes || counts.additional) {
+    log.info(`Found ${counts.stories} ${counts.stories === 1 ? 'story' : 'stories'} with ` +
+      `${counts.modes} mode snapshots and ${counts.additional} additional snapshots (${snapshots.length} story snapshots)`);
+  }
+
+  if (viewportStories.size) {
+    log.info(`${viewportStories.size} ${viewportStories.size === 1 ? 'story' : 'stories'} captured at ` +
+      'their Storybook viewport width (set `storybook.storyViewport: false` to disable)');
+  }
 
   const docSnapshots = mapDocSnapshots(docEntries, config, confOptions, invalid, log, globalDocSettings);
   snapshots = snapshots.concat(docSnapshots);
@@ -254,6 +386,7 @@ function mapStorybookSnapshots(stories, { previewUrl, flags, config, globalDocSe
 
   // remove filter options and generate story snapshot URLs
   return snapshots.map(({ skip, include, exclude, ...story }) => {
+    story = omit(story, SELECTION_OPTIONS.filter(k => k !== 'tags'));
     return Object.assign(story, { url: buildStoryUrl(previewUrl, story) });
   });
 }
@@ -331,9 +464,30 @@ export async function applyIntelliStoryFilter(
 }
 
 // Starts the percy instance and collects Storybook snapshots, calling the callback when done
-export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildDir, flags }) {
+// Viewport keys referenced by Percy config modes and additional snapshots, so the browser
+// returns their sizes from each story's viewport options
+function configViewportKeys(config) {
+  return [].concat(config?.modes ?? [], config?.additionalSnapshots ?? [])
+    .map(s => viewportKey(s?.globals?.viewport)).filter(Boolean);
+}
+
+// Version order: project.json, the about page, then (for `storybook:start` only) the installed
+// package; the about page is only loaded when project.json has no version.
+async function* resolveStorybookEnvironmentInfo(percy, baseUrl, localStorybook) {
+  let version = await fetchStorybookProjectVersion(percy, baseUrl);
+  if (version) return `storybook/${version}`;
+
+  let aboutUrl = new URL('index.html?path=/settings/about', baseUrl).href;
+  let info = yield* withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo), undefined, { from: 'about url' });
+  if (info === 'storybook/unknown' && localStorybook) {
+    let installed = fullVersionFromInstalledPackage();
+    if (installed) return `storybook/${installed}`;
+  }
+  return info;
+}
+
+export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildDir, flags, localStorybook }) {
   try {
-    let aboutUrl = new URL('?path=/settings/about', baseUrl).href;
     let previewUrl = new URL('iframe.html', baseUrl).href;
     let log = logger('storybook');
 
@@ -362,7 +516,7 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
     const { isDocDiscoveryEnabled, isAutodocDiscoveryEnabled, globalDocSettings } = getDocCaptureFlagsWithRules(storybookConfig);
 
     let [environmentInfo, stories] = yield* yieldAll([
-      withPage(percy, aboutUrl, p => p.eval(evalStorybookEnvironmentInfo), undefined, { from: 'about url' }),
+      resolveStorybookEnvironmentInfo(percy, baseUrl, localStorybook),
       withPage(
         percy,
         previewUrl,
@@ -371,7 +525,8 @@ export async function* takeStorybookSnapshots(percy, callback, { baseUrl, buildD
           {
             docCapture: isDocDiscoveryEnabled,
             autodocCapture: isAutodocDiscoveryEnabled,
-            intelliStory: !!storybookConfig?.intelliStory?.enabled
+            intelliStory: !!storybookConfig?.intelliStory?.enabled,
+            viewportKeys: configViewportKeys(storybookConfig)
           }
         ),
         undefined,

@@ -14,9 +14,6 @@ export default {
   parameters: {
     percy: {
       name: 'Args',
-      // Exclude by default so Args does not pollute no-filter snapshot counts.
-      // `--include=Args` supplies a global filter which overrides story-level exclude.
-      exclude: [/.*/],
       additionalSnapshots: [{
         prefix: 'Custom ',
         args: {

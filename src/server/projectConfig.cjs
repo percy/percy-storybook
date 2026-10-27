@@ -10,6 +10,26 @@ const { PERCY_API_BASE, validateBuildId, validateProjectId, basicAuth, safeWebUr
 /* ─── .percy.yml helpers ───────────────────────────────────────────────── */
 
 /**
+ * Tag filters from .percy.yml (`storybook.tags`), shown in the panel because a panel run applies
+ * them on top of its story scope. Returns null when there is no readable config.
+ */
+async function readStorybookTagFilters() {
+  try {
+    const { storybookSchema, configSchema } = await import('../config.js');
+    // eslint-disable-next-line import/no-extraneous-dependencies
+    const { addSchema, load } = await import('@percy/config');
+    addSchema([storybookSchema, configSchema]);
+    const tags = load({ path: getPercyYmlPath(), reload: true, print: false })?.storybook?.tags;
+    const include = [].concat(tags?.include ?? []);
+    const exclude = [].concat(tags?.exclude ?? []);
+    return (include.length || exclude.length) ? { include, exclude } : null;
+  } catch {
+    /* istanbul ignore next: load() reports bad config itself; this only guards the panel */
+    return null;
+  }
+}
+
+/**
  * Serialize a string as a YAML double-quoted scalar.
  *
  * projectName comes from the Percy API and may legitimately contain quotes,
@@ -304,12 +324,14 @@ function registerProjectConfigHandlers(channel) {
       // Do NOT send the BrowserStack username/access key back to the browser.
       // The credentials stay in the Node process; all authenticated Percy calls
       // are made server-side via readBsCredentials().
+      const tagFilters = await readStorybookTagFilters();
       channel.emit(PERCY_EVENTS.PROJECT_CONFIG_LOADED, {
         credentialsValid: true,
         project,
         projectDetails,
         hasValidToken: tokenValid,
-        lastBuild
+        lastBuild,
+        ...(tagFilters ? { tagFilters } : {})
       });
     } catch {
       channel.emit(PERCY_EVENTS.PROJECT_CONFIG_LOADED, {
@@ -379,4 +401,4 @@ function registerProjectConfigHandlers(channel) {
   });
 }
 
-module.exports = { readPercyYml, writePercyYml, fetchPercyToken, setPercyToken, registerProjectConfigHandlers };
+module.exports = { readStorybookTagFilters, readPercyYml, writePercyYml, fetchPercyToken, setPercyToken, registerProjectConfigHandlers };
